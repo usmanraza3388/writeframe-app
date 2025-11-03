@@ -46,10 +46,6 @@ export const useDeleteItem = () => {
   // ADD: Special function to handle scene deletion with remake count updates
   const deleteSceneWithRemakeHandling = async (sceneId: string): Promise<boolean> => {
     try {
-      
-      // originalSceneId is declared for potential future use
-       let originalSceneId: string | null = null;
-
       // 1. Check if this scene is a remake by looking in scene_remakes table
       const { data: remakeRecord, error: remakeError } = await supabase
         .from('scene_remakes')
@@ -59,8 +55,6 @@ export const useDeleteItem = () => {
 
       // If it's a remake scene, handle the remake count
       if (!remakeError && remakeRecord) {
-        originalSceneId = remakeRecord.original_scene_id;
-        
         // 2. Decrement the original scene's remake_count
         const { error: decrementError } = await supabase.rpc(
           'decrement_count',
