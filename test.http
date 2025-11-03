@@ -1,0 +1,3 @@
+### GET user profile
+GET http://localhost:3000/users/f3e33917-4434-40e6-a9b4-7d6179f7021c
+Accept: application/json
