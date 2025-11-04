@@ -15,9 +15,9 @@ app.use(cors({ origin: "*" }));
 const userRoutes = require("./routes/userRoutes");
 app.use("/users", userRoutes);
 
-// Optional test route
-app.get("/api", (req, res) => {
-  res.json({ message: "API is working" });
+// Test route for backend API
+app.get("/api/test", (req, res) => {
+  res.json({ message: "Backend is working!" });
 });
 
 // Optional SPA / static files
