@@ -6,7 +6,6 @@ const path = require("path");
 const supabase = require("./supabaseClient"); // direct import
 
 const app = express();
-const PORT = process.env.PORT || 3000;
 
 // Middleware
 app.use(express.json());
@@ -27,5 +26,5 @@ app.get("*", (req, res) => {
   res.sendFile(path.join(__dirname, "..", "public", "index.html"));
 });
 
-// Start server
-app.listen(PORT, () => console.log(`Server running at http://localhost:${PORT}`));
+// Export the app for serverless deployment
+module.exports = app;
