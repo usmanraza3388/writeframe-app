@@ -1,7 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../assets/lib/supabaseClient';
 
-// UPDATED: Added repost content types
 interface CommentsStatusParams {
   content_type: 'scene' | 'monologue' | 'character' | 'frame' | 'character_repost' | 'frame_repost' | 'monologue_repost';
   content_id: string;
@@ -18,141 +17,59 @@ interface CommentWithUser {
   };
 }
 
+// FIXED: Add proper type for the raw comment data
+interface RawComment {
+  id: string;
+  user_id: string;
+  content: string;
+  created_at: string;
+  profiles: {
+    username: string;
+    avatar_url: string | null;
+  }[] | null;
+}
+
 export const useCommentsStatus = ({ content_type, content_id }: CommentsStatusParams) => {
   return useQuery({
     queryKey: ['comments', content_type, content_id],
     queryFn: async () => {
-      // CAREFULLY UPDATED: Handle both original and repost content types
+      console.log('=== START COMMENT FETCH ===');
+      console.log('Content type:', content_type);
+      console.log('Content ID:', content_id);
+      
       const isRepost = content_type.includes('_repost');
       const baseType = isRepost ? content_type.replace('_repost', '') : content_type;
       const tableName = isRepost ? `${content_type}_comments` : `${baseType}_comments`;
       const idColumn = isRepost ? 'repost_id' : `${baseType}_id`;
       
-      // FIXED: Use exact foreign key constraint names for each table
-      let commentsQuery;
+      console.log('Table name:', tableName);
+      console.log('ID column:', idColumn);
 
-      if (tableName === 'monologue_comments') {
-        // Use the correct foreign key for monologue_comments
-        commentsQuery = supabase
-          .from(tableName)
-          .select(`
-            id,
-            user_id,
-            content,
-            created_at,
-            profiles!monologue_comments_user_id_fkey (
-              username,
-              avatar_url
-            )
-          `);
-      } else if (tableName === 'scene_comments') {
-        // Use the correct foreign key for scene_comments
-        commentsQuery = supabase
-          .from(tableName)
-          .select(`
-            id,
-            user_id,
-            content,
-            created_at,
-            profiles!scene_comments_user_id_fkey (
-              username,
-              avatar_url
-            )
-          `);
-      } else if (tableName === 'character_comments') {
-        // Use the correct foreign key for character_comments
-        commentsQuery = supabase
-          .from(tableName)
-          .select(`
-            id,
-            user_id,
-            content,
-            created_at,
-            profiles!character_comments_user_id_fkey (
-              username,
-              avatar_url
-            )
-          `);
-      } else if (tableName === 'frame_comments') {
-        // Use the correct foreign key for frame_comments
-        commentsQuery = supabase
-          .from(tableName)
-          .select(`
-            id,
-            user_id,
-            content,
-            created_at,
-            profiles!frame_comments_user_id_fkey (
-              username,
-              avatar_url
-            )
-          `);
-      } else if (tableName === 'character_repost_comments') {
-        // Use the correct foreign key for character_repost_comments
-        commentsQuery = supabase
-          .from(tableName)
-          .select(`
-            id,
-            user_id,
-            content,
-            created_at,
-            profiles!character_repost_comments_user_id_fkey (
-              username,
-              avatar_url
-            )
-          `);
-      } else if (tableName === 'frame_repost_comments') {
-        // Use the correct foreign key for frame_repost_comments
-        commentsQuery = supabase
-          .from(tableName)
-          .select(`
-            id,
-            user_id,
-            content,
-            created_at,
-            profiles!frame_repost_comments_user_id_fkey (
-              username,
-              avatar_url
-            )
-          `);
-      } else if (tableName === 'monologue_repost_comments') {
-        // Use the correct foreign key for monologue_repost_comments
-        commentsQuery = supabase
-          .from(tableName)
-          .select(`
-            id,
-            user_id,
-            content,
-            created_at,
-            profiles!monologue_repost_comments_user_id_fkey (
-              username,
-              avatar_url
-            )
-          `);
-      } else {
-        // Fallback for any unknown tables
-        commentsQuery = supabase
-          .from(tableName)
-          .select(`
-            id,
-            user_id,
-            content,
-            created_at,
-            profiles:user_id (
-              username,
-              avatar_url
-            )
-          `);
-      }
+      // SIMPLIFIED: Use basic join without foreign key specifiers
+      const commentsQuery = supabase
+        .from(tableName)
+        .select(`
+          id,
+          user_id,
+          content,
+          created_at,
+          profiles (
+            username,
+            avatar_url
+          )
+        `);
 
       // Execute the query
       const { data: comments, error: commentsError } = await commentsQuery
         .eq(idColumn, content_id)
         .order('created_at', { ascending: true });
 
+      console.log('=== QUERY RESULTS ===');
+      console.log('Comments error:', commentsError);
+      console.log('Raw comments data:', comments);
+      
       if (commentsError) {
         console.error('Error fetching comments:', commentsError);
-        // Fallback to just count if comments fetch fails
         const mainTable = isRepost ? `${baseType}_reposts` : `${baseType}s`;
         const { data: contentData } = await supabase
           .from(mainTable)
@@ -166,24 +83,51 @@ export const useCommentsStatus = ({ content_type, content_id }: CommentsStatusPa
         };
       }
 
-      // FIXED: Simplified transform - profiles will be an array due to proper join
-      const commentsWithUser: CommentWithUser[] = (comments || []).map(comment => {
-        // With proper foreign key joins, profiles is guaranteed to be an array
-        const profile = comment.profiles && comment.profiles[0];
+      // FIXED: Type the comments properly
+      const rawComments = comments as RawComment[];
+      
+      // DEBUG: Check each comment's structure
+      console.log('=== TRANSFORMING COMMENTS ===');
+      const commentsWithUser: CommentWithUser[] = (rawComments || []).map((comment, index) => {
+        console.log(`Comment ${index}:`, comment);
+        console.log(`Comment ${index} profiles:`, comment.profiles);
+        console.log(`Comment ${index} profiles type:`, typeof comment.profiles);
+        console.log(`Comment ${index} is array:`, Array.isArray(comment.profiles));
         
-        return {
+        let username = 'Unknown User';
+        let avatar_url = null;
+
+        if (comment.profiles) {
+          if (Array.isArray(comment.profiles) && comment.profiles.length > 0) {
+            // FIXED: Access array element properly
+            username = comment.profiles[0]?.username || 'Unknown User';
+            avatar_url = comment.profiles[0]?.avatar_url || null;
+          } else if (typeof comment.profiles === 'object' && !Array.isArray(comment.profiles)) {
+            // Handle case where profiles is a single object
+            const profileObj = comment.profiles as any;
+            username = profileObj.username || 'Unknown User';
+            avatar_url = profileObj.avatar_url || null;
+          }
+        }
+
+        console.log(`Comment ${index} final username:`, username);
+        
+        const result = {
           id: comment.id,
           user_id: comment.user_id,
           content: comment.content,
           created_at: comment.created_at,
-          user: {
-            username: profile?.username || 'Unknown User',
-            avatar_url: profile?.avatar_url || null
-          }
+          user: { username, avatar_url }
         };
+        
+        console.log(`Comment ${index} result:`, result);
+        return result;
       });
 
-      // Get comment count from main table for consistency
+      console.log('=== FINAL COMMENTS WITH USER ===');
+      console.log(commentsWithUser);
+
+      // Get comment count
       const mainTable = isRepost ? `${baseType}_reposts` : `${baseType}s`;
       const { data: contentData } = await supabase
         .from(mainTable)
@@ -191,6 +135,8 @@ export const useCommentsStatus = ({ content_type, content_id }: CommentsStatusPa
         .eq('id', content_id)
         .single();
 
+      console.log('=== END COMMENT FETCH ===');
+      
       return {
         commentCount: contentData?.comment_count || commentsWithUser.length,
         comments: commentsWithUser
