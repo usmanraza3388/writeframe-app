@@ -17,6 +17,18 @@ interface CommentWithUser {
   };
 }
 
+// FIXED: Add proper type for the raw comment data
+interface RawComment {
+  id: string;
+  user_id: string;
+  content: string;
+  created_at: string;
+  profiles: {
+    username: string;
+    avatar_url: string | null;
+  }[] | null;
+}
+
 export const useCommentsStatus = ({ content_type, content_id }: CommentsStatusParams) => {
   return useQuery({
     queryKey: ['comments', content_type, content_id],
@@ -26,7 +38,7 @@ export const useCommentsStatus = ({ content_type, content_id }: CommentsStatusPa
       const tableName = isRepost ? `${content_type}_comments` : `${baseType}_comments`;
       const idColumn = isRepost ? 'repost_id' : `${baseType}_id`;
 
-      // FIXED: Use !inner join to ensure profile data is always returned
+      // SIMPLIFIED: Use basic join without foreign key specifiers
       const commentsQuery = supabase
         .from(tableName)
         .select(`
@@ -34,7 +46,7 @@ export const useCommentsStatus = ({ content_type, content_id }: CommentsStatusPa
           user_id,
           content,
           created_at,
-          profiles!inner (
+          profiles (
             username,
             avatar_url
           )
@@ -60,20 +72,33 @@ export const useCommentsStatus = ({ content_type, content_id }: CommentsStatusPa
         };
       }
 
-      // Transform the data - !inner ensures profiles is always an array with data
-      const commentsWithUser: CommentWithUser[] = (comments || []).map(comment => {
-        // With !inner join, profiles is guaranteed to exist and be an array
-        const profile = comment.profiles[0];
+      // FIXED: Type the comments properly
+      const rawComments = comments as RawComment[];
+      
+      // Transform the data to flatten the profile relationship
+      const commentsWithUser: CommentWithUser[] = (rawComments || []).map((comment) => {
+        let username = 'Unknown User';
+        let avatar_url = null;
+
+        if (comment.profiles) {
+          if (Array.isArray(comment.profiles) && comment.profiles.length > 0) {
+            // FIXED: Access array element properly
+            username = comment.profiles[0]?.username || 'Unknown User';
+            avatar_url = comment.profiles[0]?.avatar_url || null;
+          } else if (typeof comment.profiles === 'object' && !Array.isArray(comment.profiles)) {
+            // Handle case where profiles is a single object
+            const profileObj = comment.profiles as any;
+            username = profileObj.username || 'Unknown User';
+            avatar_url = profileObj.avatar_url || null;
+          }
+        }
         
         return {
           id: comment.id,
           user_id: comment.user_id,
           content: comment.content,
           created_at: comment.created_at,
-          user: {
-            username: profile.username, // No fallback needed with !inner
-            avatar_url: profile.avatar_url
-          }
+          user: { username, avatar_url }
         };
       });
 
