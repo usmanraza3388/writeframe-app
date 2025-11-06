@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom'; // ADDED: Import useNavigate
 import { useCommentsStatus } from '../../hooks/useCommentsStatus';
 import { useDeleteComment } from '../../hooks/useDeleteComment'; // ADDED: Import delete hook
 import { useAuth } from '../../contexts/AuthContext'; // ADDED: For current user
@@ -30,6 +31,7 @@ const CommentsSection: React.FC<CommentsSectionProps> = ({
   onSubmitComment,
   isLoading = false
 }) => {
+  const navigate = useNavigate(); // ADDED: Navigation hook
   const [comment, setComment] = useState('');
   const commentsEndRef = useRef<HTMLDivElement>(null);
   const [showMenuForComment, setShowMenuForComment] = useState<string | null>(null); // ADDED: Track which comment's menu is open
@@ -45,6 +47,12 @@ const CommentsSection: React.FC<CommentsSectionProps> = ({
 
   const comments = commentsData?.comments || [];
   const commentCount = commentsData?.commentCount || 0;
+
+  // ADDED: Profile click handler
+  const handleProfileClick = (userId: string) => {
+    navigate(`/profile/${userId}`);
+    onClose(); // Close comments when navigating to profile
+  };
 
   const handleSubmit = () => {
     if (comment.trim()) {
@@ -206,18 +214,22 @@ const CommentsSection: React.FC<CommentsSectionProps> = ({
                 position: 'relative' // ADDED: For menu positioning
               }}>
                 <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
-                  {/* User Avatar */}
-                  <div style={{
-                    width: '40px',
-                    height: '40px',
-                    borderRadius: '50%',
-                    backgroundColor: '#E5E5E5',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    flexShrink: 0,
-                    overflow: 'hidden'
-                  }}>
+                  {/* User Avatar - UPDATED: Now clickable */}
+                  <div 
+                    onClick={() => handleProfileClick(comment.user_id)}
+                    style={{
+                      width: '40px',
+                      height: '40px',
+                      borderRadius: '50%',
+                      backgroundColor: '#E5E5E5',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      flexShrink: 0,
+                      overflow: 'hidden',
+                      cursor: 'pointer' // ADDED: Show it's clickable
+                    }}
+                  >
                     {comment.user.avatar_url ? (
                       <img 
                         src={comment.user.avatar_url}
@@ -243,13 +255,19 @@ const CommentsSection: React.FC<CommentsSectionProps> = ({
                   
                   {/* Comment Content */}
                   <div style={{ flex: 1 }}>
-                    <div style={{
-                      fontFamily: 'Playfair Display, serif',
-                      fontWeight: '600',
-                      fontSize: '14px',
-                      color: '#000',
-                      marginBottom: '4px'
-                    }}>
+                    {/* Username - UPDATED: Now clickable */}
+                    <div 
+                      onClick={() => handleProfileClick(comment.user_id)}
+                      style={{
+                        fontFamily: 'Playfair Display, serif',
+                        fontWeight: '600',
+                        fontSize: '14px',
+                        color: '#000',
+                        marginBottom: '4px',
+                        cursor: 'pointer', // ADDED: Show it's clickable
+                        display: 'inline-block' // ADDED: Prevent full width click
+                      }}
+                    >
                       {comment.user.username}
                     </div>
                     <div style={{
