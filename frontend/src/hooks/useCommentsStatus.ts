@@ -28,7 +28,7 @@ export const useCommentsStatus = ({ content_type, content_id }: CommentsStatusPa
       const tableName = isRepost ? `${content_type}_comments` : `${baseType}_comments`;
       const idColumn = isRepost ? 'repost_id' : `${baseType}_id`;
       
-      // FIXED: Simplified - use basic profile join for all tables (Supabase handles the relationship automatically)
+      // FIXED: Use SIMPLE profile join for ALL tables - no complex foreign key specifiers
       const commentsQuery = supabase
         .from(tableName)
         .select(`
