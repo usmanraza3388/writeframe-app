@@ -28,11 +28,11 @@ export const useCommentsStatus = ({ content_type, content_id }: CommentsStatusPa
       const tableName = isRepost ? `${content_type}_comments` : `${baseType}_comments`;
       const idColumn = isRepost ? 'repost_id' : `${baseType}_id`;
       
-      // FIXED: Handle different comment tables with their specific queries
+      // FIXED: Use exact foreign key constraint names for each table
       let commentsQuery;
 
       if (tableName === 'monologue_comments') {
-        // Specific query for monologue_comments to avoid FK ambiguity
+        // Use the correct foreign key for monologue_comments
         commentsQuery = supabase
           .from(tableName)
           .select(`
@@ -46,7 +46,7 @@ export const useCommentsStatus = ({ content_type, content_id }: CommentsStatusPa
             )
           `);
       } else if (tableName === 'scene_comments') {
-        // Specific query for scene_comments to avoid FK ambiguity
+        // Use the correct foreign key for scene_comments
         commentsQuery = supabase
           .from(tableName)
           .select(`
@@ -59,8 +59,78 @@ export const useCommentsStatus = ({ content_type, content_id }: CommentsStatusPa
               avatar_url
             )
           `);
+      } else if (tableName === 'character_comments') {
+        // Use the correct foreign key for character_comments
+        commentsQuery = supabase
+          .from(tableName)
+          .select(`
+            id,
+            user_id,
+            content,
+            created_at,
+            profiles!character_comments_user_id_fkey (
+              username,
+              avatar_url
+            )
+          `);
+      } else if (tableName === 'frame_comments') {
+        // Use the correct foreign key for frame_comments
+        commentsQuery = supabase
+          .from(tableName)
+          .select(`
+            id,
+            user_id,
+            content,
+            created_at,
+            profiles!frame_comments_user_id_fkey (
+              username,
+              avatar_url
+            )
+          `);
+      } else if (tableName === 'character_repost_comments') {
+        // Use the correct foreign key for character_repost_comments
+        commentsQuery = supabase
+          .from(tableName)
+          .select(`
+            id,
+            user_id,
+            content,
+            created_at,
+            profiles!character_repost_comments_user_id_fkey (
+              username,
+              avatar_url
+            )
+          `);
+      } else if (tableName === 'frame_repost_comments') {
+        // Use the correct foreign key for frame_repost_comments
+        commentsQuery = supabase
+          .from(tableName)
+          .select(`
+            id,
+            user_id,
+            content,
+            created_at,
+            profiles!frame_repost_comments_user_id_fkey (
+              username,
+              avatar_url
+            )
+          `);
+      } else if (tableName === 'monologue_repost_comments') {
+        // Use the correct foreign key for monologue_repost_comments
+        commentsQuery = supabase
+          .from(tableName)
+          .select(`
+            id,
+            user_id,
+            content,
+            created_at,
+            profiles!monologue_repost_comments_user_id_fkey (
+              username,
+              avatar_url
+            )
+          `);
       } else {
-        // Default query for other tables (character_comments, frame_comments, etc.)
+        // Fallback for any unknown tables
         commentsQuery = supabase
           .from(tableName)
           .select(`
@@ -96,9 +166,9 @@ export const useCommentsStatus = ({ content_type, content_id }: CommentsStatusPa
         };
       }
 
-      // Transform the data to flatten the profile relationship
+      // FIXED: Simplified transform - profiles will be an array due to proper join
       const commentsWithUser: CommentWithUser[] = (comments || []).map(comment => {
-        // profiles is an array, take the first element
+        // With proper foreign key joins, profiles is guaranteed to be an array
         const profile = comment.profiles && comment.profiles[0];
         
         return {
