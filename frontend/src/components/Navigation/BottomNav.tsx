@@ -109,6 +109,9 @@ const BottomNav: React.FC = () => {
 
   const isActive = (path: string) => location.pathname === path;
 
+  // FIXED: Only highlight profile when viewing own profile
+  const isOwnProfileActive = location.pathname === `/profile/${user?.id}`;
+
   // Creation options data
   const creationOptions = [
     { 
@@ -367,7 +370,7 @@ const BottomNav: React.FC = () => {
             </span>
           </button>
 
-          {/* Profile Button */}
+          {/* Profile Button - FIXED: Only highlight when viewing own profile */}
           <button
             onClick={handleProfileClick}
             style={{
@@ -375,12 +378,12 @@ const BottomNav: React.FC = () => {
               border: 'none',
               cursor: 'pointer',
               padding: '8px 12px', // REDUCED: Less padding
-              borderRadius: '1212px',
+              borderRadius: '12px',
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
               gap: '4px', // REDUCED: Less gap
-              color: location.pathname.startsWith('/profile/') ? 'var(--text-primary)' : 'var(--text-gray)',
+              color: isOwnProfileActive ? 'var(--text-primary)' : 'var(--text-gray)',
               transition: 'all 0.2s ease',
               flex: 1,
               maxWidth: '70px'
@@ -388,7 +391,7 @@ const BottomNav: React.FC = () => {
             onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--background-secondary)'}
             onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
           >
-            <ProfileIcon active={location.pathname.startsWith('/profile/')} />
+            <ProfileIcon active={isOwnProfileActive} />
             <span style={{
               fontSize: '11px',
               fontFamily: "'Cormorant', serif",

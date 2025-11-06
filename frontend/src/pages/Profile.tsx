@@ -581,13 +581,15 @@ export default function Profile() {
             {profile.genre_persona || 'No genre set'}
           </div>
 
-          {/* UPDATED: Add NotificationBell and NavigationMenu in top-right corner */}
-          <div style={menuContainerStyle}>
-            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-              <NotificationBell />
-              <NavigationMenu />
+          {/* FIXED: Only show NotificationBell and NavigationMenu for own profile */}
+          {isOwnProfile && (
+            <div style={menuContainerStyle}>
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <NotificationBell />
+                <NavigationMenu />
+              </div>
             </div>
-          </div>
+          )}
 
           <div style={bioContainerStyle}>
             <p style={bioStyle}>{profile.bio || 'No bio yet'}</p>
