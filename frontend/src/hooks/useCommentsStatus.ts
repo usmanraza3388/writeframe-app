@@ -1,7 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../assets/lib/supabaseClient';
 
-// UPDATED: Added repost content types
 interface CommentsStatusParams {
   content_type: 'scene' | 'monologue' | 'character' | 'frame' | 'character_repost' | 'frame_repost' | 'monologue_repost';
   content_id: string;
@@ -22,13 +21,12 @@ export const useCommentsStatus = ({ content_type, content_id }: CommentsStatusPa
   return useQuery({
     queryKey: ['comments', content_type, content_id],
     queryFn: async () => {
-      // CAREFULLY UPDATED: Handle both original and repost content types
       const isRepost = content_type.includes('_repost');
       const baseType = isRepost ? content_type.replace('_repost', '') : content_type;
       const tableName = isRepost ? `${content_type}_comments` : `${baseType}_comments`;
       const idColumn = isRepost ? 'repost_id' : `${baseType}_id`;
-      
-      // FIXED: Use SIMPLE profile join for ALL tables - no complex foreign key specifiers
+
+      // FIXED: Use !inner join to ensure profile data is always returned
       const commentsQuery = supabase
         .from(tableName)
         .select(`
@@ -36,7 +34,7 @@ export const useCommentsStatus = ({ content_type, content_id }: CommentsStatusPa
           user_id,
           content,
           created_at,
-          profiles (
+          profiles!inner (
             username,
             avatar_url
           )
@@ -49,7 +47,6 @@ export const useCommentsStatus = ({ content_type, content_id }: CommentsStatusPa
 
       if (commentsError) {
         console.error('Error fetching comments:', commentsError);
-        // Fallback to just count if comments fetch fails
         const mainTable = isRepost ? `${baseType}_reposts` : `${baseType}s`;
         const { data: contentData } = await supabase
           .from(mainTable)
@@ -63,10 +60,10 @@ export const useCommentsStatus = ({ content_type, content_id }: CommentsStatusPa
         };
       }
 
-      // Transform the data to flatten the profile relationship
+      // Transform the data - !inner ensures profiles is always an array with data
       const commentsWithUser: CommentWithUser[] = (comments || []).map(comment => {
-        // profiles is an array, take the first element
-        const profile = comment.profiles && comment.profiles[0];
+        // With !inner join, profiles is guaranteed to exist and be an array
+        const profile = comment.profiles[0];
         
         return {
           id: comment.id,
@@ -74,8 +71,8 @@ export const useCommentsStatus = ({ content_type, content_id }: CommentsStatusPa
           content: comment.content,
           created_at: comment.created_at,
           user: {
-            username: profile?.username || 'Unknown User',
-            avatar_url: profile?.avatar_url || null
+            username: profile.username, // No fallback needed with !inner
+            avatar_url: profile.avatar_url
           }
         };
       });
