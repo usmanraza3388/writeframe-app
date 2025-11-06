@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom'; // ADDED: Import useNavigate
 import type { FeedScene } from '../../utils/feedActions';
 import RemakeEditor from '../RemakeEditor/RemakeEditor';
 import { useDeleteItem } from '../../hooks/useDeleteItem';
@@ -132,6 +133,7 @@ interface SceneCardProps {
 }
 
 const SceneCard: React.FC<SceneCardProps> = React.memo(({ scene, currentUserId, onAction }) => {
+  const navigate = useNavigate(); // ADDED: Navigation hook
   const [showMenu, setShowMenu] = useState(false);
   const [showRemakeEditor, setShowRemakeEditor] = useState(false);
   const [showReportDialog, setShowReportDialog] = useState(false);
@@ -183,6 +185,11 @@ const SceneCard: React.FC<SceneCardProps> = React.memo(({ scene, currentUserId, 
   const menuOptions = isOwner 
     ? ['Edit', 'Delete', 'Save', 'Copy Link', 'Report']
     : ['Save', 'Copy Link', 'Report'];
+
+  // ADDED: Profile click handler
+  const handleProfileClick = useCallback(() => {
+    navigate(`/profile/${scene.user_id}`);
+  }, [navigate, scene.user_id]);
 
   const handleSave = useCallback(async () => {
     if (!currentUserId) {
@@ -440,8 +447,9 @@ const SceneCard: React.FC<SceneCardProps> = React.memo(({ scene, currentUserId, 
           marginBottom: '20px'
         }}>
           <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
-            {/* FIXED: Avatar with simpler check */}
+            {/* FIXED: Avatar with simpler check - UPDATED: Now clickable */}
             <div 
+              onClick={handleProfileClick}
               role="img"
               aria-label={`${scene.user_name}'s avatar`}
               style={{
@@ -454,7 +462,8 @@ const SceneCard: React.FC<SceneCardProps> = React.memo(({ scene, currentUserId, 
                 justifyContent: 'center',
                 overflow: 'hidden',
                 flexShrink: 0,
-                border: '1.5px solid #E5E5E5'
+                border: '1.5px solid #E5E5E5',
+                cursor: 'pointer' // ADDED: Show it's clickable
               }}
             >
               {scene.user_avatar ? (
@@ -479,7 +488,14 @@ const SceneCard: React.FC<SceneCardProps> = React.memo(({ scene, currentUserId, 
               )}
             </div>
             
-            <div style={{ display: 'flex', flexDirection: 'column' }}>
+            <div 
+              onClick={handleProfileClick}
+              style={{ 
+                display: 'flex', 
+                flexDirection: 'column',
+                cursor: 'pointer' // ADDED: Show it's clickable
+              }}
+            >
               <span style={{
                 fontFamily: 'Playfair Display, serif',
                 fontSize: '20px',

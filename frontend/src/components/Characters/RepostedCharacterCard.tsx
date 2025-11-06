@@ -1,4 +1,5 @@
 import React, { useState, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom'; // ADDED: Import useNavigate
 import CharacterCard from './CharacterCard';
 // REMOVED: Unused import
 // FIXED IMPORTS
@@ -127,6 +128,9 @@ const RepostedCharacterCard: React.FC<RepostedCharacterCardProps> = React.memo((
     currentUserId 
   });
 
+  // ADDED: Navigation hook
+  const navigate = useNavigate();
+
   // ADD NEW STATES
   const [showCommentDialog, setShowCommentDialog] = useState(false);
   const [showShareDialog, setShowShareDialog] = useState(false);
@@ -248,15 +252,10 @@ const RepostedCharacterCard: React.FC<RepostedCharacterCardProps> = React.memo((
     onAction?.('view_original', repost.id, { originalCharacterId: originalCharacter.id });
   };
 
-  const handleReposterClick = () => {
-    console.log('👤 Reposter clicked - navigating to profile:', { 
-      reposterId: repost.user_id,
-      reposterName: repost.user_name 
-    });
-    
-    // Navigate to reposter's profile
-    onAction?.('view_profile', repost.user_id);
-  };
+  // UPDATED: Direct profile navigation instead of using onAction
+  const handleReposterClick = useCallback(() => {
+    navigate(`/profile/${repost.user_id}`);
+  }, [navigate, repost.user_id]);
 
   return (
     <article 
@@ -315,11 +314,10 @@ const RepostedCharacterCard: React.FC<RepostedCharacterCardProps> = React.memo((
           display: 'flex',
           alignItems: 'center',
           gap: '12px',
-          cursor: 'pointer',
           padding: '8px 0'
         }}
       >
-        {/* Reposter Avatar - UPDATED: Now uses actual avatar URL */}
+        {/* Reposter Avatar - UPDATED: Now uses direct navigation */}
         <div 
           onClick={handleReposterClick}
           role="img"
@@ -333,7 +331,8 @@ const RepostedCharacterCard: React.FC<RepostedCharacterCardProps> = React.memo((
             alignItems: 'center',
             justifyContent: 'center',
             overflow: 'hidden',
-            flexShrink: 0
+            flexShrink: 0,
+            cursor: 'pointer' // ADDED: Show it's clickable
           }}
         >
           {repost.avatar_url ? (
@@ -354,10 +353,15 @@ const RepostedCharacterCard: React.FC<RepostedCharacterCardProps> = React.memo((
           )}
         </div>
         
-        {/* Reposter Info */}
+        {/* Reposter Info - UPDATED: Now uses direct navigation */}
         <div 
           onClick={handleReposterClick}
-          style={{ display: 'flex', flexDirection: 'column', flex: 1 }}
+          style={{ 
+            display: 'flex', 
+            flexDirection: 'column', 
+            flex: 1,
+            cursor: 'pointer' // ADDED: Show it's clickable
+          }}
         >
           <h3 style={{
             fontFamily: 'Playfair Display, serif',

@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom'; // ADDED: Import useNavigate
 import type { FrameCardProps } from '../../utils/frames';
 import { useDeleteItem } from '../../hooks/useDeleteItem';
 import { useSaveItem } from '../../hooks/useSaveItem';
@@ -95,6 +96,7 @@ const FrameCard: React.FC<FrameCardProps> = React.memo(({
   currentUserId, 
   onAction 
 }) => {
+  const navigate = useNavigate(); // ADDED: Navigation hook
   const [showMenu, setShowMenu] = useState(false);
   // REMOVED: Mock like and repost states
   // ADDED: New dialog states
@@ -153,6 +155,11 @@ const FrameCard: React.FC<FrameCardProps> = React.memo(({
       : ['Save', 'Copy Link', 'Report'],
     [isOwner]
   );
+
+  // ADDED: Profile click handler
+  const handleProfileClick = useCallback(() => {
+    navigate(`/profile/${frame.user_id}`);
+  }, [navigate, frame.user_id]);
 
   // ADD: Handle save action
   const handleSave = useCallback(async () => {
@@ -419,8 +426,9 @@ const FrameCard: React.FC<FrameCardProps> = React.memo(({
         }}>
           {/* User Info */}
           <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
-            {/* Avatar */}
+            {/* Avatar - UPDATED: Now clickable */}
             <div 
+              onClick={handleProfileClick}
               role="img"
               aria-label={`${userData.userName}'s avatar`}
               style={{
@@ -433,7 +441,8 @@ const FrameCard: React.FC<FrameCardProps> = React.memo(({
                 justifyContent: 'center',
                 overflow: 'hidden',
                 flexShrink: 0,
-                border: '1.5px solid #E5E5E5'
+                border: '1.5px solid #E5E5E5',
+                cursor: 'pointer' // ADDED: Show it's clickable
               }}
             >
               {userData.userAvatar ? (
@@ -458,8 +467,15 @@ const FrameCard: React.FC<FrameCardProps> = React.memo(({
               )}
             </div>
             
-            {/* Name and Genre */}
-            <div style={{ display: 'flex', flexDirection: 'column' }}>
+            {/* Name and Genre - UPDATED: Now clickable */}
+            <div 
+              onClick={handleProfileClick}
+              style={{ 
+                display: 'flex', 
+                flexDirection: 'column',
+                cursor: 'pointer' // ADDED: Show it's clickable
+              }}
+            >
               <h3 style={{
                 fontFamily: 'Playfair Display, serif',
                 fontSize: '20px',

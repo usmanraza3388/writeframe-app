@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom'; // ADDED: Import useNavigate
 import type { CharacterCardProps } from '../../utils/character-types';
 import { useDeleteItem } from '../../hooks/useDeleteItem';
 import { useSaveItem } from '../../hooks/useSaveItem';
@@ -144,6 +145,9 @@ const CharacterCard: React.FC<CharacterCardProps> = React.memo(({
   currentUserId, 
   onAction 
 }) => {
+  // ADDED: Navigation hook
+  const navigate = useNavigate();
+
   const [showMenu, setShowMenu] = useState(false);
   const [showCommentDialog, setShowCommentDialog] = useState(false);
   const [showShareDialog, setShowShareDialog] = useState(false);
@@ -192,6 +196,11 @@ const CharacterCard: React.FC<CharacterCardProps> = React.memo(({
       : ['Save', 'Copy Link', 'Report'],
     [isOwner]
   );
+
+  // ADDED: Profile click handler
+  const handleProfileClick = useCallback(() => {
+    navigate(`/profile/${character.user_id}`);
+  }, [navigate, character.user_id]);
 
   // Handle save action
   const handleSave = useCallback(async () => {
@@ -433,10 +442,11 @@ const CharacterCard: React.FC<CharacterCardProps> = React.memo(({
           justifyContent: 'space-between',
           marginBottom: '20px'
         }}>
-          {/* User Info */}
+          {/* User Info - UPDATED: Now clickable */}
           <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
-            {/* Avatar - CIRCULAR for user */}
+            {/* Avatar - CIRCULAR for user - UPDATED: Now clickable */}
             <div 
+              onClick={handleProfileClick}
               role="img"
               aria-label={`${character.user_name}'s avatar`}
               style={{
@@ -449,7 +459,8 @@ const CharacterCard: React.FC<CharacterCardProps> = React.memo(({
                 justifyContent: 'center',
                 overflow: 'hidden',
                 flexShrink: 0,
-                border: '1.5px solid #E5E5E5'
+                border: '1.5px solid #E5E5E5',
+                cursor: 'pointer' // ADDED: Show it's clickable
               }}
             >
               {character.avatar_url ? (
@@ -472,8 +483,15 @@ const CharacterCard: React.FC<CharacterCardProps> = React.memo(({
               )}
             </div>
             
-            {/* Name and Genre */}
-            <div style={{ display: 'flex', flexDirection: 'column' }}>
+            {/* Name and Genre - UPDATED: Now clickable */}
+            <div 
+              onClick={handleProfileClick}
+              style={{ 
+                display: 'flex', 
+                flexDirection: 'column',
+                cursor: 'pointer' // ADDED: Show it's clickable
+              }}
+            >
               <h3 style={{
                 fontFamily: 'Playfair Display, serif',
                 fontSize: '20px',

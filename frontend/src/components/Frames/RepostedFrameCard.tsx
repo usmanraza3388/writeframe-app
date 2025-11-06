@@ -1,4 +1,5 @@
 import React, { useState, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom'; // ADDED: Import useNavigate
 import FrameCard from './FrameCard';
 // ADD NEW IMPORTS
 import { useLikeItem } from '../../hooks/useLikeItem';
@@ -103,6 +104,7 @@ const RepostedFrameCard: React.FC<RepostedFrameCardProps> = React.memo(({
   currentUserId,
   onAction
 }) => {
+  const navigate = useNavigate(); // ADDED: Navigation hook
   // ADD NEW STATES
   const [showCommentDialog, setShowCommentDialog] = useState(false);
   const [showShareDialog, setShowShareDialog] = useState(false);
@@ -129,6 +131,11 @@ const RepostedFrameCard: React.FC<RepostedFrameCardProps> = React.memo(({
     content_type: 'frame_repost', 
     content_id: repost.id 
   });
+
+  // ADDED: Profile click handler
+  const handleProfileClick = useCallback(() => {
+    navigate(`/profile/${repost.user_id}`);
+  }, [navigate, repost.user_id]);
 
   // ADDED: Handle undo repost from repost header
   const handleUndoRepost = useCallback(async () => {
@@ -193,11 +200,6 @@ const RepostedFrameCard: React.FC<RepostedFrameCardProps> = React.memo(({
     onAction?.('view_original', repost.id, { originalFrameId: originalFrame.id });
   };
 
-  const handleReposterClick = () => {
-    // Navigate to reposter's profile
-    onAction?.('view_profile', repost.user_id);
-  };
-
   return (
     <article 
       style={{
@@ -259,9 +261,9 @@ const RepostedFrameCard: React.FC<RepostedFrameCardProps> = React.memo(({
           padding: '8px 0'
         }}
       >
-        {/* Reposter Avatar - UPDATED: Now uses actual avatar URL */}
+        {/* Reposter Avatar - UPDATED: Now uses actual avatar URL and clickable */}
         <div 
-          onClick={handleReposterClick}
+          onClick={handleProfileClick}
           role="img"
           aria-label={`${repost.user_name}'s avatar`}
           style={{
@@ -273,7 +275,8 @@ const RepostedFrameCard: React.FC<RepostedFrameCardProps> = React.memo(({
             alignItems: 'center',
             justifyContent: 'center',
             overflow: 'hidden',
-            flexShrink: 0
+            flexShrink: 0,
+            cursor: 'pointer' // ADDED: Show it's clickable
           }}
         >
           {repost.avatar_url ? ( // ← THIS IS THE FIX
@@ -294,10 +297,15 @@ const RepostedFrameCard: React.FC<RepostedFrameCardProps> = React.memo(({
           )}
         </div>
         
-        {/* Reposter Info */}
+        {/* Reposter Info - UPDATED: Now clickable */}
         <div 
-          onClick={handleReposterClick}
-          style={{ display: 'flex', flexDirection: 'column', flex: 1 }}
+          onClick={handleProfileClick}
+          style={{ 
+            display: 'flex', 
+            flexDirection: 'column', 
+            flex: 1,
+            cursor: 'pointer' // ADDED: Show it's clickable
+          }}
         >
           <h3 style={{
             fontFamily: 'Playfair Display, serif',

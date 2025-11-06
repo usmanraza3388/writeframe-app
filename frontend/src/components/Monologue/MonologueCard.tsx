@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom'; // ADDED: Import useNavigate
 import { useDeleteItem } from '../../hooks/useDeleteItem';
 import { useSaveItem } from '../../hooks/useSaveItem';
 import { useSavedStatus } from '../../hooks/useSavedStatus';
@@ -165,6 +166,7 @@ const MonologueCard: React.FC<MonologueCardProps> = React.memo(({
   currentUserId, 
   onAction 
 }) => {
+  const navigate = useNavigate(); // ADDED: Navigation hook
   // ADD: Safety check for undefined monologue
   if (!monologue) {
     console.error('MonologueCard received undefined monologue data');
@@ -222,6 +224,11 @@ const MonologueCard: React.FC<MonologueCardProps> = React.memo(({
       : ['Save', 'Copy Link', 'Report'],
     [isOwner]
   );
+
+  // ADDED: Profile click handler
+  const handleProfileClick = useCallback(() => {
+    navigate(`/profile/${monologue.user_id}`);
+  }, [navigate, monologue.user_id]);
 
   // ADD: Handle save action
   const handleSave = useCallback(async () => {
@@ -468,8 +475,9 @@ const MonologueCard: React.FC<MonologueCardProps> = React.memo(({
         }}>
           {/* User Info */}
           <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
-            {/* FIXED: Avatar section using profiles.avatar_url */}
+            {/* FIXED: Avatar section using profiles.avatar_url - UPDATED: Now clickable */}
             <div 
+              onClick={handleProfileClick}
               role="img"
               aria-label={`${monologue.user_name}'s avatar`}
               style={{
@@ -482,7 +490,8 @@ const MonologueCard: React.FC<MonologueCardProps> = React.memo(({
                 justifyContent: 'center',
                 overflow: 'hidden',
                 flexShrink: 0,
-                border: '1.5px solid #E5E5E5'
+                border: '1.5px solid #E5E5E5',
+                cursor: 'pointer' // ADDED: Show it's clickable
               }}
             >
               {monologue.profiles?.avatar_url ? (
@@ -507,8 +516,15 @@ const MonologueCard: React.FC<MonologueCardProps> = React.memo(({
               )}
             </div>
             
-            {/* Name and Genre */}
-            <div style={{ display: 'flex', flexDirection: 'column' }}>
+            {/* Name and Genre - UPDATED: Now clickable */}
+            <div 
+              onClick={handleProfileClick}
+              style={{ 
+                display: 'flex', 
+                flexDirection: 'column',
+                cursor: 'pointer' // ADDED: Show it's clickable
+              }}
+            >
               <h3 style={{
                 fontFamily: 'Playfair Display, serif',
                 fontSize: '20px',
