@@ -16,16 +16,12 @@ export function useUserProfile(userId) {
     const fetchProfile = async () => {
       try {
         setIsLoading(true);
-        console.log('🔄 Fetching profile for:', userId);
         
         const { data: profileData, error: profileError } = await supabase
           .from('profiles')
           .select('*')
           .eq('id', userId)
           .single();
-
-        console.log('📊 Profile fetch result:', profileData);
-        console.log('❌ Profile fetch error:', profileError);
 
         if (profileError) {
           throw profileError;
@@ -34,7 +30,7 @@ export function useUserProfile(userId) {
         setData(profileData);
         setError(null);
       } catch (err) {
-        console.error('🚨 Profile fetch failed:', err);
+        console.error('Profile fetch failed:', err);
         setError(err.message);
         setData(null);
       } finally {
@@ -48,15 +44,55 @@ export function useUserProfile(userId) {
   return { data, isLoading, error };
 }
 
-// Keep the other hooks as they are for now
+// FIXED: Actual implementation that works with database
 export function useFollowUser(userId) {
   const [isLoading, setIsLoading] = useState(false);
   
   const mutateAsync = async () => {
+    if (!userId) throw new Error('User ID is required');
+    
     setIsLoading(true);
     try {
-      // This will also need fixing later
-      console.log('Follow user:', userId);
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User must be logged in to echo');
+
+      // Check if already echoing
+      const { data: existingEchoes, error: checkError } = await supabase
+        .from('user_echoes')
+        .select('id')
+        .eq('from_user_id', user.id)
+        .eq('to_user_id', userId);
+
+      if (checkError) throw checkError;
+
+      const isEchoing = existingEchoes && existingEchoes.length > 0;
+
+      if (isEchoing) {
+        // Unecho - remove the relationship
+        const { error: deleteError } = await supabase
+          .from('user_echoes')
+          .delete()
+          .eq('from_user_id', user.id)
+          .eq('to_user_id', userId);
+
+        if (deleteError) throw deleteError;
+        return { action: 'unecho' };
+      } else {
+        // Echo - create the relationship
+        const { error: insertError } = await supabase
+          .from('user_echoes')
+          .insert({
+            from_user_id: user.id,
+            to_user_id: userId
+          });
+
+        if (insertError) throw insertError;
+        return { action: 'echo' };
+      }
+    } catch (error) {
+      console.error('Echo operation failed:', error);
+      throw error;
     } finally {
       setIsLoading(false);
     }

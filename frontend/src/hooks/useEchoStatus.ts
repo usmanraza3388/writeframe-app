@@ -8,15 +8,19 @@ export const useEchoStatus = (targetUserId: string) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return { isEchoing: false };
 
-      const { data: echo } = await supabase
+      // Check echo status without .single()
+      const { data: echoes, error } = await supabase
         .from('user_echoes')
         .select('id')
         .eq('from_user_id', user.id)
-        .eq('to_user_id', targetUserId)
-        .single();
+        .eq('to_user_id', targetUserId);
+
+      if (error) {
+        return { isEchoing: false };
+      }
 
       return {
-        isEchoing: !!echo
+        isEchoing: !!echoes && echoes.length > 0
       };
     },
     enabled: !!targetUserId,

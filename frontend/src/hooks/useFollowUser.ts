@@ -9,7 +9,7 @@ export const useFollowUser = (userId: string) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User must be logged in to echo');
 
-      // Check if already echoing - FIX: Remove .single() for empty tables
+      // Check if already echoing
       const { data: existingEchoes, error: checkError } = await supabase
         .from('user_echoes')
         .select('id')
