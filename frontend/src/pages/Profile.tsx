@@ -5,6 +5,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 // @ts-ignore
 import { useFollowUser } from '../hooks/useUserProfile';
 // @ts-ignore
+import { useEchoStatus } from '../hooks/useEchoStatus';
+// @ts-ignore
 import { useProfileData } from '../hooks/useProfileData';
 // @ts-ignore
 import EditProfileModal from '../components/EditProfileModal';
@@ -75,6 +77,7 @@ export default function Profile() {
   // UPDATED: Added refresh to destructuring
   const { profile, stats, tabContent, isLoading, error, refresh } = useProfileData(id || '');
   const followMutation = useFollowUser(id);
+  const { data: echoStatus, isLoading: echoStatusLoading } = useEchoStatus(id || '');
   const { notifyEcho } = useNotifications();
   // ADDED: Use auth context for signOut
   const { signOut } = useAuth();
@@ -678,14 +681,17 @@ export default function Profile() {
         <div style={actionsContainerStyle}>
           <button 
             onClick={handleEcho}
-            disabled={followMutation.isLoading}
+            disabled={followMutation.isLoading || echoStatusLoading}
             style={{
               ...echoButtonStyle,
+              ...(echoStatus?.isEchoing ? echoButtonActiveStyle : {}),
               ...(followMutation.isLoading ? echoButtonLoadingStyle : {})
             }}
           >
             {followMutation.isLoading ? (
               <div style={loadingSpinnerStyle}></div>
+            ) : echoStatus?.isEchoing ? (
+              'Echoing'
             ) : (
               'Echo'
             )}
@@ -1018,6 +1024,11 @@ const echoButtonStyle: React.CSSProperties = {
   alignItems: 'center',
   justifyContent: 'center',
   gap: 8,
+};
+
+const echoButtonActiveStyle: React.CSSProperties = {
+  background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
+  color: '#FFFFFF',
 };
 
 const echoButtonLoadingStyle: React.CSSProperties = {
