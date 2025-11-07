@@ -340,6 +340,7 @@ export default function Profile() {
     }
     try {
       await followMutation.mutateAsync();
+      refresh(); // ADDED: Force refresh profile data to update counts
       
       // ADD NOTIFICATION AFTER SUCCESSFUL ECHO:
       if (profile && currentUser) {

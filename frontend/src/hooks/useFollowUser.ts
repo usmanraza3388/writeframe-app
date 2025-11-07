@@ -9,26 +9,29 @@ export const useFollowUser = (userId: string) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User must be logged in to echo');
 
-      // Check if already echoing
-      const { data: existingEcho } = await supabase
+      // Check if already echoing - FIX: Remove .single() for empty tables
+      const { data: existingEchoes, error: checkError } = await supabase
         .from('user_echoes')
         .select('id')
         .eq('from_user_id', user.id)
-        .eq('to_user_id', userId)
-        .single();
+        .eq('to_user_id', userId);
 
-      if (existingEcho) {
-        // Unecho - remove the echo relationship
+      if (checkError) throw checkError;
+
+      const isEchoing = existingEchoes && existingEchoes.length > 0;
+
+      if (isEchoing) {
+        // Unecho
         const { error } = await supabase
           .from('user_echoes')
           .delete()
-          .eq('id', existingEcho.id);
+          .eq('from_user_id', user.id)
+          .eq('to_user_id', userId);
 
         if (error) throw error;
-        
-        console.log('Unechoed user:', userId);
+        return { action: 'unecho' };
       } else {
-        // Echo - create echo relationship
+        // Echo
         const { error } = await supabase
           .from('user_echoes')
           .insert({
@@ -37,19 +40,11 @@ export const useFollowUser = (userId: string) => {
           });
 
         if (error) throw error;
-        
-        console.log('Echoed user:', userId);
+        return { action: 'echo' };
       }
     },
     onSuccess: () => {
-      // Refresh all relevant data
-      queryClient.invalidateQueries({ queryKey: ['profile', userId] });
-      queryClient.invalidateQueries({ queryKey: ['profile-data', userId] });
-      queryClient.invalidateQueries({ queryKey: ['feed'] });
       queryClient.invalidateQueries({ queryKey: ['echo-status', userId] });
-    },
-    onError: (error) => {
-      console.error('Echo operation failed:', error);
     }
   });
 };
