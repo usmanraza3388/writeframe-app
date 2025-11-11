@@ -17,7 +17,12 @@ const NotificationBell: React.FC = () => {
 
   // Load notifications and unread count
   const loadNotifications = async () => {
-    if (!user) return;
+    if (!user) {
+      // Clear everything if no user
+      setNotifications([]);
+      setUnreadCount(0);
+      return;
+    }
     
     setIsLoading(true);
     try {
@@ -30,6 +35,9 @@ const NotificationBell: React.FC = () => {
       setUnreadCount(countData);
     } catch (error) {
       console.error('Error loading notifications:', error);
+      // Clear on error too
+      setNotifications([]);
+      setUnreadCount(0);
     } finally {
       setIsLoading(false);
     }
@@ -52,19 +60,27 @@ const NotificationBell: React.FC = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isOpen, user]);
 
-  // Load initial unread count
+  // 🔥 FIXED: Enhanced user change handling
   useEffect(() => {
-    if (user) {
-      loadNotifications();
-    }
-  }, [user]);
-
-  // 🔥 FIX: Reset notifications when user changes
-  useEffect(() => {
+    // Clear everything immediately when user changes
     setNotifications([]);
     setUnreadCount(0);
     setIsOpen(false);
-  }, [user?.id]);
+    
+    // Load new user's notifications
+    if (user) {
+      loadNotifications();
+    }
+  }, [user?.id]); // Only depend on user.id, not the whole user object
+
+  // 🔥 ADDED: Clear everything when user becomes null (logout)
+  useEffect(() => {
+    if (!user) {
+      setNotifications([]);
+      setUnreadCount(0);
+      setIsOpen(false);
+    }
+  }, [user]);
 
   const handleBellClick = () => {
     setIsOpen(!isOpen);
@@ -181,21 +197,21 @@ const NotificationBell: React.FC = () => {
         )}
       </button>
 
-      {/* Notifications Panel - FIXED: Positioned relative to viewport */}
+      {/* Notifications Panel */}
       {isOpen && (
         <div
           ref={panelRef}
           style={{
-            position: 'fixed', // CHANGED: Use fixed instead of absolute
-            top: '70px', // CHANGED: Position from top of viewport
-            right: 'calc(50% - 187.5px + 32px)', // CHANGED: Calculate based on profile container
-            width: '300px', // CHANGED: Slightly smaller to fit better
-            maxHeight: '350px', // CHANGED: Reduced max height
+            position: 'fixed',
+            top: '70px',
+            right: 'calc(50% - 187.5px + 32px)',
+            width: '300px',
+            maxHeight: '350px',
             backgroundColor: 'var(--background-card)',
             border: '1px solid var(--border-color)',
             borderRadius: '12px',
             boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
-            zIndex: 10000, // CHANGED: Higher z-index to ensure it's on top
+            zIndex: 10000,
             display: 'flex',
             flexDirection: 'column',
             overflow: 'hidden',
@@ -244,7 +260,7 @@ const NotificationBell: React.FC = () => {
             style={{
               flex: 1,
               overflowY: 'auto',
-              maxHeight: '250px', // CHANGED: Reduced to fit better
+              maxHeight: '250px',
               minHeight: '80px',
             }}
           >
