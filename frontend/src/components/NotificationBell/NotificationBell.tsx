@@ -59,6 +59,13 @@ const NotificationBell: React.FC = () => {
     }
   }, [user]);
 
+  // 🔥 FIX: Reset notifications when user changes
+  useEffect(() => {
+    setNotifications([]);
+    setUnreadCount(0);
+    setIsOpen(false);
+  }, [user?.id]);
+
   const handleBellClick = () => {
     setIsOpen(!isOpen);
   };
