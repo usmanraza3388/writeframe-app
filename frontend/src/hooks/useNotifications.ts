@@ -5,18 +5,16 @@ import { supabase } from '../assets/lib/supabaseClient';
 // Notification types
 export type NotificationType = 'echo' | 'remake' | 'comment' | 'follow' | 'whisper';
 
-// Notification payload interfaces
+// Notification payload interfaces - REMOVED name fields
 export interface EchoNotification {
   type: 'echo';
   userId: string;
-  echoerName: string;
   echoerId: string;
 }
 
 export interface RemakeNotification {
   type: 'remake';
   userId: string;
-  remakerName: string;
   remakerId: string;
   sceneId: string;
   sceneTitle: string;
@@ -25,7 +23,6 @@ export interface RemakeNotification {
 export interface CommentNotification {
   type: 'comment';
   userId: string;
-  commenterName: string;
   commenterId: string;
   sceneId: string;
   sceneTitle: string;
@@ -40,7 +37,6 @@ export interface PromptEmailNotification {
 export interface WhisperNotification {
   type: 'whisper';
   userId: string;
-  senderName: string;
   senderId: string;
   messagePreview: string;
 }
@@ -49,6 +45,27 @@ export type NotificationData = EchoNotification | RemakeNotification | CommentNo
 
 // Enhanced notification service with database integration
 export const useNotifications = () => {
+  // Helper function to get profile name from profiles table
+  const getProfileName = useCallback(async (userId: string): Promise<string> => {
+    try {
+      const { data: profile, error } = await supabase
+        .from('profiles')
+        .select('full_name, username')
+        .eq('id', userId)
+        .single();
+
+      if (error || !profile) {
+        console.error('❌ Failed to fetch profile:', error);
+        return 'Unknown User';
+      }
+
+      return profile.full_name || profile.username || 'Unknown User';
+    } catch (err) {
+      console.error('💥 Error fetching profile name:', err);
+      return 'Unknown User';
+    }
+  }, []);
+
   // Save notification to database
   const saveNotificationToDB = useCallback(async (
     userId: string,
@@ -82,8 +99,10 @@ export const useNotifications = () => {
     }
   }, []);
 
-  // Notify about echoes - NOW WITH DATABASE
-  const notifyEcho = useCallback(async (userId: string, echoerName: string, echoerId: string) => {
+  // Notify about echoes - UPDATED: Fetch profile name
+  const notifyEcho = useCallback(async (userId: string, echoerId: string) => {
+    const echoerName = await getProfileName(echoerId);
+    
     console.log(`📢 ECHO NOTIFICATION: ${echoerName} echoed user ${userId}`);
     
     // Save to database
@@ -101,16 +120,17 @@ export const useNotifications = () => {
     }
     
     return dbSuccess;
-  }, [saveNotificationToDB]);
+  }, [saveNotificationToDB, getProfileName]);
 
-  // Notify about remakes - NOW WITH DATABASE
+  // Notify about remakes - UPDATED: Fetch profile name
   const notifyRemake = useCallback(async (
     userId: string, 
-    remakerName: string, 
     remakerId: string, 
     sceneId: string, 
     sceneTitle: string
   ) => {
+    const remakerName = await getProfileName(remakerId);
+    
     console.log(`📢 REMAKE NOTIFICATION: ${remakerName} remaked your scene "${sceneTitle}"`);
     
     // Save to database
@@ -128,15 +148,16 @@ export const useNotifications = () => {
     }
     
     return dbSuccess;
-  }, [saveNotificationToDB]);
+  }, [saveNotificationToDB, getProfileName]);
 
-  // Notify about whispers - NOW WITH DATABASE
+  // Notify about whispers - UPDATED: Fetch profile name
   const notifyWhisper = useCallback(async (
     userId: string, 
-    senderName: string, 
     senderId: string, 
     messagePreview: string
   ) => {
+    const senderName = await getProfileName(senderId);
+    
     console.log(`📢 WHISPER NOTIFICATION: ${senderName} sent a whisper to user ${userId}`);
     
     // Save to database
@@ -159,7 +180,7 @@ export const useNotifications = () => {
     }
     
     return dbSuccess;
-  }, [saveNotificationToDB]);
+  }, [saveNotificationToDB, getProfileName]);
 
   // Send prompt emails - STUB FOR NOW (MVP)
   const sendPromptEmail = useCallback((userEmail: string, prompt: string) => {
@@ -234,15 +255,15 @@ export const useNotifications = () => {
     }
   }, []);
 
-  // Generic notification sender
+  // Generic notification sender - UPDATED: Remove name parameters
   const sendNotification = useCallback(async (data: NotificationData) => {
     switch (data.type) {
       case 'echo':
-        return await notifyEcho(data.userId, data.echoerName, data.echoerId);
+        return await notifyEcho(data.userId, data.echoerId);
       case 'remake':
-        return await notifyRemake(data.userId, data.remakerName, data.remakerId, data.sceneId, data.sceneTitle);
+        return await notifyRemake(data.userId, data.remakerId, data.sceneId, data.sceneTitle);
       case 'whisper':
-        return await notifyWhisper(data.userId, data.senderName, data.senderId, data.messagePreview);
+        return await notifyWhisper(data.userId, data.senderId, data.messagePreview);
       case 'prompt_email':
         return sendPromptEmail(data.userEmail, data.prompt);
       default:
