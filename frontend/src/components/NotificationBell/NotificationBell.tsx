@@ -3,7 +3,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNotifications } from '../../hooks/useNotifications';
 import { useAuth } from '../../contexts/AuthContext';
 
-const NotificationBell: React.FC = () => {
+// UPDATED: Accept profileId prop
+const NotificationBell: React.FC<{ profileId?: string }> = ({ profileId }) => {
   const { user } = useAuth();
   const { getUserNotifications, markAsRead, getUnreadCount } = useNotifications();
   
@@ -15,10 +16,13 @@ const NotificationBell: React.FC = () => {
   const panelRef = useRef<HTMLDivElement>(null);
   const bellRef = useRef<HTMLButtonElement>(null);
 
-  // Load notifications and unread count
+  // UPDATED: Use profileId if provided, otherwise use auth user ID
+  const targetUserId = profileId || user?.id;
+
+  // UPDATED: Load notifications for targetUserId
   const loadNotifications = async () => {
-    if (!user) {
-      // Clear everything if no user
+    if (!targetUserId) {
+      // Clear everything if no target user
       setNotifications([]);
       setUnreadCount(0);
       return;
@@ -27,8 +31,8 @@ const NotificationBell: React.FC = () => {
     setIsLoading(true);
     try {
       const [notifsData, countData] = await Promise.all([
-        getUserNotifications(user.id, 10),
-        getUnreadCount(user.id)
+        getUserNotifications(targetUserId, 10),
+        getUnreadCount(targetUserId) // UPDATED: Use targetUserId
       ]);
       
       setNotifications(notifsData);
@@ -58,29 +62,29 @@ const NotificationBell: React.FC = () => {
     }
 
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [isOpen, user]);
+  }, [isOpen, targetUserId]); // UPDATED: Use targetUserId
 
-  // 🔥 FIXED: Enhanced user change handling
+  // UPDATED: Enhanced target user change handling
   useEffect(() => {
-    // Clear everything immediately when user changes
+    // Clear everything immediately when target user changes
     setNotifications([]);
     setUnreadCount(0);
     setIsOpen(false);
     
-    // Load new user's notifications
-    if (user) {
+    // Load new target user's notifications
+    if (targetUserId) {
       loadNotifications();
     }
-  }, [user?.id]); // Only depend on user.id, not the whole user object
+  }, [targetUserId]); // UPDATED: Use targetUserId instead of user.id
 
-  // 🔥 ADDED: Clear everything when user becomes null (logout)
+  // UPDATED: Clear everything when target user becomes null
   useEffect(() => {
-    if (!user) {
+    if (!targetUserId) {
       setNotifications([]);
       setUnreadCount(0);
       setIsOpen(false);
     }
-  }, [user]);
+  }, [targetUserId]);
 
   const handleBellClick = () => {
     setIsOpen(!isOpen);
