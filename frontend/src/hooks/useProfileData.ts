@@ -4,7 +4,8 @@ import { supabase } from '../assets/lib/supabaseClient';
 
 interface ProfileStats {
   scenes: number;
-  echoes: number;
+  followers: number;  // Changed from echoes to followers
+  following: number;  // Added this new property
   remakes: number;
   monologues: number;
   characters: number;
@@ -64,7 +65,14 @@ const transformFrameData = (frame: any) => ({
 export const useProfileData = (userId: string) => {
   const [profile, setProfile] = useState<any>(null);
   const [stats, setStats] = useState<ProfileStats>({
-    scenes: 0, echoes: 0, remakes: 0, monologues: 0, characters: 0, frames: 0, totalLikes: 0
+    scenes: 0, 
+    followers: 0,  // Changed from echoes to followers
+    following: 0,  // Added this new property
+    remakes: 0, 
+    monologues: 0, 
+    characters: 0, 
+    frames: 0, 
+    totalLikes: 0
   });
   const [tabContent, setTabContent] = useState<TabContent>({
     scenes: [], monologues: [], characters: [], frames: []
@@ -98,7 +106,7 @@ export const useProfileData = (userId: string) => {
         // 2. Fetch ALL data in parallel but process SEPARATELY
         const [
           scenesCount, monologuesCount, charactersCount, framesCount,
-          echoesCount, remakesCount, totalLikesCount,
+          followersCount, followingCount, remakesCount, totalLikesCount,
           originalScenes, originalMonologues, originalCharacters, originalFrames,
           characterReposts, monologueReposts, frameReposts
         ] = await Promise.all([
@@ -108,8 +116,9 @@ export const useProfileData = (userId: string) => {
           supabase.from('characters').select('id', { count: 'exact' }).eq('user_id', userId).eq('status', 'published'),
           supabase.from('frames').select('id', { count: 'exact' }).eq('user_id', userId).eq('status', 'published'),
           
-          // Engagement counts
-          supabase.from('user_echoes').select('id', { count: 'exact' }).eq('to_user_id', userId),
+          // Engagement counts - UPDATED: followers and following
+          supabase.from('user_echoes').select('id', { count: 'exact' }).eq('to_user_id', userId), // Followers
+          supabase.from('user_echoes').select('id', { count: 'exact' }).eq('from_user_id', userId), // Following
           supabase.from('scenes')
             .select('remake_count')
             .eq('user_id', userId)
@@ -240,7 +249,8 @@ export const useProfileData = (userId: string) => {
             monologues: monologuesCount.count || 0,
             characters: charactersCount.count || 0,
             frames: framesCount.count || 0,
-            echoes: echoesCount.count || 0,
+            followers: followersCount.count || 0,  // Changed from echoes to followers
+            following: followingCount.count || 0,  // Added this new property
             remakes: totalRemakesReceived,
             totalLikes: totalLikesCount.count || 0,
           });
