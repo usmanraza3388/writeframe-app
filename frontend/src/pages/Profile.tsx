@@ -342,8 +342,8 @@ export default function Profile() {
       await followMutation.mutateAsync();
       refresh(); // ADDED: Force refresh profile data to update counts
       
-      // ADD NOTIFICATION AFTER SUCCESSFUL ECHO:
-      if (profile && currentUser) {
+      // UPDATED: Only send notification if user started echoing (was not echoing before)
+      if (profile && currentUser && !echoStatus?.isEchoing) {
         notifyEcho(
           profile.id, // The user being echoed (profile owner)
           currentUser.id
@@ -588,7 +588,7 @@ export default function Profile() {
           {isOwnProfile && (
             <div style={menuContainerStyle}>
               <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                <NotificationBell />
+                <NotificationBell profileId={profile?.id} />
                 <NavigationMenu />
               </div>
             </div>
