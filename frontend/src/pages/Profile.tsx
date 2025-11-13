@@ -813,7 +813,7 @@ export default function Profile() {
             <div style={statDividerStyle}></div>
             <div style={statItemStyle}>
               <div style={statValueStyle}>{stats.echoes || 0}</div>
-              <div style={statLabelStyle}>Echoes</div>
+              <div style={statLabelStyle}>Followers</div>
             </div>
             <div style={statDividerStyle}></div>
             <div style={statItemStyle}>
@@ -848,9 +848,9 @@ export default function Profile() {
               {followMutation.isLoading ? (
                 <div style={loadingSpinnerStyle}></div>
               ) : echoStatus?.isEchoing ? (
-                'Echoing'
+                'Following'
               ) : (
-                'Echo'
+                'Follow'
               )}
             </button>
             <button 
@@ -1331,15 +1331,6 @@ const emptyStateSubtextStyle: React.CSSProperties = {
   fontStyle: 'italic',
   lineHeight: 1.4,
 };
-
-// REMOVED: loadingStyle since it's no longer used
-// const loadingStyle: React.CSSProperties = {
-//   textAlign: 'center',
-//   padding: '60px 0',
-//   color: '#6B7280',
-//   fontSize: '16px',
-//   fontFamily: "'Cormorant', serif",
-// };
 
 const errorStyle: React.CSSProperties = {
   textAlign: 'center',
