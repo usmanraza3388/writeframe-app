@@ -677,32 +677,34 @@ export default function Profile() {
           </div>
         )}
 
-        {/* Action Buttons */}
-        <div style={actionsContainerStyle}>
-          <button 
-            onClick={handleEcho}
-            disabled={followMutation.isLoading || echoStatusLoading}
-            style={{
-              ...echoButtonStyle,
-              ...(echoStatus?.isEchoing ? echoButtonActiveStyle : {}),
-              ...(followMutation.isLoading ? echoButtonLoadingStyle : {})
-            }}
-          >
-            {followMutation.isLoading ? (
-              <div style={loadingSpinnerStyle}></div>
-            ) : echoStatus?.isEchoing ? (
-              'Echoing'
-            ) : (
-              'Echo'
-            )}
-          </button>
-          <button 
-            onClick={handleWhisper}
-            style={whisperButtonStyle}
-          >
-            Whisper
-          </button>
-        </div>
+        {/* UPDATED: Action Buttons - Only show for other users' profiles */}
+        {!isOwnProfile && (
+          <div style={actionsContainerStyle}>
+            <button 
+              onClick={handleEcho}
+              disabled={followMutation.isLoading || echoStatusLoading}
+              style={{
+                ...echoButtonStyle,
+                ...(echoStatus?.isEchoing ? echoButtonActiveStyle : {}),
+                ...(followMutation.isLoading ? echoButtonLoadingStyle : {})
+              }}
+            >
+              {followMutation.isLoading ? (
+                <div style={loadingSpinnerStyle}></div>
+              ) : echoStatus?.isEchoing ? (
+                'Echoing'
+              ) : (
+                'Echo'
+              )}
+            </button>
+            <button 
+              onClick={handleWhisper}
+              style={whisperButtonStyle}
+            >
+              Whisper
+            </button>
+          </div>
+        )}
 
         {/* Divider */}
         <div style={dividerStyle}>
