@@ -346,7 +346,6 @@ export default function Profile() {
       if (profile && currentUser) {
         notifyEcho(
           profile.id, // The user being echoed (profile owner)
-          currentUser.user_metadata?.full_name || currentUser.email || 'Someone',
           currentUser.id
         );
       }
