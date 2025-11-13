@@ -184,7 +184,7 @@ export default function SignIn() {
 
         {/* Terms */}
         <p style={{ margin: 0, fontFamily: "'Cormorant', serif", fontSize: 12, color: "#4B5563", textAlign: "center", lineHeight: 1.4 }}>
-          By clicking Sign in or Continue with Google, Facebook, or Apple, you agree to{" "}
+          By clicking Sign in or Continue with Google, you agree to{" "}
           <span style={{ textDecoration: "underline" }}>Terms of Use</span> and{" "}
           <span style={{ textDecoration: "underline" }}>Privacy Policy</span>.
         </p>
@@ -196,7 +196,7 @@ export default function SignIn() {
           <hr style={{ flex: 1, border: "none", height: 1, background: "#E5E7EB" }} />
         </div>
 
-        {/* Social buttons */}
+        {/* Social buttons - Only Google shown */}
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
           <SocialButton label="Continue with Google" onClick={() => handleOAuth("google")} style={{}}>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden>
@@ -204,19 +204,6 @@ export default function SignIn() {
               <path d="M12 22c2.7 0 4.98-.9 6.64-2.46l-3.3-2.64c-.9.6-2.04.96-3.34.96-2.56 0-4.72-1.72-5.49-4.04H3.96v2.54C5.64 19.94 8.64 22 12 22z" fill="#34A853"/>
               <path d="M6.51 13.82A6.996 6.996 0 0 1 6 12c0-.68.12-1.34.33-1.96V7.5H3.96A9.99 9.99 0 0 0 2 12c0 1.66.36 3.24 1 4.66l3.51-2.84z" fill="#FBBC05"/>
               <path d="M12 5.5c1.48 0 2.8.5 3.85 1.48L19.2 4.34C17.04 2.36 14.16 1.2 11 1.2 7.64 1.2 4.64 3.26 3 6.46l3.51 2.84C7.28 7.22 9.44 5.5 12 5.5z" fill="#EA4335"/>
-            </svg>
-          </SocialButton>
-
-          <SocialButton label="Continue with Facebook" onClick={() => handleOAuth("facebook")}>
-            <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden>
-              <path d="M22 12a10 10 0 1 0-11.5 9.9v-7h-2.2v-2.9h2.2V9.5c0-2.2 1.3-3.4 3.3-3.4.95 0 1.95.17 1.95.17v2.1h-1.08c-1.07 0-1.4.67-1.4 1.35v1.64h2.38l-.38 2.9h-2v7A10 10 0 0 0 22 12z" fill="#1877F2"/>
-            </svg>
-          </SocialButton>
-
-          <SocialButton label="Continue with Apple" onClick={() => handleOAuth("apple")}>
-            <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden>
-              <path d="M16.365 1.43c-.8.1-1.74.56-2.3 1.2-.5.6-.94 1.44-.7 2.31 0 0 1.6.08 2.35-.62.74-.7.93-1.74.65-3" fill="#000"/>
-              <path d="M12.1 4.3c-1.8 0-3.5 1.1-4.4 1.1-1 .02-2.5-1.04-4.1-1.02C2.5 4.4.5 6.6.5 10c0 2.14.9 4.7 2.4 7.28 1.32 2.24 2.9 4.6 5.06 4.66 1.08.03 1.5-.7 2.8-.7 1.3 0 1.7.7 2.8.68 2.17-.03 3.73-2.39 5.06-4.64C23 14.7 24 12.22 24 10c0-3.5-2-5.6-5.6-5.6-1.6 0-2.96.98-3.3.98-.4 0-2.1-1.02-3.0-1.02z" fill="#000"/>
             </svg>
           </SocialButton>
         </div>
