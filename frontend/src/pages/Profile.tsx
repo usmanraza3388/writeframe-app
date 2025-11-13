@@ -27,7 +27,154 @@ import { useAuth } from '../contexts/AuthContext';
 // @ts-ignore
 import GridItem from '../components/GridItem';
 
-// Social Media Icon Components
+// ADDED: Skeleton Loading Components
+const ProfileSkeleton: React.FC = () => (
+  <div style={containerStyle}>
+    {/* Header Skeleton */}
+    <div style={headerStyle}>
+      <div style={{
+        ...avatarContainerStyle,
+        backgroundColor: '#E5E5E5',
+        animation: 'pulse 1.5s ease-in-out infinite'
+      }} />
+      
+      <div style={nameContainerStyle}>
+        <div style={{
+          width: '160px',
+          height: '32px',
+          backgroundColor: '#E5E5E5',
+          borderRadius: '6px',
+          marginBottom: '8px',
+          animation: 'pulse 1.5s ease-in-out infinite'
+        }} />
+        <div style={{
+          width: '120px',
+          height: '20px',
+          backgroundColor: '#E5E5E5',
+          borderRadius: '4px',
+          animation: 'pulse 1.5s ease-in-out infinite'
+        }} />
+      </div>
+
+      <div style={{
+        width: '140px',
+        height: '32px',
+        backgroundColor: '#E5E5E5',
+        borderRadius: '20px',
+        animation: 'pulse 1.5s ease-in-out infinite'
+      }} />
+
+      <div style={bioContainerStyle}>
+        <div style={{
+          width: '280px',
+          height: '16px',
+          backgroundColor: '#E5E5E5',
+          borderRadius: '4px',
+          marginBottom: '8px',
+          animation: 'pulse 1.5s ease-in-out infinite'
+        }} />
+        <div style={{
+          width: '240px',
+          height: '16px',
+          backgroundColor: '#E5E5E5',
+          borderRadius: '4px',
+          animation: 'pulse 1.5s ease-in-out infinite'
+        }} />
+      </div>
+
+      <div style={{
+        width: '120px',
+        height: '40px',
+        backgroundColor: '#E5E5E5',
+        borderRadius: '12px',
+        animation: 'pulse 1.5s ease-in-out infinite'
+      }} />
+    </div>
+
+    {/* Stats Skeleton */}
+    <div style={statsContainerStyle}>
+      {[1, 2, 3].map((item) => (
+        <div key={item} style={statItemStyle}>
+          <div style={{
+            width: '40px',
+            height: '24px',
+            backgroundColor: '#E5E5E5',
+            borderRadius: '4px',
+            margin: '0 auto 8px auto',
+            animation: 'pulse 1.5s ease-in-out infinite'
+          }} />
+          <div style={{
+            width: '50px',
+            height: '14px',
+            backgroundColor: '#E5E5E5',
+            borderRadius: '3px',
+            margin: '0 auto',
+            animation: 'pulse 1.5s ease-in-out infinite'
+          }} />
+        </div>
+      ))}
+    </div>
+
+    {/* Action Buttons Skeleton */}
+    <div style={actionsContainerStyle}>
+      <div style={{
+        flex: 1,
+        height: '48px',
+        backgroundColor: '#E5E5E5',
+        borderRadius: '12px',
+        animation: 'pulse 1.5s ease-in-out infinite'
+      }} />
+      <div style={{
+        flex: 1,
+        height: '48px',
+        backgroundColor: '#E5E5E5',
+        borderRadius: '12px',
+        animation: 'pulse 1.5s ease-in-out infinite'
+      }} />
+    </div>
+
+    {/* Tabs Skeleton */}
+    <div style={tabsContainerStyle}>
+      {[1, 2, 3, 4].map((tab) => (
+        <div
+          key={tab}
+          style={{
+            ...tabButtonStyle,
+            backgroundColor: '#E5E5E5',
+            animation: 'pulse 1.5s ease-in-out infinite',
+            height: '36px'
+          }}
+        />
+      ))}
+    </div>
+
+    {/* Grid Skeleton */}
+    <div style={gridStyle}>
+      {Array.from({ length: 4 }).map((_, index) => (
+        <div
+          key={index}
+          style={{
+            aspectRatio: '1',
+            backgroundColor: '#E5E5E5',
+            borderRadius: '8px',
+            animation: 'pulse 1.5s ease-in-out infinite'
+          }}
+        />
+      ))}
+    </div>
+  </div>
+);
+
+// ADDED: CSS for skeleton animation
+const skeletonStyles = `
+@keyframes pulse {
+  0% { opacity: 1; }
+  50% { opacity: 0.5; }
+  100% { opacity: 1; }
+}
+`;
+
+// Social Media Icon Components (keep existing)
 const FacebookIcon: React.FC<{ size?: number }> = ({ size = 24 }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor">
     <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
@@ -82,6 +229,17 @@ export default function Profile() {
   // ADDED: Use auth context for signOut
   const { signOut } = useAuth();
 
+  // ADDED: Skeleton styles effect
+  React.useEffect(() => {
+    const style = document.createElement('style');
+    style.textContent = skeletonStyles;
+    document.head.appendChild(style);
+    
+    return () => {
+      document.head.removeChild(style);
+    };
+  }, []);
+
   useEffect(() => {
     const getCurrentUser = async () => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -128,6 +286,28 @@ export default function Profile() {
   
   const isOwnProfile = currentUser?.id === id;
  const shouldShowStats = isOwnProfile || profile?.settings?.public_stats !== false;
+
+  // ADDED: Show skeleton loading while data is loading
+  if (isLoading) {
+    return (
+      <div style={pageContainerStyle}>
+        <ProfileSkeleton />
+        <BottomNav />
+      </div>
+    );
+  }
+
+  if (error || !profile) {
+    return (
+      <div style={pageContainerStyle}>
+        <div style={containerStyle}>
+          <div style={errorStyle}>User not found</div>
+        </div>
+        <BottomNav />
+      </div>
+    );
+  }
+
   // Navigation Menu Component - Moved inside main component to fix scope issues
   const NavigationMenu: React.FC = () => {
     const [isOpen, setIsOpen] = useState(false);
@@ -308,30 +488,6 @@ export default function Profile() {
       </div>
     );
   };
-
-  if (isLoading) {
-    return (
-      <div style={pageContainerStyle}>
-        <div style={containerStyle}>
-          <div style={loadingStyle}>Loading profile...</div>
-        </div>
-        {/* ADDED: BottomNav */}
-        <BottomNav />
-      </div>
-    );
-  }
-
-  if (error || !profile) {
-    return (
-      <div style={pageContainerStyle}>
-        <div style={containerStyle}>
-          <div style={errorStyle}>User not found</div>
-        </div>
-        {/* ADDED: BottomNav */}
-        <BottomNav />
-      </div>
-    );
-  }
 
   const handleEcho = async () => {
     if (!currentUser) {
@@ -763,7 +919,7 @@ export default function Profile() {
   );
 }
 
-// STYLES - ALL REMAIN EXACTLY THE SAME
+// STYLES - ALL REMAIN EXACTLY THE SAME (keep all your existing styles)
 const pageContainerStyle: React.CSSProperties = {
   minHeight: '100vh',
   display: 'flex',
@@ -1176,13 +1332,14 @@ const emptyStateSubtextStyle: React.CSSProperties = {
   lineHeight: 1.4,
 };
 
-const loadingStyle: React.CSSProperties = {
-  textAlign: 'center',
-  padding: '60px 0',
-  color: '#6B7280',
-  fontSize: '16px',
-  fontFamily: "'Cormorant', serif",
-};
+// REMOVED: loadingStyle since it's no longer used
+// const loadingStyle: React.CSSProperties = {
+//   textAlign: 'center',
+//   padding: '60px 0',
+//   color: '#6B7280',
+//   fontSize: '16px',
+//   fontFamily: "'Cormorant', serif",
+// };
 
 const errorStyle: React.CSSProperties = {
   textAlign: 'center',
@@ -1191,17 +1348,3 @@ const errorStyle: React.CSSProperties = {
   fontSize: '16px',
   fontFamily: "'Cormorant', serif",
 };
-
-// Add CSS animation for loading spinner and avatar hover
-const styles = document.createElement('style');
-styles.textContent = `
-  @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-  }
-  
-  .avatar-container:hover .avatar-overlay {
-    opacity: 1;
-  }
-`;
-document.head.appendChild(styles);
