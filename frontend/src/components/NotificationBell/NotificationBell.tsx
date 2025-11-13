@@ -1,5 +1,6 @@
 // src/components/NotificationBell/NotificationBell.tsx
 import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom'; // ADDED: Import useNavigate
 import { useNotifications } from '../../hooks/useNotifications';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -7,6 +8,7 @@ import { useAuth } from '../../contexts/AuthContext';
 const NotificationBell: React.FC<{ profileId?: string }> = ({ profileId }) => {
   const { user } = useAuth();
   const { getUserNotifications, markAsRead, getUnreadCount } = useNotifications();
+  const navigate = useNavigate(); // ADDED: useNavigate hook
   
   const [notifications, setNotifications] = useState<any[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -18,6 +20,49 @@ const NotificationBell: React.FC<{ profileId?: string }> = ({ profileId }) => {
 
   // UPDATED: Use profileId if provided, otherwise use auth user ID
   const targetUserId = profileId || user?.id;
+
+  // ADDED: Click handler for profile navigation
+  const handleProfileClick = (notification: any, event: React.MouseEvent) => {
+    event.stopPropagation(); // Prevent triggering the notification click
+    
+    if (notification.related_entity_id) {
+      navigate(`/profile/${notification.related_entity_id}`);
+    }
+  };
+
+  // ADDED: Helper function to extract clickable name from message
+  const getClickableMessage = (notification: any) => {
+    const message = notification.message;
+    
+    switch (notification.type) {
+      case 'echo':
+        const echoMatch = message.match(/^(.*?) echoed your profile$/);
+        if (echoMatch) return { name: echoMatch[1], suffix: ' echoed your profile' };
+        break;
+        
+      case 'remake':
+        const remakeMatch = message.match(/^(.*?) remade your scene "(.*)"$/);
+        if (remakeMatch) return { name: remakeMatch[1], suffix: ` remade your scene "${remakeMatch[2]}"` };
+        break;
+        
+      case 'comment':
+        const commentMatch = message.match(/^(.*?) commented on your scene "(.*)"$/);
+        if (commentMatch) return { name: commentMatch[1], suffix: ` commented on your scene "${commentMatch[2]}"` };
+        break;
+        
+      case 'follow':
+        const followMatch = message.match(/^(.*?) started following you$/);
+        if (followMatch) return { name: followMatch[1], suffix: ' started following you' };
+        break;
+        
+      case 'whisper':
+        const whisperMatch = message.match(/^(.*?): (.*)$/);
+        if (whisperMatch) return { name: whisperMatch[1], suffix: `: ${whisperMatch[2]}` };
+        break;
+    }
+    
+    return null;
+  };
 
   // UPDATED: Load notifications for targetUserId
   const loadNotifications = async () => {
@@ -341,11 +386,39 @@ const NotificationBell: React.FC<{ profileId?: string }> = ({ profileId }) => {
                           color: 'var(--text-secondary)',
                           marginBottom: '4px',
                           lineHeight: '1.3',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
                         }}
                       >
-                        {notification.message}
+                        {(() => {
+                          const clickableData = getClickableMessage(notification);
+                          
+                          if (clickableData && notification.related_entity_id) {
+                            return (
+                              <>
+                                <span
+                                  onClick={(e) => handleProfileClick(notification, e)}
+                                  style={{
+                                    color: 'var(--text-primary)',
+                                    fontWeight: '600',
+                                    cursor: 'pointer',
+                                    textDecoration: 'underline',
+                                  }}
+                                  onMouseEnter={(e) => {
+                                    e.currentTarget.style.color = 'var(--accent-color)';
+                                  }}
+                                  onMouseLeave={(e) => {
+                                    e.currentTarget.style.color = 'var(--text-primary)';
+                                  }}
+                                >
+                                  {clickableData.name}
+                                </span>
+                                {clickableData.suffix}
+                              </>
+                            );
+                          }
+                          
+                          // Fallback for notifications without clickable names
+                          return notification.message;
+                        })()}
                       </div>
                       <div
                         style={{
