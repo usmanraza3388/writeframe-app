@@ -26,6 +26,11 @@ import { useAuth } from '../contexts/AuthContext';
 // ADDED: Import enhanced GridItem
 // @ts-ignore
 import GridItem from '../components/GridItem';
+// ADDED: Import Follow Modals
+// @ts-ignore
+import FollowersModal from '../components/Follow/FollowersModal';
+// @ts-ignore
+import FollowingModal from '../components/Follow/FollowingModal';
 
 // ADDED: Skeleton Loading Components
 const ProfileSkeleton: React.FC = () => (
@@ -220,6 +225,9 @@ export default function Profile() {
   // ADDED: Pagination state
   const [visibleItems, setVisibleItems] = useState(8);
   const ITEMS_PER_PAGE = 8;
+  // ADDED: Modal state
+  const [showFollowersModal, setShowFollowersModal] = useState(false);
+  const [showFollowingModal, setShowFollowingModal] = useState(false);
   
   // UPDATED: Added refresh to destructuring
   const { profile, stats, tabContent, isLoading, error, refresh } = useProfileData(id || '');
@@ -808,12 +816,42 @@ export default function Profile() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             {/* Row 1: Social Stats - Followers & Following */}
             <div style={statsContainerStyle}>
-              <div style={statItemStyle}>
+              <div 
+                style={{ 
+                  ...statItemStyle, 
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease'
+                }}
+                onClick={() => setShowFollowersModal(true)}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = '#F5F3EB';
+                  e.currentTarget.style.transform = 'translateY(-1px)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = 'transparent';
+                  e.currentTarget.style.transform = 'translateY(0)';
+                }}
+              >
                 <div style={statValueStyle}>{stats.followers || 0}</div>
                 <div style={statLabelStyle}>Followers</div>
               </div>
               <div style={statDividerStyle}></div>
-              <div style={statItemStyle}>
+              <div 
+                style={{ 
+                  ...statItemStyle, 
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease'
+                }}
+                onClick={() => setShowFollowingModal(true)}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = '#F5F3EB';
+                  e.currentTarget.style.transform = 'translateY(-1px)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = 'transparent';
+                  e.currentTarget.style.transform = 'translateY(0)';
+                }}
+              >
                 <div style={statValueStyle}>{stats.following || 0}</div>
                 <div style={statLabelStyle}>Following</div>
               </div>
@@ -907,6 +945,19 @@ export default function Profile() {
 
         {/* Content Grid - UPDATED: Uses enhanced GridItem with pagination */}
         {availableTabs.length > 0 && renderGridContent()}
+
+        {/* ADDED: Follow Modals */}
+        <FollowersModal
+          open={showFollowersModal}
+          onClose={() => setShowFollowersModal(false)}
+          profileId={id || ''}
+        />
+
+        <FollowingModal
+          open={showFollowingModal}
+          onClose={() => setShowFollowingModal(false)}
+          profileId={id || ''}
+        />
 
         {/* ADDED: Crop Modal */}
         <CropModal
