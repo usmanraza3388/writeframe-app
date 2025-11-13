@@ -803,22 +803,33 @@ export default function Profile() {
           )}
         </div>
 
-        {/* Stats Section - Conditionally Rendered */}
+        {/* Stats Section - Conditionally Rendered - UPDATED: Split into two rows */}
         {shouldShowStats ? (
-          <div style={statsContainerStyle}>
-            <div style={statItemStyle}>
-              <div style={statValueStyle}>{stats.scenes || 0}</div>
-              <div style={statLabelStyle}>Scenes</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            {/* Row 1: Social Stats - Followers & Following */}
+            <div style={statsContainerStyle}>
+              <div style={statItemStyle}>
+                <div style={statValueStyle}>{stats.followers || 0}</div>
+                <div style={statLabelStyle}>Followers</div>
+              </div>
+              <div style={statDividerStyle}></div>
+              <div style={statItemStyle}>
+                <div style={statValueStyle}>{stats.following || 0}</div>
+                <div style={statLabelStyle}>Following</div>
+              </div>
             </div>
-            <div style={statDividerStyle}></div>
-            <div style={statItemStyle}>
-              <div style={statValueStyle}>{stats.echoes || 0}</div>
-              <div style={statLabelStyle}>Followers</div>
-            </div>
-            <div style={statDividerStyle}></div>
-            <div style={statItemStyle}>
-              <div style={statValueStyle}>{stats.remakes || 0}</div>
-              <div style={statLabelStyle}>Remakes</div>
+
+            {/* Row 2: Content Stats - Scenes & Remakes */}
+            <div style={statsContainerStyle}>
+              <div style={statItemStyle}>
+                <div style={statValueStyle}>{stats.scenes || 0}</div>
+                <div style={statLabelStyle}>Scenes</div>
+              </div>
+              <div style={statDividerStyle}></div>
+              <div style={statItemStyle}>
+                <div style={statValueStyle}>{stats.remakes || 0}</div>
+                <div style={statLabelStyle}>Remakes</div>
+              </div>
             </div>
           </div>
         ) : (
