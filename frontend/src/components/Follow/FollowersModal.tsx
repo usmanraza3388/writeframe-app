@@ -26,8 +26,8 @@ const overlayStyle: React.CSSProperties = {
 const modalStyle: React.CSSProperties = {
   background: '#FFFFFF',
   borderRadius: '16px',
-  width: '100%',
-  maxWidth: '400px',
+  width: '375px',
+  maxWidth: '375px',
   maxHeight: '80vh',
   display: 'flex',
   flexDirection: 'column',
