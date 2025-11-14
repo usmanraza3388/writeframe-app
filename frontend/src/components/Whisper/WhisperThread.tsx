@@ -111,6 +111,12 @@ export const WhisperThread: React.FC = () => {
     navigate(-1);
   };
 
+  const handleProfileClick = () => {
+    if (otherUser?.id) {
+      navigate(`/profile/${otherUser.id}`);
+    }
+  };
+
   const formatTime = (createdAt: string) => {
     const date = new Date(createdAt);
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -167,7 +173,24 @@ export const WhisperThread: React.FC = () => {
             </svg>
           </button>
           
-          <div style={userInfoStyle}>
+          <div 
+            style={userInfoStyle}
+            onClick={handleProfileClick}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.cursor = 'pointer';
+              e.currentTarget.style.backgroundColor = '#FAF8F2';
+              e.currentTarget.style.borderRadius = '12px';
+              e.currentTarget.style.padding = '8px';
+              e.currentTarget.style.margin = '-8px';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.cursor = 'default';
+              e.currentTarget.style.backgroundColor = 'transparent';
+              e.currentTarget.style.borderRadius = '0';
+              e.currentTarget.style.padding = '0';
+              e.currentTarget.style.margin = '0';
+            }}
+          >
             <div style={avatarStyle}>
               {otherUser.avatar_url ? (
                 <img 
