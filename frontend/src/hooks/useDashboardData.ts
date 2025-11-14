@@ -43,15 +43,16 @@ export const useDashboardData = () => {
       try {
         setIsLoading(true);
         
-        // Fetch all user content in parallel
+        // Fetch all user content in parallel - FIXED: scenes query to use status='published'
         const [
           scenesResponse,
           monologuesResponse, 
           charactersResponse,
           framesResponse
         ] = await Promise.all([
-          supabase.from('scenes').select('*').eq('user_id', user.id).eq('published', true),
-          supabase.from('monologues').select('*').eq('user_id', user.id).eq('published', true),
+          // FIXED: Changed from .eq('published', true) to .eq('status', 'published')
+          supabase.from('scenes').select('*').eq('user_id', user.id).eq('status', 'published'),
+          supabase.from('monologues').select('*').eq('user_id', user.id).eq('status', 'published'),
           supabase.from('characters').select('*').eq('user_id', user.id).eq('status', 'published'),
           supabase.from('frames').select('*').eq('user_id', user.id).eq('status', 'published')
         ]);
