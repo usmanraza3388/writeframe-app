@@ -811,41 +811,47 @@ export default function Profile() {
           )}
         </div>
 
-        {/* Stats Section - Conditionally Rendered - UPDATED: Split into two rows */}
+        {/* Stats Section - Conditionally Rendered - UPDATED: Completely separate designs */}
         {shouldShowStats ? (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            {/* Row 1: Social Stats - Followers & Following BUTTONS */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            {/* Row 1: Minimal Social Buttons - Followers & Following */}
             <div style={socialButtonsContainerStyle}>
               <button 
                 style={socialButtonStyle}
                 onClick={() => setShowFollowersModal(true)}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = '#F5F3EB';
-                  e.currentTarget.style.transform = 'translateY(-2px)';
+                  e.currentTarget.style.backgroundColor = '#F8F6F0';
+                  e.currentTarget.style.borderColor = 'rgba(0, 0, 0, 0.15)';
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = '#FAF8F2';
-                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.backgroundColor = 'transparent';
+                  e.currentTarget.style.borderColor = 'rgba(0, 0, 0, 0.08)';
                 }}
               >
-                <div style={socialButtonValueStyle}>{stats.followers || 0}</div>
-                <div style={socialButtonLabelStyle}>Followers</div>
+                <div style={socialButtonContentStyle}>
+                  <div style={socialButtonValueStyle}>{stats.followers || 0}</div>
+                  <div style={socialButtonLabelStyle}>Followers</div>
+                </div>
               </button>
+              
+              <div style={socialButtonDividerStyle}></div>
               
               <button 
                 style={socialButtonStyle}
                 onClick={() => setShowFollowingModal(true)}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = '#F5F3EB';
-                  e.currentTarget.style.transform = 'translateY(-2px)';
+                  e.currentTarget.style.backgroundColor = '#F8F6F0';
+                  e.currentTarget.style.borderColor = 'rgba(0, 0, 0, 0.15)';
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = '#FAF8F2';
-                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.backgroundColor = 'transparent';
+                  e.currentTarget.style.borderColor = 'rgba(0, 0, 0, 0.08)';
                 }}
               >
-                <div style={socialButtonValueStyle}>{stats.following || 0}</div>
-                <div style={socialButtonLabelStyle}>Following</div>
+                <div style={socialButtonContentStyle}>
+                  <div style={socialButtonValueStyle}>{stats.following || 0}</div>
+                  <div style={socialButtonLabelStyle}>Following</div>
+                </div>
               </button>
             </div>
 
@@ -1015,43 +1021,66 @@ const menuContainerStyle: React.CSSProperties = {
   right: '0'
 };
 
-// NEW: Social Buttons Styles (for Followers/Following)
+// NEW: Minimal Social Buttons Styles (completely different from stats)
 const socialButtonsContainerStyle: React.CSSProperties = {
   display: 'flex',
-  gap: 12,
-  width: '100%',
+  alignItems: 'center',
+  background: 'transparent',
+  border: '1px solid rgba(0, 0, 0, 0.08)',
+  borderRadius: 12,
+  padding: 0,
+  gap: 0,
+  width: 'fit-content',
+  margin: '0 auto',
+  boxShadow: '0 1px 3px rgba(0, 0, 0, 0.04)',
 };
 
 const socialButtonStyle: React.CSSProperties = {
   flex: 1,
-  background: '#FAF8F2',
-  border: '1.5px solid rgba(0, 0, 0, 0.08)',
-  borderRadius: 16,
-  padding: '16px 12px',
+  background: 'transparent',
+  border: 'none',
+  borderRadius: 11,
+  padding: '12px 20px',
   cursor: 'pointer',
-  transition: 'all 0.3s ease',
+  transition: 'all 0.2s ease',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  minWidth: '100px',
+  fontFamily: "'Cormorant', serif",
+};
+
+const socialButtonContentStyle: React.CSSProperties = {
   display: 'flex',
   flexDirection: 'column',
   alignItems: 'center',
   justifyContent: 'center',
-  gap: 4,
-  fontFamily: "'Cormorant', serif",
-  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)',
+  gap: 2,
 };
 
 const socialButtonValueStyle: React.CSSProperties = {
-  fontSize: 20,
-  fontWeight: '700',
+  fontSize: 16,
+  fontWeight: '600',
   color: '#1A1A1A',
   fontFamily: "'Cormorant', serif",
+  lineHeight: 1,
 };
 
 const socialButtonLabelStyle: React.CSSProperties = {
-  fontSize: 12,
+  fontSize: 11,
   color: '#6B7280',
   fontFamily: "'Cormorant', serif",
   fontWeight: 500,
-  letterSpacing: '0.02em',
+  letterSpacing: '0.03em',
+  textTransform: 'uppercase',
+  lineHeight: 1,
+};
+
+const socialButtonDividerStyle: React.CSSProperties = {
+  width: 1,
+  height: 24,
+  background: 'rgba(0, 0, 0, 0.08)',
+  flexShrink: 0,
 };
 
 // NEW: Private Stats Styles
