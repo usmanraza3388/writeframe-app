@@ -183,6 +183,7 @@ export const WhisperThread: React.FC = () => {
   const [otherUser, setOtherUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
+  const [unsendingMessageId, setUnsendingMessageId] = useState<string | null>(null); // ADDED: Track unsending state
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -233,18 +234,44 @@ export const WhisperThread: React.FC = () => {
 
       setMessages(messagesData || []);
 
-      // Mark messages as read
+      // MARK AS DELIVERED: Update status of messages sent to current user
       if (messagesData) {
-        const unreadMessages = messagesData.filter(
-          msg => msg.recipient_id === user.id && !msg.is_read
+        const messagesToMarkDelivered = messagesData.filter(
+          msg => msg.recipient_id === user.id && msg.message_status === 'sent'
         );
         
-        for (const msg of unreadMessages) {
+        for (const msg of messagesToMarkDelivered) {
           await supabase
             .from('whispers')
-            .update({ is_read: true })
+            .update({ 
+              message_status: 'delivered',
+              is_read: true 
+            })
             .eq('id', msg.id);
         }
+
+        // MARK AS SEEN: Update status when user actually views the messages
+        const messagesToMarkSeen = messagesData.filter(
+          msg => msg.recipient_id === user.id && msg.message_status === 'delivered'
+        );
+        
+        for (const msg of messagesToMarkSeen) {
+          await supabase
+            .from('whispers')
+            .update({ 
+              message_status: 'seen'
+            })
+            .eq('id', msg.id);
+        }
+
+        // Refresh messages to get updated statuses
+        const { data: updatedMessages } = await supabase
+          .from('whispers')
+          .select('*')
+          .or(`and(sender_id.eq.${user.id},recipient_id.eq.${userId}),and(sender_id.eq.${userId},recipient_id.eq.${user.id})`)
+          .order('created_at', { ascending: true });
+
+        setMessages(updatedMessages || []);
       }
 
     } catch (error) {
@@ -267,7 +294,9 @@ export const WhisperThread: React.FC = () => {
           recipient_id: userId,
           message: newMessage.trim(),
           created_at: new Date().toISOString(),
-          is_read: false
+          is_read: false,
+          message_status: 'sent', // ADDED: Set initial status as 'sent'
+          is_unsent: false // ADDED: Initialize unsent flag
         });
 
       if (error) throw error;
@@ -281,6 +310,54 @@ export const WhisperThread: React.FC = () => {
       alert('Failed to send message. Please try again.');
     } finally {
       setSending(false);
+    }
+  };
+
+  // ADDED: Function to check if message can be unsent (within 5 minutes)
+  const canUnsendMessage = (message: any) => {
+    if (!user || message.sender_id !== user.id || message.is_unsent) {
+      return false;
+    }
+    
+    const messageTime = new Date(message.created_at).getTime();
+    const currentTime = new Date().getTime();
+    const fiveMinutes = 5 * 60 * 1000; // 5 minutes in milliseconds
+    
+    return (currentTime - messageTime) <= fiveMinutes;
+  };
+
+  // ADDED: Function to unsend a message
+  const handleUnsendMessage = async (messageId: string) => {
+    if (!user) return;
+    
+    setUnsendingMessageId(messageId);
+    try {
+      const { error } = await supabase
+        .from('whispers')
+        .update({ 
+          is_unsent: true,
+          message_status: 'sent' // Reset status since message is no longer visible
+        })
+        .eq('id', messageId)
+        .eq('sender_id', user.id); // Ensure user can only unsend their own messages
+
+      if (error) throw error;
+
+      // Refresh messages to show updated state
+      await loadConversation();
+      
+    } catch (error) {
+      console.error('Error unsending message:', error);
+      alert('Failed to unsend message. Please try again.');
+    } finally {
+      setUnsendingMessageId(null);
+    }
+  };
+
+  // ADDED: Function to show confirmation dialog for unsend
+  const confirmUnsend = (messageId: string) => {
+    if (window.confirm('Are you sure you want to unsend this message? This action cannot be undone.')) {
+      handleUnsendMessage(messageId);
     }
   };
 
@@ -311,6 +388,26 @@ export const WhisperThread: React.FC = () => {
       return 'Yesterday';
     } else {
       return date.toLocaleDateString();
+    }
+  };
+
+  // ADDED: Function to get status display text and color
+  const getMessageStatusInfo = (message: any) => {
+    if (!user || message.sender_id !== user.id) return { text: '', color: '' };
+    
+    if (message.is_unsent) {
+      return { text: 'Unsent', color: '#6B7280' };
+    }
+
+    switch (message.message_status) {
+      case 'sent':
+        return { text: 'Sent', color: '#6B7280' };
+      case 'delivered':
+        return { text: 'Delivered', color: '#3B82F6' };
+      case 'seen':
+        return { text: 'Seen', color: '#10B981' };
+      default:
+        return { text: 'Sent', color: '#6B7280' };
     }
   };
 
@@ -402,6 +499,8 @@ export const WhisperThread: React.FC = () => {
                 const isOwnMessage = user && message.sender_id === user.id;
                 const showDate = index === 0 || 
                   formatDate(messages[index - 1].created_at) !== formatDate(message.created_at);
+                const statusInfo = getMessageStatusInfo(message); // ADDED: Get status info
+                const canUnsend = canUnsendMessage(message); // ADDED: Check if message can be unsent
 
                 return (
                   <React.Fragment key={message.id}>
@@ -410,16 +509,77 @@ export const WhisperThread: React.FC = () => {
                         {formatDate(message.created_at)}
                       </div>
                     )}
-                    <div style={{
-                      ...messageBubbleStyle,
-                      ...(isOwnMessage ? ownMessageBubbleStyle : otherMessageBubbleStyle)
-                    }}>
+                    <div 
+                      style={{
+                        ...messageBubbleStyle,
+                        ...(isOwnMessage ? ownMessageBubbleStyle : otherMessageBubbleStyle),
+                        position: 'relative'
+                      }}
+                      // ADDED: Hover effect for own messages that can be unsent
+                      onMouseEnter={(e) => {
+                        if (isOwnMessage && canUnsend && !message.is_unsent) {
+                          e.currentTarget.style.backgroundColor = isOwnMessage ? '#2A2A2A' : '#F0EDE4';
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (isOwnMessage && canUnsend && !message.is_unsent) {
+                          e.currentTarget.style.backgroundColor = isOwnMessage ? '#1A1A1A' : '#FAF8F2';
+                        }
+                      }}
+                    >
                       <div style={messageTextStyle}>
-                        {message.message}
+                        {message.is_unsent ? 'This message was unsent' : message.message}
                       </div>
-                      <div style={messageTimeStyle}>
-                        {formatTime(message.created_at)}
+                      <div style={{
+                        ...messageTimeStyle,
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        gap: '8px'
+                      }}>
+                        <span>{formatTime(message.created_at)}</span>
+                        {/* ADDED: Status indicator for own messages */}
+                        {isOwnMessage && statusInfo.text && (
+                          <span style={{
+                            fontSize: '10px',
+                            color: statusInfo.color,
+                            fontStyle: 'italic'
+                          }}>
+                            {statusInfo.text}
+                          </span>
+                        )}
                       </div>
+                      
+                      {/* ADDED: Unsend button for own messages within 5 minutes */}
+                      {isOwnMessage && canUnsend && !message.is_unsent && (
+                        <div style={{
+                          position: 'absolute',
+                          top: '-8px',
+                          right: '-8px'
+                        }}>
+                          <button
+                            onClick={() => confirmUnsend(message.id)}
+                            disabled={unsendingMessageId === message.id}
+                            style={{
+                              background: '#DC2626',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: '50%',
+                              width: '24px',
+                              height: '24px',
+                              fontSize: '12px',
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              opacity: unsendingMessageId === message.id ? 0.5 : 1
+                            }}
+                            title="Unsend message"
+                          >
+                            {unsendingMessageId === message.id ? '...' : '×'}
+                          </button>
+                        </div>
+                      )}
                     </div>
                   </React.Fragment>
                 );

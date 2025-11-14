@@ -113,6 +113,7 @@ export const InboxPage: React.FC = () => {
   const navigate = useNavigate();
   const [conversations, setConversations] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [deletingConversations, setDeletingConversations] = useState<Set<string>>(new Set()); // ADDED: Track deleting state
 
   // ADDED: Skeleton styles effect
   React.useEffect(() => {
@@ -137,6 +138,16 @@ export const InboxPage: React.FC = () => {
     if (!user) return;
     
     try {
+      // ADDED: Get deleted conversations for current user
+      const { data: deletedConvos, error: deletedError } = await supabase
+        .from('deleted_conversations')
+        .select('other_user_id')
+        .eq('user_id', user.id);
+
+      if (deletedError) throw deletedError;
+
+      const deletedUserIds = new Set(deletedConvos?.map(d => d.other_user_id) || []);
+
       // Get all whispers where user is either sender or recipient
       const { data, error } = await supabase
         .from('whispers')
@@ -155,6 +166,12 @@ export const InboxPage: React.FC = () => {
       
       data?.forEach(whisper => {
         const otherUserId = whisper.sender_id === user.id ? whisper.recipient_id : whisper.sender_id;
+        
+        // ADDED: Skip conversations that user has deleted
+        if (deletedUserIds.has(otherUserId)) {
+          return;
+        }
+        
         const otherUser = whisper.sender_id === user.id ? whisper.recipient : whisper.sender;
         
         if (!conversationMap.has(otherUserId)) {
@@ -171,6 +188,44 @@ export const InboxPage: React.FC = () => {
       console.error('Error loading conversations:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // ADDED: Function to delete a conversation
+  const handleDeleteConversation = async (otherUser: any, e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent navigation when clicking delete
+    
+    if (!user || !otherUser?.id) return;
+
+    if (!window.confirm('Are you sure you want to delete this conversation? This action cannot be undone.')) {
+      return;
+    }
+
+    setDeletingConversations(prev => new Set(prev).add(otherUser.id));
+    
+    try {
+      const { error } = await supabase
+        .from('deleted_conversations')
+        .insert({
+          user_id: user.id,
+          other_user_id: otherUser.id
+        })
+        .select();
+
+      if (error) throw error;
+
+      // Remove the conversation from the local state immediately
+      setConversations(prev => prev.filter(conv => conv.user.id !== otherUser.id));
+      
+    } catch (error) {
+      console.error('Error deleting conversation:', error);
+      alert('Failed to delete conversation. Please try again.');
+    } finally {
+      setDeletingConversations(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(otherUser.id);
+        return newSet;
+      });
     }
   };
 
@@ -239,7 +294,8 @@ export const InboxPage: React.FC = () => {
                   borderRadius: 12,
                   cursor: 'pointer',
                   border: conv.unread ? '1px solid #bc63ceff' : '1px solid transparent',
-                  transition: 'all 0.2s ease'
+                  transition: 'all 0.2s ease',
+                  position: 'relative' // ADDED: For delete button positioning
                 }}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.background = '#F0EDE4';
@@ -295,14 +351,41 @@ export const InboxPage: React.FC = () => {
                       }}>
                         {conv.user.full_name || conv.user.username}
                       </div>
-                      {conv.unread && (
-                        <div style={{
-                          width: 8,
-                          height: 8,
-                          borderRadius: '50%',
-                          backgroundColor: '#bc63ceff'
-                        }} />
-                      )}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        {conv.unread && (
+                          <div style={{
+                            width: 8,
+                            height: 8,
+                            borderRadius: '50%',
+                            backgroundColor: '#bc63ceff'
+                          }} />
+                        )}
+                        {/* ADDED: Delete button */}
+                        <button
+                          onClick={(e) => handleDeleteConversation(conv.user, e)}
+                          disabled={deletingConversations.has(conv.user.id)}
+                          style={{
+                            background: 'transparent',
+                            border: 'none',
+                            color: '#DC2626',
+                            cursor: 'pointer',
+                            padding: '4px',
+                            borderRadius: '4px',
+                            opacity: deletingConversations.has(conv.user.id) ? 0.5 : 1,
+                            fontSize: '12px',
+                            fontWeight: 'bold'
+                          }}
+                          title="Delete conversation"
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.background = '#FEE2E2';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.background = 'transparent';
+                          }}
+                        >
+                          {deletingConversations.has(conv.user.id) ? '...' : '×'}
+                        </button>
+                      </div>
                     </div>
                     <div style={{ 
                       fontFamily: 'Cormorant, serif', 
@@ -312,7 +395,7 @@ export const InboxPage: React.FC = () => {
                       textOverflow: 'ellipsis',
                       whiteSpace: 'nowrap'
                     }}>
-                      {conv.lastMessage.message}
+                      {conv.lastMessage.is_unsent ? 'This message was unsent' : conv.lastMessage.message}
                     </div>
                   </div>
                 </div>
