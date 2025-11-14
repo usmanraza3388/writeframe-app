@@ -1,6 +1,5 @@
 // src/pages/Settings.tsx
-import React, { useState, useRef, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useProfileData } from '../hooks/useProfileData';
 import { useTheme } from '../contexts/ThemeContext';
@@ -33,12 +32,6 @@ const containerStyle: React.CSSProperties = {
   border: '1px solid rgba(0, 0, 0, 0.06)',
   margin: '0 auto',
   position: 'relative',
-};
-
-const menuContainerStyle: React.CSSProperties = {
-  position: 'absolute',
-  top: '32px',
-  right: '32px'
 };
 
 const sectionStyle: React.CSSProperties = {
@@ -100,16 +93,6 @@ const skeletonStyles = `
 const SettingsSkeleton: React.FC = () => (
   <div style={containerStyle}>
     {/* Header Skeleton */}
-    <div style={menuContainerStyle}>
-      <div style={{
-        width: '32px',
-        height: '32px',
-        backgroundColor: '#E5E5E5',
-        borderRadius: '4px',
-        animation: 'pulse 1.5s ease-in-out infinite'
-      }} />
-    </div>
-
     <div style={{
       width: '120px',
       height: '32px',
@@ -279,7 +262,6 @@ const SettingsSkeleton: React.FC = () => (
 );
 
 export default function Settings() {
-  const navigate = useNavigate();
   const { user } = useAuth();
   const { profile } = useProfileData(user?.id || '');
   const { setTheme } = useTheme();
@@ -491,120 +473,6 @@ export default function Settings() {
     }));
   };
 
-  // Navigation Menu Component - Exact copy from Profile.tsx
-  const NavigationMenu: React.FC = () => {
-    const [isOpen, setIsOpen] = useState(false);
-    const menuRef = useRef<HTMLDivElement>(null);
-
-    const toggleMenu = () => setIsOpen(prev => !prev);
-    const closeMenu = () => setIsOpen(false);
-
-    // Close menu when clicking outside
-    useEffect(() => {
-      const handleClickOutside = (event: MouseEvent) => {
-        if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-          closeMenu();
-        }
-      };
-
-      if (isOpen) {
-        document.addEventListener('mousedown', handleClickOutside);
-      }
-
-      return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, [isOpen]);
-
-    const menuItems = [
-      { label: 'Stats & Dashboard', path: '/dashboard' },
-      { label: 'Drafts', path: '/drafts' },
-      { label: 'Profile', path: '/profile' }
-    ];
-
-    const handleMenuItemClick = (path: string) => {
-      navigate(path);
-      closeMenu();
-    };
-
-    return (
-      <div style={{ position: 'relative' }} ref={menuRef}>
-        {/* Three Parallel Lines Icon (Instagram style) */}
-        <button
-          onClick={toggleMenu}
-          aria-label="Navigation menu"
-          aria-expanded={isOpen}
-          style={{
-            background: 'none',
-            border: 'none',
-            cursor: 'pointer',
-            padding: '8px',
-            borderRadius: '4px',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '3px',
-            transition: 'background-color 0.2s'
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor = '#f0f0f0';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.backgroundColor = 'transparent';
-          }}
-        >
-          {/* Three parallel lines - Instagram style */}
-          <div style={{ width: '18px', height: '2px', backgroundColor: '#1A1A1A' }}></div>
-          <div style={{ width: '18px', height: '2px', backgroundColor: '#1A1A1A' }}></div>
-          <div style={{ width: '18px', height: '2px', backgroundColor: '#1A1A1A' }}></div>
-        </button>
-
-        {/* Dropdown Menu */}
-        {isOpen && (
-          <div
-            style={{
-              position: 'absolute',
-              top: '40px',
-              right: 0,
-              backgroundColor: 'white',
-              borderRadius: '12px',
-              boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
-              padding: '8px 0',
-              minWidth: '180px',
-              zIndex: 1000,
-              border: '1px solid rgba(0,0,0,0.08)'
-            }}
-          >
-            {menuItems.map((item) => (
-              <button
-                key={item.path}
-                onClick={() => handleMenuItemClick(item.path)}
-                style={{
-                  width: '100%',
-                  background: 'none',
-                  border: 'none',
-                  padding: '12px 16px',
-                  textAlign: 'left',
-                  cursor: 'pointer',
-                  fontSize: '14px',
-                  fontFamily: "'Cormorant', serif",
-                  fontWeight: 500,
-                  color: '#1A1A1A',
-                  transition: 'background-color 0.2s'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = '#FAF8F2';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = 'transparent';
-                }}
-              >
-                {item.label}
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
-    );
-  };
-
   // Additional Styles (for the main component)
   const headerStyle: React.CSSProperties = {
     fontFamily: "'Playfair Display', serif",
@@ -789,11 +657,6 @@ export default function Settings() {
   return (
     <div style={pageContainerStyle}>
       <div style={containerStyle}>
-        {/* Navigation Menu - Same as Profile.tsx */}
-        <div style={menuContainerStyle}>
-          <NavigationMenu />
-        </div>
-
         {/* Header - Consistent with Profile page */}
         <h1 style={headerStyle}>Settings</h1>
         
