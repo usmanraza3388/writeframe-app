@@ -855,16 +855,39 @@ export default function Profile() {
               </button>
             </div>
 
-            {/* Row 2: Content Stats - Scenes & Remakes (STATIC STATS) */}
+            {/* Row 2: Content Stats - All Content Types */}
             <div style={statsContainerStyle}>
-              <div style={statItemStyle}>
-                <div style={statValueStyle}>{stats.scenes || 0}</div>
-                <div style={statLabelStyle}>Scenes</div>
+              {/* Scenes & Remakes Container */}
+              <div style={combinedStatItemStyle}>
+                <div style={combinedStatValueStyle}>
+                  <span style={mainStatValueStyle}>{stats.scenes || 0}</span>
+                  <span style={secondaryStatValueStyle}>/{stats.remakes || 0}</span>
+                </div>
+                <div style={combinedStatLabelStyle}>
+                  <span>Scenes</span>
+                  <span style={secondaryStatLabelStyle}>Remakes</span>
+                </div>
               </div>
               <div style={statDividerStyle}></div>
+
+              {/* Characters */}
               <div style={statItemStyle}>
-                <div style={statValueStyle}>{stats.remakes || 0}</div>
-                <div style={statLabelStyle}>Remakes</div>
+                <div style={statValueStyle}>{stats.characters || 0}</div>
+                <div style={statLabelStyle}>Chars</div>
+              </div>
+              <div style={statDividerStyle}></div>
+
+              {/* Monologues */}
+              <div style={statItemStyle}>
+                <div style={statValueStyle}>{stats.monologues || 0}</div>
+                <div style={statLabelStyle}>Monos</div>
+              </div>
+              <div style={statDividerStyle}></div>
+
+              {/* Frames */}
+              <div style={statItemStyle}>
+                <div style={statValueStyle}>{stats.frames || 0}</div>
+                <div style={statLabelStyle}>Frames</div>
               </div>
             </div>
           </div>
@@ -1081,6 +1104,50 @@ const socialButtonDividerStyle: React.CSSProperties = {
   height: 24,
   background: 'rgba(0, 0, 0, 0.08)',
   flexShrink: 0,
+};
+
+// NEW: Combined stat styles for Scenes/Remakes
+const combinedStatItemStyle: React.CSSProperties = {
+  textAlign: 'center',
+  flex: 1,
+  padding: '12px 8px',
+};
+
+const combinedStatValueStyle: React.CSSProperties = {
+  fontSize: 20,
+  fontWeight: '700',
+  color: '#1A1A1A',
+  marginBottom: 4,
+  fontFamily: "'Cormorant', serif",
+  lineHeight: 1,
+};
+
+const mainStatValueStyle: React.CSSProperties = {
+  fontSize: 20,
+  fontWeight: '700',
+  color: '#1A1A1A',
+};
+
+const secondaryStatValueStyle: React.CSSProperties = {
+  fontSize: 16,
+  fontWeight: '600',
+  color: '#6B7280',
+  marginLeft: '2px',
+};
+
+const combinedStatLabelStyle: React.CSSProperties = {
+  fontSize: 12,
+  color: '#6B7280',
+  fontFamily: "'Cormorant', serif",
+  fontWeight: 500,
+  letterSpacing: '0.02em',
+  lineHeight: 1.2,
+};
+
+const secondaryStatLabelStyle: React.CSSProperties = {
+  fontSize: 10,
+  color: '#9CA3AF',
+  marginLeft: '4px',
 };
 
 // NEW: Private Stats Styles
