@@ -9,6 +9,275 @@ import { supabase } from '../assets/lib/supabaseClient';
 import BottomNav from '../components/Navigation/BottomNav';
 import type { Theme } from '../contexts/ThemeContext';
 
+// ADDED: Style definitions at the top
+const pageContainerStyle: React.CSSProperties = {
+  minHeight: '100vh',
+  display: 'flex',
+  alignItems: 'flex-start',
+  justifyContent: 'center',
+  background: 'linear-gradient(135deg, #FFFFFF 0%, #FAF8F5 100%)',
+  padding: '20px 0',
+  paddingBottom: '100px',
+};
+
+const containerStyle: React.CSSProperties = {
+  width: 375,
+  background: '#FFFFFF',
+  borderRadius: 20,
+  padding: 32,
+  boxSizing: 'border-box',
+  display: 'flex',
+  flexDirection: 'column',
+  gap: 28,
+  boxShadow: '0 4px 24px rgba(0, 0, 0, 0.08)',
+  border: '1px solid rgba(0, 0, 0, 0.06)',
+  margin: '0 auto',
+  position: 'relative',
+};
+
+const menuContainerStyle: React.CSSProperties = {
+  position: 'absolute',
+  top: '32px',
+  right: '32px'
+};
+
+const sectionStyle: React.CSSProperties = {
+  display: 'flex',
+  flexDirection: 'column',
+  gap: 16,
+};
+
+const settingItemStyle: React.CSSProperties = {
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  padding: '16px 0',
+  borderBottom: '1px solid rgba(0,0,0,0.08)',
+  cursor: 'pointer',
+  transition: 'background-color 0.2s',
+};
+
+const creativeFocusOptionStyle: React.CSSProperties = {
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  padding: '12px 0',
+  borderBottom: '1px solid rgba(0,0,0,0.08)',
+};
+
+const themeOptionsContainerStyle: React.CSSProperties = {
+  display: 'flex',
+  gap: 12,
+  marginTop: 8,
+};
+
+const socialLinkItemStyle: React.CSSProperties = {
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  padding: '12px 0',
+  borderBottom: '1px solid rgba(0,0,0,0.08)',
+};
+
+const toggleContainerStyle: React.CSSProperties = {
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  padding: '16px 0',
+  borderBottom: '1px solid rgba(0,0,0,0.08)',
+};
+
+// ADDED: CSS for skeleton animation
+const skeletonStyles = `
+@keyframes pulse {
+  0% { opacity: 1; }
+  50% { opacity: 0.5; }
+  100% { opacity: 1; }
+}
+`;
+
+// ADDED: Skeleton Loading Component
+const SettingsSkeleton: React.FC = () => (
+  <div style={containerStyle}>
+    {/* Header Skeleton */}
+    <div style={menuContainerStyle}>
+      <div style={{
+        width: '32px',
+        height: '32px',
+        backgroundColor: '#E5E5E5',
+        borderRadius: '4px',
+        animation: 'pulse 1.5s ease-in-out infinite'
+      }} />
+    </div>
+
+    <div style={{
+      width: '120px',
+      height: '32px',
+      backgroundColor: '#E5E5E5',
+      borderRadius: '6px',
+      margin: '0 auto 32px auto',
+      animation: 'pulse 1.5s ease-in-out infinite'
+    }} />
+
+    {/* Profile Settings Skeleton */}
+    <div style={sectionStyle}>
+      <div style={{
+        width: '140px',
+        height: '24px',
+        backgroundColor: '#E5E5E5',
+        borderRadius: '4px',
+        marginBottom: '16px',
+        animation: 'pulse 1.5s ease-in-out infinite'
+      }} />
+      
+      {[1, 2].map((item) => (
+        <div key={item} style={settingItemStyle}>
+          <div style={{
+            width: '100px',
+            height: '16px',
+            backgroundColor: '#E5E5E5',
+            borderRadius: '4px',
+            animation: 'pulse 1.5s ease-in-out infinite'
+          }} />
+          <div style={{
+            width: '60px',
+            height: '16px',
+            backgroundColor: '#E5E5E5',
+            borderRadius: '4px',
+            animation: 'pulse 1.5s ease-in-out infinite'
+          }} />
+        </div>
+      ))}
+    </div>
+
+    {/* Creative Focus Skeleton */}
+    <div style={sectionStyle}>
+      <div style={{
+        width: '140px',
+        height: '24px',
+        backgroundColor: '#E5E5E5',
+        borderRadius: '4px',
+        marginBottom: '16px',
+        animation: 'pulse 1.5s ease-in-out infinite'
+      }} />
+      
+      {[1, 2, 3, 4].map((item) => (
+        <div key={item} style={creativeFocusOptionStyle}>
+          <div style={{
+            width: '120px',
+            height: '16px',
+            backgroundColor: '#E5E5E5',
+            borderRadius: '4px',
+            animation: 'pulse 1.5s ease-in-out infinite'
+          }} />
+          <div style={{
+            width: '44px',
+            height: '24px',
+            backgroundColor: '#E5E5E5',
+            borderRadius: '12px',
+            animation: 'pulse 1.5s ease-in-out infinite'
+          }} />
+        </div>
+      ))}
+    </div>
+
+    {/* Theme Skeleton */}
+    <div style={sectionStyle}>
+      <div style={{
+        width: '80px',
+        height: '24px',
+        backgroundColor: '#E5E5E5',
+        borderRadius: '4px',
+        marginBottom: '16px',
+        animation: 'pulse 1.5s ease-in-out infinite'
+      }} />
+      
+      <div style={themeOptionsContainerStyle}>
+        {[1, 2, 3].map((item) => (
+          <div key={item} style={{
+            flex: 1,
+            padding: '12px 16px',
+            borderRadius: '12px',
+            backgroundColor: '#E5E5E5',
+            animation: 'pulse 1.5s ease-in-out infinite'
+          }} />
+        ))}
+      </div>
+    </div>
+
+    {/* Social Links Skeleton */}
+    <div style={sectionStyle}>
+      <div style={{
+        width: '120px',
+        height: '24px',
+        backgroundColor: '#E5E5E5',
+        borderRadius: '4px',
+        marginBottom: '16px',
+        animation: 'pulse 1.5s ease-in-out infinite'
+      }} />
+      
+      {[1, 2, 3].map((item) => (
+        <div key={item} style={socialLinkItemStyle}>
+          <div style={{
+            width: '80px',
+            height: '16px',
+            backgroundColor: '#E5E5E5',
+            borderRadius: '4px',
+            animation: 'pulse 1.5s ease-in-out infinite'
+          }} />
+          <div style={{
+            width: '100px',
+            height: '16px',
+            backgroundColor: '#E5E5E5',
+            borderRadius: '4px',
+            animation: 'pulse 1.5s ease-in-out infinite'
+          }} />
+        </div>
+      ))}
+    </div>
+
+    {/* Notifications Skeleton */}
+    <div style={sectionStyle}>
+      <div style={{
+        width: '120px',
+        height: '24px',
+        backgroundColor: '#E5E5E5',
+        borderRadius: '4px',
+        marginBottom: '16px',
+        animation: 'pulse 1.5s ease-in-out infinite'
+      }} />
+      
+      {[1, 2].map((item) => (
+        <div key={item} style={toggleContainerStyle}>
+          <div style={{
+            width: '120px',
+            height: '16px',
+            backgroundColor: '#E5E5E5',
+            borderRadius: '4px',
+            animation: 'pulse 1.5s ease-in-out infinite'
+          }} />
+          <div style={{
+            width: '44px',
+            height: '24px',
+            backgroundColor: '#E5E5E5',
+            borderRadius: '12px',
+            animation: 'pulse 1.5s ease-in-out infinite'
+          }} />
+        </div>
+      ))}
+    </div>
+
+    {/* Save Button Skeleton */}
+    <div style={{
+      width: '100%',
+      height: '48px',
+      backgroundColor: '#E5E5E5',
+      borderRadius: '12px',
+      animation: 'pulse 1.5s ease-in-out infinite'
+    }} />
+  </div>
+);
+
 export default function Settings() {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -41,6 +310,17 @@ export default function Settings() {
   });
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+
+  // ADDED: Skeleton styles effect
+  React.useEffect(() => {
+    const style = document.createElement('style');
+    style.textContent = skeletonStyles;
+    document.head.appendChild(style);
+    
+    return () => {
+      document.head.removeChild(style);
+    };
+  }, []);
 
   // Load user settings on component mount
   useEffect(() => {
@@ -264,16 +544,16 @@ export default function Settings() {
             transition: 'background-color 0.2s'
           }}
           onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor = 'var(--background-secondary)';
+            e.currentTarget.style.backgroundColor = '#f0f0f0';
           }}
           onMouseLeave={(e) => {
             e.currentTarget.style.backgroundColor = 'transparent';
           }}
         >
           {/* Three parallel lines - Instagram style */}
-          <div style={{ width: '18px', height: '2px', backgroundColor: 'var(--text-primary)' }}></div>
-          <div style={{ width: '18px', height: '2px', backgroundColor: 'var(--text-primary)' }}></div>
-          <div style={{ width: '18px', height: '2px', backgroundColor: 'var(--text-primary)' }}></div>
+          <div style={{ width: '18px', height: '2px', backgroundColor: '#1A1A1A' }}></div>
+          <div style={{ width: '18px', height: '2px', backgroundColor: '#1A1A1A' }}></div>
+          <div style={{ width: '18px', height: '2px', backgroundColor: '#1A1A1A' }}></div>
         </button>
 
         {/* Dropdown Menu */}
@@ -283,13 +563,13 @@ export default function Settings() {
               position: 'absolute',
               top: '40px',
               right: 0,
-              backgroundColor: 'var(--background-card)',
+              backgroundColor: 'white',
               borderRadius: '12px',
               boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
               padding: '8px 0',
               minWidth: '180px',
               zIndex: 1000,
-              border: '1px solid var(--border-color)'
+              border: '1px solid rgba(0,0,0,0.08)'
             }}
           >
             {menuItems.map((item) => (
@@ -306,11 +586,11 @@ export default function Settings() {
                   fontSize: '14px',
                   fontFamily: "'Cormorant', serif",
                   fontWeight: 500,
-                  color: 'var(--text-primary)',
+                  color: '#1A1A1A',
                   transition: 'background-color 0.2s'
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = 'var(--background-secondary)';
+                  e.currentTarget.style.backgroundColor = '#FAF8F2';
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.backgroundColor = 'transparent';
@@ -325,108 +605,52 @@ export default function Settings() {
     );
   };
 
-  // Consistent with your 375px container pattern from Profile.tsx
-  const pageContainerStyle: React.CSSProperties = {
-    minHeight: '100vh',
-    display: 'flex',
-    alignItems: 'flex-start',
-    justifyContent: 'center',
-    background: 'var(--background-primary)',
-    padding: '20px 0',
-    paddingBottom: '100px', // ADDED: Space for bottom navigation
-  };
-
-  const containerStyle: React.CSSProperties = {
-    width: 375,
-    background: 'var(--background-card)',
-    borderRadius: 20,
-    padding: 32,
-    boxSizing: 'border-box',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: 28,
-    boxShadow: '0 4px 24px rgba(0, 0, 0, 0.08)',
-    border: '1px solid var(--border-color)',
-    margin: '0 auto',
-    position: 'relative',
-  };
-
+  // Additional Styles (for the main component)
   const headerStyle: React.CSSProperties = {
     fontFamily: "'Playfair Display', serif",
     fontSize: 28,
     fontWeight: 700,
-    color: 'var(--text-primary)',
+    color: '#1A1A1A',
     textAlign: 'center',
     margin: 0,
     letterSpacing: '-0.02em',
-  };
-
-  const menuContainerStyle: React.CSSProperties = {
-    position: 'absolute',
-    top: '32px',
-    right: '32px'
-  };
-
-  // Section Styles
-  const sectionStyle: React.CSSProperties = {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: 16,
   };
 
   const sectionHeaderStyle: React.CSSProperties = {
     fontFamily: "'Playfair Display', serif",
     fontSize: 20,
     fontWeight: 600,
-    color: 'var(--text-primary)',
+    color: '#1A1A1A',
     margin: 0,
-  };
-
-  const settingItemStyle: React.CSSProperties = {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: '16px 0',
-    borderBottom: '1px solid var(--border-color)',
-    cursor: 'pointer',
-    transition: 'background-color 0.2s',
   };
 
   const settingLabelStyle: React.CSSProperties = {
     fontFamily: "'Cormorant', serif",
     fontSize: 16,
-    color: 'var(--text-primary)',
+    color: '#1A1A1A',
     fontWeight: 500,
   };
 
   const settingValueStyle: React.CSSProperties = {
     fontFamily: "'Cormorant', serif",
     fontSize: 16,
-    color: 'var(--text-secondary)',
+    color: '#6B7280',
     fontStyle: 'italic',
   };
 
   const chevronStyle: React.CSSProperties = {
     fontFamily: "'Cormorant', serif",
     fontSize: 18,
-    color: 'var(--text-secondary)',
+    color: '#6B7280',
     fontWeight: 'bold',
   };
 
   // Toggle Styles
-  const toggleContainerStyle: React.CSSProperties = {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: '16px 0',
-    borderBottom: '1px solid var(--border-color)',
-  };
-
   const toggleStyle = (isOn: boolean): React.CSSProperties => ({
     width: 44,
     height: 24,
     borderRadius: 12,
-    backgroundColor: isOn ? 'var(--text-primary)' : 'var(--border-color)',
+    backgroundColor: isOn ? '#1A1A1A' : '#E5E5E5',
     position: 'relative',
     cursor: 'pointer',
     transition: 'background-color 0.2s',
@@ -436,7 +660,7 @@ export default function Settings() {
     width: 18,
     height: 18,
     borderRadius: '50%',
-    backgroundColor: 'var(--background-card)',
+    backgroundColor: '#FFFFFF',
     position: 'absolute',
     top: 3,
     left: isOn ? 23 : 3,
@@ -444,52 +668,38 @@ export default function Settings() {
   });
 
   // Theme Selection Styles
-  const themeOptionsContainerStyle: React.CSSProperties = {
-    display: 'flex',
-    gap: 12,
-    marginTop: 8,
-  };
-
   const themeOptionStyle = (theme: string): React.CSSProperties => ({
     flex: 1,
     padding: '12px 16px',
     borderRadius: 12,
-    border: selectedTheme === theme ? '2px solid var(--text-primary)' : '1px solid var(--border-color)',
-    backgroundColor: selectedTheme === theme ? 'var(--background-secondary)' : 'var(--background-card)',
+    border: selectedTheme === theme ? '2px solid #1A1A1A' : '1px solid rgba(0,0,0,0.12)',
+    backgroundColor: selectedTheme === theme ? '#FAF8F2' : '#FFFFFF',
     cursor: 'pointer',
     textAlign: 'center',
     fontFamily: "'Cormorant', serif",
     fontSize: 14,
     fontWeight: selectedTheme === theme ? 600 : 400,
-    color: 'var(--text-primary)',
+    color: '#1A1A1A',
     transition: 'all 0.2s ease',
   });
 
   // Social Links Styles
-  const socialLinkItemStyle: React.CSSProperties = {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: '12px 0',
-    borderBottom: '1px solid var(--border-color)',
-  };
-
   const socialLinkLabelStyle: React.CSSProperties = {
     fontFamily: "'Cormorant', serif",
     fontSize: 16,
-    color: 'var(--text-primary)',
+    color: '#1A1A1A',
     fontWeight: 500,
     minWidth: 80,
   };
 
   const socialLinkInputStyle: React.CSSProperties = {
     flex: 1,
-    border: '1px solid var(--border-color)',
-    background: 'var(--background-primary)',
+    border: '1px solid rgba(0,0,0,0.12)',
+    background: '#FAF8F2',
     outline: 'none',
     fontFamily: "'Cormorant', serif",
     fontSize: 14,
-    color: 'var(--text-primary)',
+    color: '#1A1A1A',
     padding: '8px 12px',
     borderRadius: 8,
     marginRight: 8,
@@ -507,7 +717,7 @@ export default function Settings() {
     border: 'none',
     fontFamily: "'Cormorant', serif",
     fontSize: 12,
-    color: 'var(--text-secondary)',
+    color: '#6B7280',
     cursor: 'pointer',
     padding: '4px 8px',
     borderRadius: 4,
@@ -518,7 +728,7 @@ export default function Settings() {
     border: 'none',
     fontFamily: "'Cormorant', serif",
     fontSize: 14,
-    color: 'var(--text-secondary)',
+    color: '#6B7280',
     cursor: 'pointer',
     fontStyle: 'italic',
   };
@@ -528,7 +738,7 @@ export default function Settings() {
     textAlign: 'right',
     fontFamily: "'Cormorant', serif",
     fontSize: 14,
-    color: 'var(--text-secondary)',
+    color: '#6B7280',
     overflow: 'hidden',
     textOverflow: 'ellipsis',
     whiteSpace: 'nowrap',
@@ -543,18 +753,10 @@ export default function Settings() {
     marginTop: 8,
   };
 
-  const creativeFocusOptionStyle: React.CSSProperties = {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: '12px 0',
-    borderBottom: '1px solid var(--border-color)',
-  };
-
   const creativeFocusLabelStyle: React.CSSProperties = {
     fontFamily: "'Cormorant', serif",
     fontSize: 16,
-    color: 'var(--text-primary)',
+    color: '#1A1A1A',
     fontWeight: 500,
   };
 
@@ -562,8 +764,8 @@ export default function Settings() {
   const saveButtonStyle: React.CSSProperties = {
     width: '100%',
     padding: '16px 20px',
-    background: 'var(--text-primary)',
-    color: 'var(--background-card)',
+    background: '#1A1A1A',
+    color: '#FFFFFF',
     border: 'none',
     borderRadius: 12,
     fontFamily: "'Cormorant', serif",
@@ -574,21 +776,11 @@ export default function Settings() {
     marginTop: 8,
   };
 
-  // Loading state
+  // ADDED: Show skeleton loading while data is loading
   if (isLoading) {
     return (
       <div style={pageContainerStyle}>
-        <div style={containerStyle}>
-          <div style={{
-            textAlign: 'center', 
-            padding: '60px 0', 
-            color: 'var(--text-secondary)',
-            fontFamily: "'Cormorant', serif"
-          }}>
-            Loading settings...
-          </div>
-        </div>
-        {/* ADDED: BottomNav */}
+        <SettingsSkeleton />
         <BottomNav />
       </div>
     );
@@ -683,7 +875,7 @@ export default function Settings() {
           <div style={{
             fontFamily: "'Cormorant', serif",
             fontSize: 13,
-            color: 'var(--text-secondary)',
+            color: '#6B7280',
             fontStyle: 'italic',
             textAlign: 'center',
             marginTop: 8
@@ -899,7 +1091,7 @@ export default function Settings() {
           <div style={{
             fontFamily: "'Cormorant', serif",
             fontSize: 13,
-            color: 'var(--text-secondary)',
+            color: '#6B7280',
             fontStyle: 'italic',
             textAlign: 'center',
             marginTop: 8

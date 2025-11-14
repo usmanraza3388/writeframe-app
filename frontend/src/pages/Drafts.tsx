@@ -33,6 +33,135 @@ const tabToTypeMap: Record<ContentTab, DraftItem['type'] | 'all'> = {
   'frames': 'frame'
 };
 
+// ADDED: Style definitions at the top
+const pageContainerStyle: React.CSSProperties = {
+  minHeight: '100vh',
+  display: 'flex',
+  alignItems: 'flex-start',
+  justifyContent: 'center',
+  background: 'linear-gradient(135deg, #FFFFFF 0%, #FAF8F5 100%)',
+  padding: '20px 0',
+  paddingBottom: '100px',
+};
+
+const containerStyle: React.CSSProperties = {
+  width: 375,
+  background: '#FFFFFF',
+  borderRadius: 20,
+  padding: 32,
+  boxSizing: 'border-box',
+  display: 'flex',
+  flexDirection: 'column',
+  gap: 28,
+  boxShadow: '0 4px 24px rgba(0, 0, 0, 0.08)',
+  border: '1px solid rgba(0, 0, 0, 0.06)',
+  margin: '0 auto',
+};
+
+// ADDED: CSS for skeleton animation
+const skeletonStyles = `
+@keyframes pulse {
+  0% { opacity: 1; }
+  50% { opacity: 0.5; }
+  100% { opacity: 1; }
+}
+`;
+
+// ADDED: Skeleton Loading Component
+const DraftsSkeleton: React.FC = () => (
+  <div style={containerStyle}>
+    {/* Header Skeleton */}
+    <div style={{
+      width: '160px',
+      height: '32px',
+      backgroundColor: '#E5E5E5',
+      borderRadius: '6px',
+      margin: '0 auto 32px auto',
+      animation: 'pulse 1.5s ease-in-out infinite'
+    }} />
+
+    {/* Main Tabs Skeleton */}
+    <div style={mainTabsContainerStyle}>
+      {[1, 2].map((item) => (
+        <div key={item} style={{
+          ...mainTabButtonStyle,
+          backgroundColor: '#E5E5E5',
+          animation: 'pulse 1.5s ease-in-out infinite'
+        }} />
+      ))}
+    </div>
+
+    {/* Content Tabs Skeleton */}
+    <div style={tabsContainerStyle}>
+      {[1, 2, 3, 4, 5].map((item) => (
+        <div key={item} style={{
+          ...tabButtonStyle,
+          backgroundColor: '#E5E5E5',
+          animation: 'pulse 1.5s ease-in-out infinite'
+        }} />
+      ))}
+    </div>
+
+    {/* Draft Items Skeleton */}
+    <div style={sectionStyle}>
+      <div style={{
+        width: '80px',
+        height: '24px',
+        backgroundColor: '#E5E5E5',
+        borderRadius: '4px',
+        marginBottom: '16px',
+        animation: 'pulse 1.5s ease-in-out infinite'
+      }} />
+      
+      <div style={dividerStyle} />
+      
+      {[1, 2, 3].map((item) => (
+        <div key={item} style={draftItemStyle}>
+          <div style={draftContentStyle}>
+            <div style={{
+              width: '200px',
+              height: '18px',
+              backgroundColor: '#E5E5E5',
+              borderRadius: '4px',
+              marginBottom: '8px',
+              animation: 'pulse 1.5s ease-in-out infinite'
+            }} />
+            <div style={{
+              width: '150px',
+              height: '14px',
+              backgroundColor: '#E5E5E5',
+              borderRadius: '3px',
+              marginBottom: '8px',
+              animation: 'pulse 1.5s ease-in-out infinite'
+            }} />
+            <div style={{
+              width: '120px',
+              height: '12px',
+              backgroundColor: '#E5E5E5',
+              borderRadius: '3px',
+              animation: 'pulse 1.5s ease-in-out infinite'
+            }} />
+          </div>
+          
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div style={{
+              ...engagementStyle,
+              backgroundColor: '#E5E5E5',
+              animation: 'pulse 1.5s ease-in-out infinite'
+            }} />
+            
+            <div style={{
+              ...menuButtonStyle,
+              backgroundColor: '#E5E5E5',
+              animation: 'pulse 1.5s ease-in-out infinite'
+            }} />
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+);
+
 export default function Drafts() {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -46,6 +175,17 @@ export default function Drafts() {
   // ADD: Saved items hook
 const { savedItems, loading: savedLoading } = useSavedItems();
   const { unsaveItem } = useSaveItem();
+
+  // ADDED: Skeleton styles effect
+  React.useEffect(() => {
+    const style = document.createElement('style');
+    style.textContent = skeletonStyles;
+    document.head.appendChild(style);
+    
+    return () => {
+      document.head.removeChild(style);
+    };
+  }, []);
 
   useEffect(() => {
     loadDrafts();
@@ -314,36 +454,12 @@ const { savedItems, loading: savedLoading } = useSavedItems();
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Consistent with your 375px container pattern
-  const pageContainerStyle: React.CSSProperties = {
-    minHeight: '100vh',
-    display: 'flex',
-    alignItems: 'flex-start',
-    justifyContent: 'center',
-    background: 'var(--background-primary)',
-    padding: '20px 0',
-    paddingBottom: '100px', // ADDED: Space for bottom navigation
-  };
-
-  const containerStyle: React.CSSProperties = {
-    width: 375,
-    background: 'var(--background-card)',
-    borderRadius: 20,
-    padding: 32,
-    boxSizing: 'border-box',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: 28,
-    boxShadow: '0 4px 24px rgba(0, 0, 0, 0.08)',
-    border: '1px solid var(--border-color)',
-    margin: '0 auto',
-  };
-
+  // Additional Styles
   const headerStyle: React.CSSProperties = {
     fontFamily: "'Playfair Display', serif",
     fontSize: 28,
     fontWeight: 700,
-    color: 'var(--text-primary)',
+    color: '#1A1A1A',
     textAlign: 'center',
     margin: 0,
     letterSpacing: '-0.02em',
@@ -353,7 +469,7 @@ const { savedItems, loading: savedLoading } = useSavedItems();
   const mainTabsContainerStyle: React.CSSProperties = {
     display: 'flex',
     gap: 8,
-    background: 'var(--background-secondary)',
+    background: '#FAF8F2',
     borderRadius: 14,
     padding: 6,
     width: '100%',
@@ -371,12 +487,12 @@ const { savedItems, loading: savedLoading } = useSavedItems();
     fontFamily: "'Cormorant', serif",
     fontWeight: 500,
     transition: 'all 0.3s ease',
-    color: 'var(--text-gray)',
+    color: '#6B7280',
   };
 
   const activeMainTabButtonStyle: React.CSSProperties = {
-    background: 'var(--background-card)',
-    color: 'var(--text-primary)',
+    background: '#FFFFFF',
+    color: '#1A1A1A',
     fontWeight: 600,
     boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
   };
@@ -385,7 +501,7 @@ const { savedItems, loading: savedLoading } = useSavedItems();
   const tabsContainerStyle: React.CSSProperties = {
     display: 'flex',
     gap: 4,
-    background: 'var(--background-secondary)',
+    background: '#FAF8F2',
     borderRadius: 14,
     padding: 6,
     width: '100%',
@@ -407,7 +523,7 @@ const { savedItems, loading: savedLoading } = useSavedItems();
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    color: 'var(--text-gray)',
+    color: '#6B7280',
     minWidth: 0,
     whiteSpace: 'nowrap',
     overflow: 'hidden',
@@ -415,8 +531,8 @@ const { savedItems, loading: savedLoading } = useSavedItems();
   };
 
   const activeTabButtonStyle: React.CSSProperties = {
-    background: 'var(--background-card)',
-    color: 'var(--text-primary)',
+    background: '#FFFFFF',
+    color: '#1A1A1A',
     fontWeight: 600,
     boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
   };
@@ -431,13 +547,13 @@ const { savedItems, loading: savedLoading } = useSavedItems();
     fontFamily: "'Playfair Display', serif",
     fontSize: 20,
     fontWeight: 600,
-    color: 'var(--text-primary)',
+    color: '#1A1A1A',
     margin: 0,
   };
 
   const dividerStyle: React.CSSProperties = {
     height: 1,
-    background: 'var(--border-color)',
+    background: 'rgba(0,0,0,0.08)',
     width: '100%',
     margin: '8px 0',
   };
@@ -448,7 +564,7 @@ const { savedItems, loading: savedLoading } = useSavedItems();
     alignItems: 'center',
     padding: '16px 0',
     cursor: 'pointer',
-    borderBottom: '1px solid var(--border-color)',
+    borderBottom: '1px solid rgba(0,0,0,0.08)',
   };
 
   const draftContentStyle: React.CSSProperties = {
@@ -462,14 +578,14 @@ const { savedItems, loading: savedLoading } = useSavedItems();
     fontFamily: "'Cormorant', serif",
     fontSize: 18,
     fontWeight: 600,
-    color: 'var(--text-primary)',
+    color: '#1A1A1A',
     margin: 0,
   };
 
   const draftSubtitleStyle: React.CSSProperties = {
     fontFamily: "'Cormorant', serif",
     fontSize: 14,
-    color: 'var(--text-secondary)',
+    color: '#6B7280',
     margin: 0,
     fontStyle: 'italic',
   };
@@ -477,7 +593,7 @@ const { savedItems, loading: savedLoading } = useSavedItems();
   const draftMetaStyle: React.CSSProperties = {
     fontFamily: "'Cormorant', serif",
     fontSize: 12,
-    color: 'var(--text-light)',
+    color: '#9CA3AF',
     margin: 0,
   };
 
@@ -485,7 +601,7 @@ const { savedItems, loading: savedLoading } = useSavedItems();
     fontFamily: "'Cormorant', serif",
     fontSize: 14,
     fontWeight: 600,
-    color: 'var(--text-primary)',
+    color: '#1A1A1A',
     minWidth: 20,
     textAlign: 'center',
   };
@@ -500,7 +616,7 @@ const { savedItems, loading: savedLoading } = useSavedItems();
     cursor: 'pointer',
     padding: '8px',
     borderRadius: '4px',
-    color: 'var(--text-primary)',
+    color: '#1A1A1A',
     fontSize: 18,
   };
 
@@ -508,13 +624,13 @@ const { savedItems, loading: savedLoading } = useSavedItems();
     position: 'absolute',
     top: '35px',
     right: 0,
-    background: 'var(--background-card)',
+    background: '#FFFFFF',
     borderRadius: '8px',
     boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
     padding: '8px 0',
     minWidth: '120px',
     zIndex: 1000,
-    border: '1px solid var(--border-color)',
+    border: '1px solid rgba(0,0,0,0.08)',
   };
 
   const menuItemStyle: React.CSSProperties = {
@@ -526,24 +642,15 @@ const { savedItems, loading: savedLoading } = useSavedItems();
     cursor: 'pointer',
     fontSize: 14,
     fontFamily: "'Cormorant', serif",
-    color: 'var(--text-primary)',
+    color: '#1A1A1A',
     transition: 'background-color 0.2s',
   };
 
+  // ADDED: Show skeleton loading while data is loading
   if (loading) {
     return (
       <div style={pageContainerStyle}>
-        <div style={containerStyle}>
-          <div style={{
-            textAlign: 'center', 
-            padding: '60px 0', 
-            color: 'var(--text-secondary)',
-            fontFamily: "'Cormorant', serif"
-          }}>
-            Loading drafts...
-          </div>
-        </div>
-        {/* ADDED: BottomNav */}
+        <DraftsSkeleton />
         <BottomNav />
       </div>
     );
@@ -642,7 +749,7 @@ const { savedItems, loading: savedLoading } = useSavedItems();
                 <div style={{
                   textAlign: 'center',
                   padding: '40px 20px',
-                  color: 'var(--text-light)',
+                  color: '#9CA3AF',
                   fontFamily: "'Cormorant', serif",
                   fontStyle: 'italic'
                 }}>
@@ -685,7 +792,7 @@ const { savedItems, loading: savedLoading } = useSavedItems();
                                 setActiveMenu(null);
                               }}
                               onMouseEnter={(e) => {
-                                e.currentTarget.style.backgroundColor = 'var(--hover-background)';
+                                e.currentTarget.style.backgroundColor = '#FAF8F2';
                               }}
                               onMouseLeave={(e) => {
                                 e.currentTarget.style.backgroundColor = 'transparent';
@@ -702,7 +809,7 @@ const { savedItems, loading: savedLoading } = useSavedItems();
                                   setActiveMenu(null);
                                 }}
                                 onMouseEnter={(e) => {
-                                  e.currentTarget.style.backgroundColor = 'var(--hover-background)';
+                                  e.currentTarget.style.backgroundColor = '#FAF8F2';
                                 }}
                                 onMouseLeave={(e) => {
                                   e.currentTarget.style.backgroundColor = 'transparent';
@@ -714,7 +821,7 @@ const { savedItems, loading: savedLoading } = useSavedItems();
                             <button 
                               style={{
                                 ...menuItemStyle,
-                                color: 'var(--error-text)'
+                                color: '#DC2626'
                               }}
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -722,7 +829,7 @@ const { savedItems, loading: savedLoading } = useSavedItems();
                                 setActiveMenu(null);
                               }}
                               onMouseEnter={(e) => {
-                                e.currentTarget.style.backgroundColor = 'var(--hover-background)';
+                                e.currentTarget.style.backgroundColor = '#FEF2F2';
                               }}
                               onMouseLeave={(e) => {
                                 e.currentTarget.style.backgroundColor = 'transparent';
@@ -781,7 +888,7 @@ const { savedItems, loading: savedLoading } = useSavedItems();
                                 setActiveMenu(null);
                               }}
                               onMouseEnter={(e) => {
-                                e.currentTarget.style.backgroundColor = 'var(--hover-background)';
+                                e.currentTarget.style.backgroundColor = '#FAF8F2';
                               }}
                               onMouseLeave={(e) => {
                                 e.currentTarget.style.backgroundColor = 'transparent';
@@ -792,7 +899,7 @@ const { savedItems, loading: savedLoading } = useSavedItems();
                             <button 
                               style={{
                                 ...menuItemStyle,
-                                color: 'var(--error-text)'
+                                color: '#DC2626'
                               }}
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -800,7 +907,7 @@ const { savedItems, loading: savedLoading } = useSavedItems();
                                 setActiveMenu(null);
                               }}
                               onMouseEnter={(e) => {
-                                e.currentTarget.style.backgroundColor = 'var(--hover-background)';
+                                e.currentTarget.style.backgroundColor = '#FEF2F2';
                               }}
                               onMouseLeave={(e) => {
                                 e.currentTarget.style.backgroundColor = 'transparent';
@@ -827,7 +934,7 @@ const { savedItems, loading: savedLoading } = useSavedItems();
               <div style={{
                 textAlign: 'center',
                 padding: '40px 20px',
-                color: 'var(--text-light)',
+                color: '#9CA3AF',
                 fontFamily: "'Cormorant', serif"
               }}>
                 Loading saved items...
@@ -836,12 +943,12 @@ const { savedItems, loading: savedLoading } = useSavedItems();
               <div style={{
                 textAlign: 'center',
                 padding: '40px 20px',
-                color: 'var(--text-light)',
+                color: '#9CA3AF',
                 fontFamily: "'Cormorant', serif",
                 fontStyle: 'italic'
               }}>
                 No {activeTab !== 'all' ? activeTab : ''} saved items yet
-                <div style={{ fontSize: '13px', marginTop: '8px', color: 'var(--text-secondary)' }}>
+                <div style={{ fontSize: '13px', marginTop: '8px', color: '#6B7280' }}>
                   Save scenes, monologues, characters, or frames from other users to see them here
                 </div>
               </div>
@@ -884,7 +991,7 @@ const { savedItems, loading: savedLoading } = useSavedItems();
                               setActiveMenu(null);
                             }}
                             onMouseEnter={(e) => {
-                              e.currentTarget.style.backgroundColor = 'var(--hover-background)';
+                              e.currentTarget.style.backgroundColor = '#FAF8F2';
                             }}
                             onMouseLeave={(e) => {
                               e.currentTarget.style.backgroundColor = 'transparent';
@@ -895,7 +1002,7 @@ const { savedItems, loading: savedLoading } = useSavedItems();
                           <button 
                             style={{
                               ...menuItemStyle,
-                              color: 'var(--error-text)'
+                              color: '#DC2626'
                             }}
                             onClick={(e) => {
                               e.stopPropagation();
@@ -903,7 +1010,7 @@ const { savedItems, loading: savedLoading } = useSavedItems();
                               setActiveMenu(null);
                             }}
                             onMouseEnter={(e) => {
-                              e.currentTarget.style.backgroundColor = 'var(--hover-background)';
+                              e.currentTarget.style.backgroundColor = '#FEF2F2';
                             }}
                             onMouseLeave={(e) => {
                               e.currentTarget.style.backgroundColor = 'transparent';
