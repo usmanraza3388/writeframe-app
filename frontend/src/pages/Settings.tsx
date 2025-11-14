@@ -188,10 +188,10 @@ const SettingsSkeleton: React.FC = () => (
       </div>
     </div>
 
-    {/* Social Links Skeleton */}
+    {/* Links Skeleton */}
     <div style={sectionStyle}>
       <div style={{
-        width: '120px',
+        width: '60px',
         height: '24px',
         backgroundColor: '#E5E5E5',
         borderRadius: '4px',
@@ -199,7 +199,7 @@ const SettingsSkeleton: React.FC = () => (
         animation: 'pulse 1.5s ease-in-out infinite'
       }} />
       
-      {[1, 2, 3].map((item) => (
+      {[1, 2, 3, 4].map((item) => (
         <div key={item} style={socialLinkItemStyle}>
           <div style={{
             width: '80px',
@@ -272,12 +272,14 @@ export default function Settings() {
   const [socialLinks, setSocialLinks] = useState({
     facebook: '',
     instagram: '',
-    pinterest: ''
+    pinterest: '',
+    personal_site: '' // ADDED: Personal site field
   });
   const [socialLinksVisible, setSocialLinksVisible] = useState({
     facebook: true,
     instagram: true,
-    pinterest: true
+    pinterest: true,
+    personal_site: true // ADDED: Personal site visibility toggle
   });
   const [editingSocialLink, setEditingSocialLink] = useState<string | null>(null);
   const [notifications, setNotifications] = useState({
@@ -332,12 +334,14 @@ export default function Settings() {
           setSocialLinks(settings.social_links || {
             facebook: '',
             instagram: '',
-            pinterest: ''
+            pinterest: '',
+            personal_site: '' // ADDED: Personal site field
           });
           setSocialLinksVisible(settings.social_links_visible || {
             facebook: true,
             instagram: true,
-            pinterest: true
+            pinterest: true,
+            personal_site: true // ADDED: Personal site visibility toggle
           });
           setNotifications(settings.notifications || {
             echoesRemakes: true,
@@ -422,14 +426,18 @@ export default function Settings() {
   };
 
   const handleSocialLinkChange = (platform: string, value: string) => {
-    // Remove any URL prefixes and extract just the username
     let cleanedValue = value.trim();
     
-    // Remove common URL prefixes to store only the username
-    cleanedValue = cleanedValue
-      .replace(/https?:\/\/(www\.)?(facebook|instagram|pinterest)\.com\//, '')
-      .replace(/@/, '')
-      .trim();
+    if (platform === 'personal_site') {
+      // For personal site, keep the full URL but clean it up
+      cleanedValue = cleanedValue.replace(/https?:\/\//, '').replace(/\/$/, '');
+    } else {
+      // For social media, remove URL prefixes and extract just the username
+      cleanedValue = cleanedValue
+        .replace(/https?:\/\/(www\.)?(facebook|instagram|pinterest)\.com\//, '')
+        .replace(/@/, '')
+        .trim();
+    }
 
     setSocialLinks(prev => ({
       ...prev,
@@ -772,9 +780,9 @@ export default function Settings() {
           </div>
         </div>
 
-        {/* Social Links Section - FIXED with toggles */}
+        {/* Links Section - RENAMED from Social Links and ADDED Personal Site */}
         <div style={sectionStyle}>
-          <h2 style={sectionHeaderStyle}>Social Links</h2>
+          <h2 style={sectionHeaderStyle}>Links</h2> {/* CHANGED: Social Links → Links */}
           
           {/* Facebook */}
           <div style={socialLinkItemStyle}>
@@ -950,6 +958,64 @@ export default function Settings() {
             </div>
           </div>
 
+          {/* ADDED: Personal Site */}
+          <div style={socialLinkItemStyle}>
+            <div style={socialLinkLabelStyle}>Personal Site</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, flex: 1, justifyContent: 'flex-end' }}>
+              {editingSocialLink === 'personal_site' ? (
+                <div style={{ display: 'flex', alignItems: 'center' }}>
+                  <input
+                    type="text"
+                    value={socialLinks.personal_site}
+                    onChange={(e) => handleSocialLinkChange('personal_site', e.target.value)}
+                    placeholder="yourwebsite.com"
+                    style={socialLinkInputStyle}
+                    autoFocus
+                  />
+                  <div style={socialLinkActionsStyle}>
+                    <button 
+                      style={socialLinkButtonStyle}
+                      onClick={() => handleSocialLinkSave('personal_site')}
+                    >
+                      Save
+                    </button>
+                    <button 
+                      style={socialLinkButtonStyle}
+                      onClick={() => handleSocialLinkCancel('personal_site')}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              ) : socialLinks.personal_site ? (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={socialLinkDisplayStyle}>
+                    {socialLinks.personal_site}
+                  </span>
+                  <button 
+                    style={socialLinkButtonStyle}
+                    onClick={() => handleAddSocialLink('personal_site')}
+                  >
+                    Edit
+                  </button>
+                </div>
+              ) : (
+                <button 
+                  style={addLinkButtonStyle}
+                  onClick={() => handleAddSocialLink('personal_site')}
+                >
+                  Add link
+                </button>
+              )}
+              <div 
+                style={toggleStyle(socialLinksVisible.personal_site)}
+                onClick={() => handleSocialLinkToggle('personal_site')}
+              >
+                <div style={toggleKnobStyle(socialLinksVisible.personal_site)} />
+              </div>
+            </div>
+          </div>
+
           {/* Helper text */}
           <div style={{
             fontFamily: "'Cormorant', serif",
@@ -959,7 +1025,7 @@ export default function Settings() {
             textAlign: 'center',
             marginTop: 8
           }}>
-            Toggle to show/hide social links on your profile
+            Toggle to show/hide links on your profile
           </div>
         </div>
 
