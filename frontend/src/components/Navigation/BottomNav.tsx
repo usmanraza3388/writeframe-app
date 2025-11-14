@@ -306,7 +306,7 @@ const BottomNav: React.FC = () => {
             </span>
           </button>
 
-          {/* ADDED: Messages Button */}
+          {/* CHANGED: Messages Button to Whispers */}
           <button
             onClick={handleMessagesClick}
             style={{
@@ -334,7 +334,7 @@ const BottomNav: React.FC = () => {
               fontWeight: '500',
               letterSpacing: '0.5px'
             }}>
-              Messages
+              Whispers
             </span>
           </button>
 

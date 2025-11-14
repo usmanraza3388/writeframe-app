@@ -6,6 +6,172 @@ import { useAuth } from '../../contexts/AuthContext';
 import useNotifications from '../../hooks/useNotifications';
 import BottomNav from '../Navigation/BottomNav';
 
+// ADDED: Style definitions at the top
+const pageContainerStyle: React.CSSProperties = {
+  minHeight: '100vh',
+  display: 'flex',
+  flexDirection: 'column',
+  background: 'linear-gradient(135deg, #FFFFFF 0%, #FAF8F5 100%)',
+  paddingBottom: '80px'
+};
+
+const containerStyle: React.CSSProperties = {
+  flex: 1,
+  display: 'flex',
+  flexDirection: 'column',
+  maxWidth: '375px',
+  margin: '0 auto',
+  width: '100%',
+  background: '#FFFFFF'
+};
+
+// ADDED: CSS for skeleton animation
+const skeletonStyles = `
+@keyframes pulse {
+  0% { opacity: 1; }
+  50% { opacity: 0.5; }
+  100% { opacity: 1; }
+}
+`;
+
+// ADDED: Skeleton Loading Component
+const WhisperThreadSkeleton: React.FC = () => (
+  <div style={pageContainerStyle}>
+    <div style={containerStyle}>
+      {/* Header Skeleton */}
+      <div style={headerStyle}>
+        <div style={{
+          ...backButtonStyle,
+          backgroundColor: '#E5E5E5',
+          animation: 'pulse 1.5s ease-in-out infinite'
+        }} />
+        
+        <div style={userInfoStyle}>
+          <div style={{
+            ...avatarStyle,
+            backgroundColor: '#E5E5E5',
+            animation: 'pulse 1.5s ease-in-out infinite'
+          }} />
+          
+          <div style={userTextStyle}>
+            <div style={{
+              width: '120px',
+              height: '16px',
+              backgroundColor: '#E5E5E5',
+              borderRadius: '4px',
+              marginBottom: '4px',
+              animation: 'pulse 1.5s ease-in-out infinite'
+            }} />
+            <div style={{
+              width: '80px',
+              height: '12px',
+              backgroundColor: '#E5E5E5',
+              borderRadius: '3px',
+              animation: 'pulse 1.5s ease-in-out infinite'
+            }} />
+          </div>
+        </div>
+      </div>
+
+      {/* Messages Skeleton */}
+      <div style={messagesContainerStyle}>
+        <div style={messagesListStyle}>
+          {/* Other user message skeleton */}
+          <div style={{
+            ...messageBubbleStyle,
+            ...otherMessageBubbleStyle,
+            backgroundColor: '#E5E5E5',
+            animation: 'pulse 1.5s ease-in-out infinite'
+          }}>
+            <div style={{
+              width: '180px',
+              height: '16px',
+              backgroundColor: '#D1D5DB',
+              borderRadius: '4px',
+              marginBottom: '8px',
+              animation: 'pulse 1.5s ease-in-out infinite'
+            }} />
+            <div style={{
+              width: '60px',
+              height: '12px',
+              backgroundColor: '#D1D5DB',
+              borderRadius: '3px',
+              animation: 'pulse 1.5s ease-in-out infinite'
+            }} />
+          </div>
+
+          {/* Own message skeleton */}
+          <div style={{
+            ...messageBubbleStyle,
+            ...ownMessageBubbleStyle,
+            backgroundColor: '#E5E5E5',
+            animation: 'pulse 1.5s ease-in-out infinite'
+          }}>
+            <div style={{
+              width: '150px',
+              height: '16px',
+              backgroundColor: '#D1D5DB',
+              borderRadius: '4px',
+              marginBottom: '8px',
+              animation: 'pulse 1.5s ease-in-out infinite'
+            }} />
+            <div style={{
+              width: '50px',
+              height: '12px',
+              backgroundColor: '#D1D5DB',
+              borderRadius: '3px',
+              animation: 'pulse 1.5s ease-in-out infinite'
+            }} />
+          </div>
+
+          {/* Other user message skeleton */}
+          <div style={{
+            ...messageBubbleStyle,
+            ...otherMessageBubbleStyle,
+            backgroundColor: '#E5E5E5',
+            animation: 'pulse 1.5s ease-in-out infinite'
+          }}>
+            <div style={{
+              width: '200px',
+              height: '16px',
+              backgroundColor: '#D1D5DB',
+              borderRadius: '4px',
+              marginBottom: '8px',
+              animation: 'pulse 1.5s ease-in-out infinite'
+            }} />
+            <div style={{
+              width: '70px',
+              height: '12px',
+              backgroundColor: '#D1D5DB',
+              borderRadius: '3px',
+              animation: 'pulse 1.5s ease-in-out infinite'
+            }} />
+          </div>
+        </div>
+      </div>
+
+      {/* Input Skeleton */}
+      <div style={inputFormStyle}>
+        <div style={inputContainerStyle}>
+          <div style={{
+            ...inputStyle,
+            backgroundColor: '#E5E5E5',
+            border: 'none',
+            animation: 'pulse 1.5s ease-in-out infinite'
+          }} />
+          <div style={{
+            ...sendButtonStyle,
+            backgroundColor: '#E5E5E5',
+            border: 'none',
+            animation: 'pulse 1.5s ease-in-out infinite'
+          }} />
+        </div>
+      </div>
+    </div>
+    <BottomNav />
+  </div>
+);
+
 export const WhisperThread: React.FC = () => {
   const { userId } = useParams(); // The other user's ID
   const navigate = useNavigate();
@@ -19,6 +185,17 @@ export const WhisperThread: React.FC = () => {
   const [sending, setSending] = useState(false);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // ADDED: Skeleton styles effect
+  React.useEffect(() => {
+    const style = document.createElement('style');
+    style.textContent = skeletonStyles;
+    document.head.appendChild(style);
+    
+    return () => {
+      document.head.removeChild(style);
+    };
+  }, []);
 
   // Scroll to bottom when messages change
   useEffect(() => {
@@ -137,15 +314,9 @@ export const WhisperThread: React.FC = () => {
     }
   };
 
+  // ADDED: Show skeleton loading while data is loading
   if (loading) {
-    return (
-      <div style={pageContainerStyle}>
-        <div style={containerStyle}>
-          <div style={loadingStyle}>Loading conversation...</div>
-        </div>
-        <BottomNav />
-      </div>
-    );
+    return <WhisperThreadSkeleton />;
   }
 
   if (!otherUser) {
@@ -288,25 +459,7 @@ export const WhisperThread: React.FC = () => {
   );
 };
 
-// Styles
-const pageContainerStyle: React.CSSProperties = {
-  minHeight: '100vh',
-  display: 'flex',
-  flexDirection: 'column',
-  background: 'linear-gradient(135deg, #FFFFFF 0%, #FAF8F5 100%)',
-  paddingBottom: '80px'
-};
-
-const containerStyle: React.CSSProperties = {
-  flex: 1,
-  display: 'flex',
-  flexDirection: 'column',
-  maxWidth: '375px',
-  margin: '0 auto',
-  width: '100%',
-  background: '#FFFFFF'
-};
-
+// Styles (moved to bottom but kept for reference)
 const headerStyle: React.CSSProperties = {
   display: 'flex',
   alignItems: 'center',
@@ -495,13 +648,6 @@ const emptyStateSubtextStyle: React.CSSProperties = {
   fontSize: '14px',
   color: '#9CA3AF',
   fontStyle: 'italic'
-};
-
-const loadingStyle: React.CSSProperties = {
-  textAlign: 'center',
-  padding: '60px 20px',
-  color: '#6B7280',
-  fontFamily: 'Cormorant, serif'
 };
 
 const errorStyle: React.CSSProperties = {
