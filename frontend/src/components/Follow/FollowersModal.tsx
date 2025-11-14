@@ -1,5 +1,6 @@
 // src/components/Follow/FollowersModal.tsx
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../assets/lib/supabaseClient';
 
 interface FollowersModalProps {
@@ -144,6 +145,7 @@ const bioStyle: React.CSSProperties = {
 const FollowersModal: React.FC<FollowersModalProps> = ({ open, onClose, profileId }) => {
   const [followers, setFollowers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (open && profileId) {
@@ -179,6 +181,11 @@ const FollowersModal: React.FC<FollowersModalProps> = ({ open, onClose, profileI
     }
   };
 
+  const handleUserClick = (userId: string) => {
+    onClose(); // Close the modal first
+    navigate(`/profile/${userId}`);
+  };
+
   if (!open) return null;
 
   return (
@@ -211,6 +218,7 @@ const FollowersModal: React.FC<FollowersModalProps> = ({ open, onClose, profileI
                   style={userItemStyle}
                   onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#FAF8F2'}
                   onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                  onClick={() => handleUserClick(follower.from_user_id)}
                 >
                   <img 
                     src={follower.profiles.avatar_url || '/placeholder-avatar.png'} 
