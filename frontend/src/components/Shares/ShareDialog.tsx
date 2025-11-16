@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { captureCardAsImage } from '../../utils/cardCapture';
 
 // NORMALIZED: Clean, consistent interface
 interface ShareDialogProps {
@@ -72,20 +73,42 @@ const ShareDialog: React.FC<ShareDialogProps> = ({
     return templates[contentType];
   };
 
-  // NEW: Download functionality
-  const handleDownload = () => {
+  // UPDATED: Real download functionality
+  const handleDownload = async () => {
     setIsDownloading(true);
     
-    // Track the download action
-    onShare('download');
-    
-    // TODO: Implement actual card capture with html2canvas
-    // For now, simulate download process
-    setTimeout(() => {
+    try {
+      // Track the download action
+      onShare('download');
+      
+      // Generate filename based on content
+      const fileName = `writeframe-${contentType}-${content.title}-by-${creator.name}`
+        .toLowerCase()
+        .replace(/[^a-zA-Z0-9]/g, '-')
+        .replace(/-+/g, '-');
+      
+      // For now, we'll use a placeholder element ID
+      // In STEP 4, we'll pass the actual card element ID
+      const elementId = `card-${contentType}-placeholder`;
+      
+      const success = await captureCardAsImage({
+        elementId,
+        fileName,
+        quality: 0.9
+      });
+      
+      if (success) {
+        alert('Card downloaded successfully!');
+      } else {
+        alert('Failed to download card. Please try again.');
+      }
+    } catch (error) {
+      console.error('Download error:', error);
+      alert('Error downloading card. Please try again.');
+    } finally {
       setIsDownloading(false);
-      alert('Download functionality coming soon! The card image will be saved to your device.');
       onClose();
-    }, 1000);
+    }
   };
 
   // DISABLED: Social sharing function - preserved for future use

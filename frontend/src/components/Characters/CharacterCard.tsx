@@ -389,6 +389,7 @@ const CharacterCard: React.FC<CharacterCardProps> = React.memo(({
 
       {/* Character Profile Card Layout */}
       <article 
+        id={`card-character-${character.id}`} // ← ADDED: Unique ID for card capture
         style={{
           width: 'calc(100% + 32px)',
           minHeight: mainImage ? '420px' : '350px',
