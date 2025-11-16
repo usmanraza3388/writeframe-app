@@ -184,14 +184,6 @@ export const SceneComposer: React.FC = () => {
     </svg>
   );
 
-  const toggleMood = (mood: string) => {
-    setSelectedMoods(prev => 
-      prev.includes(mood) 
-        ? prev.filter(m => m !== mood)
-        : [...prev, mood]
-    );
-  };
-
   // UPDATED: Enhanced image upload with preview
   const handleImageUpload = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
