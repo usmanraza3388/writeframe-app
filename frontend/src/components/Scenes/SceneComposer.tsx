@@ -451,23 +451,6 @@ export const SceneComposer: React.FC = () => {
     transition: 'all 0.3s ease'
   };
 
-  const moodButtonStyle = (): React.CSSProperties => ({
-    width: 100,
-    height: 32,
-    padding: '6px 12px',
-    borderRadius: 10,
-    background: '#FAFBF2',
-    border: '1px solid #FAFBF2',
-    cursor: 'pointer',
-    fontSize: 20,
-    fontFamily: "'Cormorant', serif",
-    fontWeight: 500,
-    color: '#3E3836',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center'
-  });
-
   if (loadingScene) {
     return (
       <div style={{
@@ -762,23 +745,6 @@ export const SceneComposer: React.FC = () => {
                 </button>
               </div>
             )}
-          </div>
-
-          <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
-            {['Longing', 'Nostalgie', 'Hopeful'].map((mood) => (
-              <button
-                key={mood}
-                type="button"
-                onClick={() => toggleMood(mood)}
-                style={{
-                  ...moodButtonStyle(),
-                  background: selectedMoods.includes(mood) ? '#1A1A1A' : '#FAFBF2',
-                  color: selectedMoods.includes(mood) ? '#FFFFFF' : '#3E3836'
-                }}
-              >
-                {mood}
-              </button>
-            ))}
           </div>
 
           <div style={{ textAlign: 'center', marginTop: '10px' }}>
