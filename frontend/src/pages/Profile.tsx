@@ -179,6 +179,13 @@ const skeletonStyles = `
 }
 `;
 
+// ADDED: CSS for avatar hover effects
+const avatarHoverStyles = `
+  .avatar-container:hover .avatar-overlay {
+    opacity: 1 !important;
+  }
+`;
+
 // Social Media Icon Components (keep existing)
 const FacebookIcon: React.FC<{ size?: number }> = ({ size = 24 }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor">
@@ -235,6 +242,8 @@ export default function Profile() {
   // ADDED: Modal state
   const [showFollowersModal, setShowFollowersModal] = useState(false);
   const [showFollowingModal, setShowFollowingModal] = useState(false);
+  // ADDED: Tooltip state
+  const [showAvatarTooltip, setShowAvatarTooltip] = useState(false);
   
   // UPDATED: Added refresh to destructuring
   const { profile, stats, tabContent, isLoading, error, refresh } = useProfileData(id || '');
@@ -244,10 +253,14 @@ export default function Profile() {
   // ADDED: Use auth context for signOut
   const { signOut } = useAuth();
 
+  // FIXED: Move isOwnProfile declaration before any useEffects that use it
+  const isOwnProfile = currentUser?.id === id;
+  const shouldShowStats = isOwnProfile || profile?.settings?.public_stats !== false;
+
   // ADDED: Skeleton styles effect
   React.useEffect(() => {
     const style = document.createElement('style');
-    style.textContent = skeletonStyles;
+    style.textContent = skeletonStyles + avatarHoverStyles;
     document.head.appendChild(style);
     
     return () => {
@@ -263,6 +276,15 @@ export default function Profile() {
     getCurrentUser();
   }, []);
 
+  // ADDED: Check if user is new and show tooltip
+  useEffect(() => {
+    const hasSeenTooltip = localStorage.getItem('has_seen_avatar_tooltip');
+    if (!hasSeenTooltip && isOwnProfile) {
+      setShowAvatarTooltip(true);
+      localStorage.setItem('has_seen_avatar_tooltip', 'true');
+    }
+  }, [isOwnProfile]);
+
   // ADDED: Reset pagination whenever activeTab changes
   useEffect(() => {
     setVisibleItems(ITEMS_PER_PAGE);
@@ -274,6 +296,28 @@ export default function Profile() {
   // ADDED: Click handler for grid cards
   const handleCardClick = (item: any, type: 'scenes' | 'characters' | 'monologues' | 'frames') => {
     navigate(`/home-feed#${type}-${item.id}`);
+  };
+
+  // ADDED: Function to remove profile picture
+  const handleRemoveProfilePicture = async () => {
+    try {
+      if (!currentUser) return;
+
+      // Clear from local storage
+      localStorage.removeItem(`user_avatar_${currentUser.id}`);
+
+      // Update profile with null avatar
+      await handleSaveProfile({
+        ...profile,
+        avatar_url: null
+      });
+
+      // Refresh to show placeholder
+      refresh();
+      
+    } catch (error) {
+      alert('Failed to remove profile picture. Please try again.');
+    }
   };
 
   // Filter tabs based on creative_focus settings
@@ -297,11 +341,6 @@ export default function Profile() {
     profile.settings.social_links.pinterest ||
     profile.settings.social_links.personal_site
   );
-
-  // Check if stats should be visible based on public_stats setting
-  
-  const isOwnProfile = currentUser?.id === id;
- const shouldShowStats = isOwnProfile || profile?.settings?.public_stats !== false;
 
   // ADDED: Show skeleton loading while data is loading
   if (isLoading) {
@@ -725,27 +764,59 @@ export default function Profile() {
         {/* Header Section */}
         <div style={headerStyle}>
           <div style={avatarContainerStyle} className="avatar-container">
-            <img 
-              src={displayAvatarUrl} 
-              alt={profile.username} 
-              style={avatarStyle}
-            />
-            {/* ADDED: Image upload overlay for own profile */}
+            {displayAvatarUrl === '/placeholder-avatar.png' && isOwnProfile ? (
+              <div style={emptyAvatarStyle}>
+                <div style={emptyAvatarIconStyle}>👤</div>
+                <div style={emptyAvatarTextStyle}>Add Photo</div>
+              </div>
+            ) : (
+              <img 
+                src={displayAvatarUrl} 
+                alt={profile.username} 
+                style={avatarStyle}
+              />
+            )}
+            
+            {/* ADDED: Enhanced image upload overlay for own profile */}
             {isOwnProfile && (
               <div style={avatarOverlayStyle} className="avatar-overlay">
                 <input
                   type="file"
                   accept="image/*"
-                  onChange={handleImageSelect} // UPDATED: Use new handler
+                  onChange={handleImageSelect}
                   style={fileInputStyle}
                   id="avatar-upload"
                 />
-                <label htmlFor="avatar-upload" style={avatarUploadLabelStyle}>
-                  📷
-                </label>
+                <div style={avatarOverlayContentStyle}>
+                  <label htmlFor="avatar-upload" style={avatarUploadLabelStyle}>
+                    📷 Change
+                  </label>
+                  {displayAvatarUrl !== '/placeholder-avatar.png' && (
+                    <button 
+                      onClick={handleRemoveProfilePicture}
+                      style={removeAvatarButtonStyle}
+                    >
+                      🗑️ Remove
+                    </button>
+                  )}
+                </div>
               </div>
             )}
           </div>
+
+          {/* ADDED: Avatar Tooltip for new users */}
+          {showAvatarTooltip && (
+            <div style={avatarTooltipStyle}>
+              <div style={tooltipArrowStyle}></div>
+              <p style={tooltipTextStyle}>Tap here to add your profile picture!</p>
+              <button 
+                onClick={() => setShowAvatarTooltip(false)}
+                style={tooltipCloseStyle}
+              >
+                ×
+              </button>
+            </div>
+          )}
           
           <div style={nameContainerStyle}>
             <h1 style={nameStyle}>{profile.full_name || 'Anonymous'}</h1>
@@ -1231,7 +1302,8 @@ const avatarContainerStyle: React.CSSProperties = {
   overflow: 'hidden',
   border: '3px solid #FFFFFF',
   boxShadow: '0 8px 32px rgba(0, 0, 0, 0.12)',
-  position: 'relative', // ADDED: For overlay positioning
+  position: 'relative',
+  cursor: 'pointer', // ADDED: Pointer cursor for better UX
 };
 
 const avatarStyle: React.CSSProperties = {
@@ -1240,14 +1312,14 @@ const avatarStyle: React.CSSProperties = {
   objectFit: 'cover',
 };
 
-// ADDED: New styles for avatar upload functionality
+// ADDED: Enhanced styles for avatar upload functionality
 const avatarOverlayStyle: React.CSSProperties = {
   position: 'absolute',
   top: 0,
   left: 0,
   right: 0,
   bottom: 0,
-  backgroundColor: 'rgba(0, 0, 0, 0.3)',
+  backgroundColor: 'rgba(0, 0, 0, 0.5)',
   borderRadius: '50%',
   display: 'flex',
   alignItems: 'center',
@@ -1257,17 +1329,109 @@ const avatarOverlayStyle: React.CSSProperties = {
   cursor: 'pointer',
 };
 
+const avatarOverlayContentStyle: React.CSSProperties = {
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center',
+  gap: '8px',
+};
+
 const fileInputStyle: React.CSSProperties = {
   display: 'none',
 };
 
 const avatarUploadLabelStyle: React.CSSProperties = {
-  fontSize: '24px',
+  fontSize: '14px',
   color: 'white',
   cursor: 'pointer',
-  padding: '8px',
+  padding: '6px 12px',
+  borderRadius: '6px',
+  backgroundColor: 'rgba(0, 0, 0, 0.7)',
+  fontFamily: "'Cormorant', serif",
+  fontWeight: '500',
+};
+
+const removeAvatarButtonStyle: React.CSSProperties = {
+  background: 'rgba(220, 38, 38, 0.9)',
+  color: 'white',
+  border: 'none',
+  borderRadius: '6px',
+  padding: '6px 12px',
+  fontSize: '12px',
+  cursor: 'pointer',
+  fontFamily: "'Cormorant', serif",
+  fontWeight: '500',
+};
+
+// ADDED: New styles for empty avatar state
+const emptyAvatarStyle: React.CSSProperties = {
+  width: '100%',
+  height: '100%',
+  backgroundColor: '#F3F4F6',
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center',
+  justifyContent: 'center',
   borderRadius: '50%',
-  backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  border: '2px dashed #D1D5DB',
+};
+
+const emptyAvatarIconStyle: React.CSSProperties = {
+  fontSize: '32px',
+  marginBottom: '4px',
+  opacity: 0.5,
+};
+
+const emptyAvatarTextStyle: React.CSSProperties = {
+  fontSize: '12px',
+  color: '#6B7280',
+  fontFamily: "'Cormorant', serif",
+  fontWeight: '500',
+};
+
+// ADDED: Tooltip styles
+const avatarTooltipStyle: React.CSSProperties = {
+  position: 'absolute',
+  top: '-80px',
+  left: '50%',
+  transform: 'translateX(-50%)',
+  backgroundColor: '#1A1A1A',
+  color: 'white',
+  padding: '12px 16px',
+  borderRadius: '8px',
+  fontSize: '14px',
+  fontFamily: "'Cormorant', serif",
+  zIndex: 1000,
+  minWidth: '200px',
+  textAlign: 'center',
+};
+
+const tooltipArrowStyle: React.CSSProperties = {
+  position: 'absolute',
+  bottom: '-8px',
+  left: '50%',
+  transform: 'translateX(-50%)',
+  width: 0,
+  height: 0,
+  borderLeft: '8px solid transparent',
+  borderRight: '8px solid transparent',
+  borderTop: '8px solid #1A1A1A',
+};
+
+const tooltipTextStyle: React.CSSProperties = {
+  margin: 0,
+  marginBottom: '8px',
+};
+
+const tooltipCloseStyle: React.CSSProperties = {
+  background: 'none',
+  border: 'none',
+  color: 'white',
+  fontSize: '18px',
+  cursor: 'pointer',
+  position: 'absolute',
+  top: '4px',
+  right: '8px',
 };
 
 const nameContainerStyle: React.CSSProperties = {
