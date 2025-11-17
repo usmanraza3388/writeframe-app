@@ -352,24 +352,28 @@ const SceneCard: React.FC<SceneCardProps> = React.memo(({ scene, currentUserId, 
             genre: scene.user_genre_tag
           }}
           contentType="scene"
+          targetElementId={`card-scene-${scene.id}`} // ← ADDED: Pass the card element ID
         />
       )}
       
       {/* NEUTRAL: Scene Card Layout */}
-      <div style={{
-        width: 'calc(100% + 32px)',
-        minHeight: scene.image_path ? '420px' : '320px',
-        marginLeft: '-16px',
-        marginRight: '-16px',
-        backgroundColor: '#FAF8F2',
-        borderRadius: '12px',
-        padding: '20px',
-        boxSizing: 'border-box',
-        position: 'relative',
-        borderTop: '2px solid #E5E5E5',
-        background: '#FAF8F2',
-        boxShadow: '0 1px 3px rgba(0, 0, 0, 0.08)'
-      }}>
+      <div 
+        id={`card-scene-${scene.id}`} // ← ADDED: Unique ID for card capture
+        style={{
+          width: 'calc(100% + 32px)',
+          minHeight: scene.image_path ? '420px' : '320px',
+          marginLeft: '-16px',
+          marginRight: '-16px',
+          backgroundColor: '#FAF8F2',
+          borderRadius: '12px',
+          padding: '20px',
+          boxSizing: 'border-box',
+          position: 'relative',
+          borderTop: '2px solid #E5E5E5',
+          background: '#FAF8F2',
+          boxShadow: '0 1px 3px rgba(0, 0, 0, 0.08)'
+        }}
+      >
         {/* NEUTRAL: Scene indicator header */}
         <div style={{
           display: 'flex',

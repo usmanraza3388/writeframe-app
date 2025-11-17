@@ -415,11 +415,13 @@ const MonologueCard: React.FC<MonologueCardProps> = React.memo(({
             genre: monologue.user_genre_tag
           }}
           contentType="monologue"
+          targetElementId={`card-monologue-${monologue.id}`} // ← ADDED: Pass the card element ID
         />
       )}
 
       {/* MINIMAL: Monologue Card Layout */}
       <article 
+        id={`card-monologue-${monologue.id}`} // ← ADDED: Unique ID for card capture
         style={{
           width: 'calc(100% + 32px)',
           minHeight: '168px',

@@ -366,11 +366,13 @@ const FrameCard: React.FC<FrameCardProps> = React.memo(({
             genre: userData.userGenre // UPDATED: Use flat property
           }}
           contentType="frame"
+          targetElementId={`card-frame-${frame.id}`} // ← ADDED: Pass the card element ID
         />
       )}
 
       {/* MINIMAL: Visual Frame Card Layout */}
       <article 
+        id={`card-frame-${frame.id}`} // ← ADDED: Unique ID for card capture
         style={{
           width: 'calc(100% + 32px)',
           height: '380px',
