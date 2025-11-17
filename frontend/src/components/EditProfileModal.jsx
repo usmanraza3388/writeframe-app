@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../assets/lib/supabaseClient';
 
+// UPDATED: Add the new props to the function parameters
 export default function EditProfileModal({ initial, onClose, onSave, open, onProfilePictureChange, hasProfilePicture }) {
   const [form, setForm] = useState({
     full_name: initial.full_name || '',
@@ -175,6 +176,7 @@ export default function EditProfileModal({ initial, onClose, onSave, open, onPro
     cursor: 'not-allowed'
   };
 
+  // ADDED: Profile picture button style
   const profilePictureButtonStyle = {
     width: '100%',
     padding: '12px 16px',
@@ -286,4 +288,4 @@ export default function EditProfileModal({ initial, onClose, onSave, open, onPro
       </div>
     </div>
   );
-}s
+}
