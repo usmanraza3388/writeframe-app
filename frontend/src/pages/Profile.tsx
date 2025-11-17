@@ -724,28 +724,54 @@ export default function Profile() {
       <div style={containerStyle}>
         {/* Header Section */}
         <div style={headerStyle}>
+          {/* UPDATED: Avatar container with visual indicators for profile picture upload */}
           <div style={avatarContainerStyle} className="avatar-container">
             <img 
               src={displayAvatarUrl} 
               alt={profile.username} 
               style={avatarStyle}
             />
-            {/* ADDED: Image upload overlay for own profile */}
             {isOwnProfile && (
-              <div style={avatarOverlayStyle} className="avatar-overlay">
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageSelect} // UPDATED: Use new handler
-                  style={fileInputStyle}
-                  id="avatar-upload"
-                />
-                <label htmlFor="avatar-upload" style={avatarUploadLabelStyle}>
-                  📷
-                </label>
-              </div>
+              <>
+                <div style={avatarOverlayStyle}>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageSelect}
+                    style={fileInputStyle}
+                    id="avatar-upload"
+                  />
+                  <label htmlFor="avatar-upload" style={avatarUploadLabelStyle}>
+                    📷
+                  </label>
+                </div>
+                {/* ADDED: Subtle border indicator */}
+                <div style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  border: '2px dashed rgba(255,255,255,0.5)',
+                  borderRadius: '50%',
+                  pointerEvents: 'none'
+                }}></div>
+              </>
             )}
           </div>
+          
+          {/* ADDED: Instructional text for profile picture upload */}
+          {isOwnProfile && (
+            <div style={{
+              fontSize: '12px',
+              color: '#6B7280',
+              fontFamily: "'Cormorant', serif",
+              fontStyle: 'italic',
+              marginTop: '4px'
+            }}>
+              Click to change photo
+            </div>
+          )}
           
           <div style={nameContainerStyle}>
             <h1 style={nameStyle}>{profile.full_name || 'Anonymous'}</h1>
@@ -1231,7 +1257,8 @@ const avatarContainerStyle: React.CSSProperties = {
   overflow: 'hidden',
   border: '3px solid #FFFFFF',
   boxShadow: '0 8px 32px rgba(0, 0, 0, 0.12)',
-  position: 'relative', // ADDED: For overlay positioning
+  position: 'relative',
+  cursor: 'pointer', // ADDED: Make it clear it's clickable
 };
 
 const avatarStyle: React.CSSProperties = {
@@ -1240,7 +1267,7 @@ const avatarStyle: React.CSSProperties = {
   objectFit: 'cover',
 };
 
-// ADDED: New styles for avatar upload functionality
+// UPDATED: Avatar overlay style - always visible for own profile
 const avatarOverlayStyle: React.CSSProperties = {
   position: 'absolute',
   top: 0,
@@ -1252,7 +1279,7 @@ const avatarOverlayStyle: React.CSSProperties = {
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
-  opacity: 0,
+  opacity: 0.7, // UPDATED: Always visible for own profile
   transition: 'opacity 0.2s ease',
   cursor: 'pointer',
 };
