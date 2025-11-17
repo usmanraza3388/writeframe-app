@@ -11,22 +11,19 @@ import { useProfileData } from '../hooks/useProfileData';
 // @ts-ignore
 import EditProfileModal from '../components/EditProfileModal';
 // @ts-ignore
-import CropModal from '../components/CropModal'; // ADDED: Import CropModal
+import CropModal from '../components/CropModal';
 // @ts-ignore
 import { supabase } from '../assets/lib/supabaseClient';
 // @ts-ignore
 import useNotifications from '../hooks/useNotifications';
 // @ts-ignore
 import NotificationBell from '../components/NotificationBell/NotificationBell';
-// ADDED: Import BottomNav and useAuth
 // @ts-ignore
 import BottomNav from '../components/Navigation/BottomNav';
 // @ts-ignore
 import { useAuth } from '../contexts/AuthContext';
-// ADDED: Import enhanced GridItem
 // @ts-ignore
 import GridItem from '../components/GridItem';
-// ADDED: Import Follow Modals
 // @ts-ignore
 import FollowersModal from '../components/Follow/FollowersModal';
 // @ts-ignore
@@ -205,9 +202,9 @@ const PersonalSiteIcon: React.FC<{ size?: number }> = ({ size = 24 }) => (
   </svg>
 );
 
-// ADDED: Helper function to get avatar URL with local storage fallback
+// UPDATED: Helper function to get avatar URL with local storage fallback
 const getAvatarUrl = (profile: any, currentUser: any) => {
-  if (!profile) return '/placeholder-avatar.png';
+  if (!profile) return null;
   
   // First check local storage for current user's own profile
   if (currentUser && currentUser.id === profile.id) {
@@ -218,7 +215,28 @@ const getAvatarUrl = (profile: any, currentUser: any) => {
   }
   
   // Fall back to avatar_url from database
-  return profile.avatar_url || '/placeholder-avatar.png';
+  return profile.avatar_url || null;
+};
+
+// ADDED: Get user initials for placeholder avatar
+const getUserInitials = (user: any) => {
+  if (!user) return 'U';
+  const name = user.full_name || user.username || 'User';
+  return name
+    .split(' ')
+    .map((word: string) => word[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2);
+};
+
+// ADDED: Get consistent avatar color based on user ID
+const getAvatarColor = (userId: string) => {
+  const colors = [
+    '#4F46E5', '#DC2626', '#059669', '#D97706', '#7C3AED', '#DB2777', '#0D9488'
+  ];
+  const index = userId ? userId.charCodeAt(0) % colors.length : 0;
+  return colors[index];
 };
 
 export default function Profile() {
@@ -226,22 +244,21 @@ export default function Profile() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('scenes');
   const [showEditModal, setShowEditModal] = useState(false);
-  const [showCropModal, setShowCropModal] = useState(false); // ADDED: Crop modal state
-  const [selectedImage, setSelectedImage] = useState<string | null>(null); // FIXED: Type for image URL
+  const [showCropModal, setShowCropModal] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [currentUser, setCurrentUser] = useState<any>(null);
-  // ADDED: Pagination state
   const [visibleItems, setVisibleItems] = useState(8);
   const ITEMS_PER_PAGE = 8;
-  // ADDED: Modal state
   const [showFollowersModal, setShowFollowersModal] = useState(false);
   const [showFollowingModal, setShowFollowingModal] = useState(false);
   
-  // UPDATED: Added refresh to destructuring
+  // ADDED: New state for profile picture actions
+  const [showProfileActions, setShowProfileActions] = useState(false);
+  
   const { profile, stats, tabContent, isLoading, error, refresh } = useProfileData(id || '');
   const followMutation = useFollowUser(id);
   const { data: echoStatus, isLoading: echoStatusLoading } = useEchoStatus(id || '');
   const { notifyEcho } = useNotifications();
-  // ADDED: Use auth context for signOut
   const { signOut } = useAuth();
 
   // ADDED: Skeleton styles effect
@@ -268,8 +285,9 @@ export default function Profile() {
     setVisibleItems(ITEMS_PER_PAGE);
   }, [activeTab]);
 
-  // ADDED: Get the actual avatar URL to display
+  // UPDATED: Get the actual avatar URL to display
   const displayAvatarUrl = getAvatarUrl(profile, currentUser);
+  const avatarColor = getAvatarColor(profile?.id || '');
 
   // ADDED: Click handler for grid cards
   const handleCardClick = (item: any, type: 'scenes' | 'characters' | 'monologues' | 'frames') => {
@@ -285,7 +303,6 @@ export default function Profile() {
   useEffect(() => {
     if (availableTabs.length > 0 && !availableTabs.includes(activeTab)) {
       setActiveTab(availableTabs[0]);
-      // ADDED: Reset pagination when tab changes
       setVisibleItems(ITEMS_PER_PAGE);
     }
   }, [availableTabs, activeTab]);
@@ -298,10 +315,8 @@ export default function Profile() {
     profile.settings.social_links.personal_site
   );
 
-  // Check if stats should be visible based on public_stats setting
-  
   const isOwnProfile = currentUser?.id === id;
- const shouldShowStats = isOwnProfile || profile?.settings?.public_stats !== false;
+  const shouldShowStats = isOwnProfile || profile?.settings?.public_stats !== false;
 
   // ADDED: Show skeleton loading while data is loading
   if (isLoading) {
@@ -323,6 +338,107 @@ export default function Profile() {
       </div>
     );
   }
+
+  // ADDED: Remove Profile Picture Function
+  const handleRemoveProfilePicture = async () => {
+    try {
+      if (!currentUser) return;
+
+      // Remove from local storage
+      localStorage.removeItem(`user_avatar_${currentUser.id}`);
+
+      // Update profile with empty avatar_url
+      await handleSaveProfile({
+        ...profile,
+        avatar_url: ''
+      });
+
+      setShowProfileActions(false);
+      alert('Profile picture removed successfully');
+
+    } catch (error) {
+      alert('Failed to remove profile picture. Please try again.');
+    }
+  };
+
+  // ADDED: Handle Profile Picture Click - Shows Action Sheet
+  const handleProfilePictureClick = () => {
+    if (isOwnProfile) {
+      setShowProfileActions(true);
+    }
+  };
+
+  // ADDED: Profile Actions Sheet Component
+  const ProfileActionsSheet: React.FC = () => {
+    if (!showProfileActions) return null;
+
+    return (
+      <div style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        zIndex: 1000,
+        display: 'flex',
+        alignItems: 'flex-end'
+      }}>
+        <div style={{
+          background: 'white',
+          width: '100%',
+          borderTopLeftRadius: '12px',
+          borderTopRightRadius: '12px',
+          padding: '8px 0'
+        }}>
+          {/* Upload New Photo */}
+          <button
+            onClick={() => {
+              setShowProfileActions(false);
+              setTimeout(() => document.getElementById('avatar-upload')?.click(), 100);
+            }}
+            style={actionButtonStyle}
+          >
+            📷 Upload New Photo
+          </button>
+          
+          {/* Remove Current Photo - Only show if user has a profile picture */}
+          {displayAvatarUrl && (
+            <button
+              onClick={handleRemoveProfilePicture}
+              style={{ ...actionButtonStyle, color: '#DC2626' }}
+            >
+              🗑️ Remove Current Photo
+            </button>
+          )}
+          
+          {/* Cancel */}
+          <button
+            onClick={() => setShowProfileActions(false)}
+            style={{ 
+              ...actionButtonStyle, 
+              borderTop: '1px solid #E5E5E5',
+              marginTop: '8px'
+            }}
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    );
+  };
+
+  const actionButtonStyle: React.CSSProperties = {
+    width: '100%',
+    padding: '16px 20px',
+    background: 'transparent',
+    border: 'none',
+    fontSize: '16px',
+    textAlign: 'center',
+    cursor: 'pointer',
+    fontFamily: "'Cormorant', serif",
+    fontWeight: '500'
+  };
 
   // Navigation Menu Component - Moved inside main component to fix scope issues
   const NavigationMenu: React.FC = () => {
@@ -364,7 +480,6 @@ export default function Profile() {
       try {
         setIsLoggingOut(true);
         await signOut();
-        // User will be redirected automatically via auth state change
         closeMenu();
       } catch (error) {
         alert('Error signing out. Please try again.');
@@ -398,7 +513,6 @@ export default function Profile() {
             e.currentTarget.style.backgroundColor = 'transparent';
           }}
         >
-          {/* Three parallel lines - Instagram style */}
           <div style={{ width: '18px', height: '2px', backgroundColor: '#1A1A1A' }}></div>
           <div style={{ width: '18px', height: '2px', backgroundColor: '#1A1A1A' }}></div>
           <div style={{ width: '18px', height: '2px', backgroundColor: '#1A1A1A' }}></div>
@@ -448,7 +562,6 @@ export default function Profile() {
               </button>
             ))}
             
-            {/* ADDED: Log Out button with divider */}
             <div style={{
               height: '1px',
               backgroundColor: 'rgba(0,0,0,0.08)',
@@ -512,12 +625,11 @@ export default function Profile() {
     }
     try {
       await followMutation.mutateAsync();
-      refresh(); // ADDED: Force refresh profile data to update counts
+      refresh();
       
-      // UPDATED: Only send notification if user started echoing (was not echoing before)
       if (profile && currentUser && !echoStatus?.isEchoing) {
         notifyEcho(
-          profile.id, // The user being echoed (profile owner)
+          profile.id,
           currentUser.id
         );
       }
@@ -525,17 +637,14 @@ export default function Profile() {
     }
   };
 
-  // UPDATED: Enhanced handleWhisper function
   const handleWhisper = () => {
     if (!currentUser) {
       navigate('/signin');
       return;
     }
-    // NAVIGATE to whisper composer with recipient ID
     navigate(`/whisper/${profile.id}`);
   };
 
-  // UPDATED: Complete handleSaveProfile function with Supabase integration and local storage support
   const handleSaveProfile = async (updatedData: any) => {
     try {
       if (!currentUser) {
@@ -543,14 +652,13 @@ export default function Profile() {
         return;
       }
 
-      // ACTUAL SUPABASE UPDATE
       const { error } = await supabase
         .from('profiles')
         .update({
           full_name: updatedData.full_name,
-          username: updatedData.username, // 👈 ADDED: Save username
+          username: updatedData.username,
           bio: updatedData.bio,
-          avatar_url: updatedData.avatar_url, // Keep for database sync
+          avatar_url: updatedData.avatar_url,
           genre_persona: updatedData.genre_persona,
           expression: updatedData.expression,
           updated_at: new Date().toISOString()
@@ -560,32 +668,28 @@ export default function Profile() {
       if (error) throw error;
 
       setShowEditModal(false);
-      refresh(); // AUTO-REFRESH UI
+      refresh();
       
     } catch (err) {
       alert('Failed to update profile. Please try again.');
     }
   };
 
-  // ADDED: Function to handle image selection and open crop modal
   const handleImageSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file || !currentUser) return;
 
     try {
-      // Validate file type
       if (!file.type.startsWith('image/')) {
         alert('Please select a valid image file');
         return;
       }
 
-      // Validate file size (max 5MB)
       if (file.size > 5 * 1024 * 1024) {
         alert('Image size should be less than 5MB');
         return;
       }
 
-      // Create URL for the selected image and open crop modal
       const imageUrl = URL.createObjectURL(file);
       setSelectedImage(imageUrl);
       setShowCropModal(true);
@@ -595,25 +699,20 @@ export default function Profile() {
     }
   };
 
-  // ADDED: Function to handle cropped image save
   const handleCroppedImageSave = async (croppedImageDataUrl: string) => {
     try {
       if (!currentUser) return;
 
-      // Store in local storage
       localStorage.setItem(`user_avatar_${currentUser.id}`, croppedImageDataUrl);
 
-      // Update the profile with the new image (save to database too)
       await handleSaveProfile({
         ...profile,
         avatar_url: croppedImageDataUrl
       });
 
-      // Close crop modal and cleanup
       setShowCropModal(false);
       setSelectedImage(null);
       
-      // Revoke the object URL to free memory
       if (selectedImage) {
         URL.revokeObjectURL(selectedImage);
       }
@@ -623,12 +722,10 @@ export default function Profile() {
     }
   };
 
-  // ADDED: Function to handle crop modal close
   const handleCropModalClose = () => {
     setShowCropModal(false);
     setSelectedImage(null);
     
-    // Revoke the object URL to free memory
     if (selectedImage) {
       URL.revokeObjectURL(selectedImage);
     }
@@ -644,7 +741,6 @@ export default function Profile() {
     return abbreviations[tab as keyof typeof abbreviations] || tab.charAt(0).toUpperCase() + tab.slice(1);
   };
 
-  // ADDED: Helper function for empty state icons
   const getEmptyStateIcon = () => {
     const icons = {
       scenes: '🎬',
@@ -655,15 +751,11 @@ export default function Profile() {
     return icons[activeTab as keyof typeof icons] || '📝';
   };
 
-  // FIXED: Use the isolated _id from useProfileData to prevent duplicate keys
   const generateUniqueKey = (item: any) => {
-    // Use the guaranteed unique _id from useProfileData
     return item._id || `${item._contentType}-${item.id}-${Math.random().toString(36).substr(2, 9)}`;
   };
 
-  // UPDATED: Enhanced renderGridContent function with proper data isolation
   const renderGridContent = () => {
-    // Create a fresh copy of the current tab's content to prevent mutation
     const content = [...(tabContent[activeTab as keyof typeof tabContent] || [])];
     const displayedContent = content.slice(0, visibleItems);
     const hasMoreItems = visibleItems < content.length;
@@ -689,15 +781,14 @@ export default function Profile() {
         <div style={gridStyle}>
           {displayedContent.map((item: any) => (
             <GridItem 
-              key={generateUniqueKey(item)} // FIXED: Use new key generation without activeTab parameter
+              key={generateUniqueKey(item)}
               item={item} 
               type={activeTab}
-              onCardClick={handleCardClick} // ADDED: Pass click handler
+              onCardClick={handleCardClick}
             />
           ))}
         </div>
         
-        {/* Load More Button */}
         {hasMoreItems && (
           <div style={{ display: 'flex', justifyContent: 'center', marginTop: '16px' }}>
             <button
@@ -709,7 +800,6 @@ export default function Profile() {
           </div>
         )}
         
-        {/* Show total count when all items loaded */}
         {!hasMoreItems && content.length > 0 && (
           <div style={allItemsLoadedStyle}>
             Showing all {content.length} {activeTab}
@@ -724,13 +814,39 @@ export default function Profile() {
       <div style={containerStyle}>
         {/* Header Section */}
         <div style={headerStyle}>
-          {/* UPDATED: Avatar container with visual indicators for profile picture upload */}
-          <div style={avatarContainerStyle} className="avatar-container">
-            <img 
-              src={displayAvatarUrl} 
-              alt={profile.username} 
-              style={avatarStyle}
-            />
+          {/* UPDATED: Avatar container with comprehensive profile picture management */}
+          <div 
+            style={{ 
+              ...avatarContainerStyle, 
+              cursor: isOwnProfile ? 'pointer' : 'default'
+            }} 
+            onClick={handleProfilePictureClick}
+          >
+            {/* Profile Image or Initials Placeholder */}
+            {displayAvatarUrl ? (
+              <img 
+                src={displayAvatarUrl} 
+                alt={profile.username} 
+                style={avatarStyle}
+              />
+            ) : (
+              <div style={{
+                width: '100%',
+                height: '100%',
+                backgroundColor: avatarColor,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: 'white',
+                fontSize: '32px',
+                fontWeight: 'bold',
+                fontFamily: "'Cormorant', serif"
+              }}>
+                {getUserInitials(profile)}
+              </div>
+            )}
+            
+            {/* Upload Overlay - Only show for own profile */}
             {isOwnProfile && (
               <>
                 <div style={avatarOverlayStyle}>
@@ -745,31 +861,39 @@ export default function Profile() {
                     📷
                   </label>
                 </div>
-                {/* ADDED: Subtle border indicator */}
+                
+                {/* Edit Pencil Indicator */}
                 <div style={{
                   position: 'absolute',
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  bottom: 0,
-                  border: '2px dashed rgba(255,255,255,0.5)',
+                  bottom: '4px',
+                  right: '4px',
+                  width: '24px',
+                  height: '24px',
+                  backgroundColor: '#1A1A1A',
                   borderRadius: '50%',
-                  pointerEvents: 'none'
-                }}></div>
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: 'white',
+                  fontSize: '12px'
+                }}>
+                  ✎
+                </div>
               </>
             )}
           </div>
           
-          {/* ADDED: Instructional text for profile picture upload */}
+          {/* UPDATED: Dynamic instructional text */}
           {isOwnProfile && (
             <div style={{
               fontSize: '12px',
               color: '#6B7280',
               fontFamily: "'Cormorant', serif",
               fontStyle: 'italic',
-              marginTop: '4px'
+              marginTop: '8px',
+              textAlign: 'center'
             }}>
-              Click to change photo
+              {displayAvatarUrl ? 'Tap to change or remove photo' : 'Tap to add profile photo'}
             </div>
           )}
           
@@ -782,7 +906,6 @@ export default function Profile() {
             {profile.genre_persona || 'No genre set'}
           </div>
 
-          {/* FIXED: Only show NotificationBell and NavigationMenu for own profile */}
           {isOwnProfile && (
             <div style={menuContainerStyle}>
               <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
@@ -796,7 +919,6 @@ export default function Profile() {
             <p style={bioStyle}>{profile.bio || 'No bio yet'}</p>
           </div>
 
-          {/* UPDATED: Links Section - Now includes Personal Site */}
           {hasLinks && (
             <div style={socialLinksContainerStyle}>
               {profile.settings.social_links.facebook && (
@@ -832,7 +954,6 @@ export default function Profile() {
                   <PinterestIcon />
                 </a>
               )}
-              {/* ADDED: Personal Site Link */}
               {profile.settings.social_links.personal_site && (
                 <a 
                   href={`https://${profile.settings.social_links.personal_site}`}
@@ -857,10 +978,9 @@ export default function Profile() {
           )}
         </div>
 
-        {/* Stats Section - Conditionally Rendered - UPDATED: Completely separate designs */}
+        {/* Stats Section */}
         {shouldShowStats ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            {/* Row 1: Minimal Social Buttons - Followers & Following */}
             <div style={socialButtonsContainerStyle}>
               <button 
                 style={socialButtonStyle}
@@ -901,9 +1021,7 @@ export default function Profile() {
               </button>
             </div>
 
-            {/* Row 2: Content Stats - All Content Types */}
             <div style={statsContainerStyle}>
-              {/* Scenes & Remakes Container */}
               <div style={combinedStatItemStyle}>
                 <div style={combinedStatValueStyle}>
                   <span style={mainStatValueStyle}>{stats.scenes || 0}</span>
@@ -916,21 +1034,18 @@ export default function Profile() {
               </div>
               <div style={statDividerStyle}></div>
 
-              {/* Characters */}
               <div style={statItemStyle}>
                 <div style={statValueStyle}>{stats.characters || 0}</div>
                 <div style={statLabelStyle}>Chars</div>
               </div>
               <div style={statDividerStyle}></div>
 
-              {/* Monologues */}
               <div style={statItemStyle}>
                 <div style={statValueStyle}>{stats.monologues || 0}</div>
                 <div style={statLabelStyle}>Monos</div>
               </div>
               <div style={statDividerStyle}></div>
 
-              {/* Frames */}
               <div style={statItemStyle}>
                 <div style={statValueStyle}>{stats.frames || 0}</div>
                 <div style={statLabelStyle}>Frames</div>
@@ -949,7 +1064,6 @@ export default function Profile() {
           </div>
         )}
 
-        {/* UPDATED: Action Buttons - Only show for other users' profiles */}
         {!isOwnProfile && (
           <div style={actionsContainerStyle}>
             <button 
@@ -978,12 +1092,10 @@ export default function Profile() {
           </div>
         )}
 
-        {/* Divider */}
         <div style={dividerStyle}>
           <div style={dividerInnerStyle}></div>
         </div>
 
-        {/* Tabs - Filtered by Creative Focus */}
         {availableTabs.length > 0 ? (
           <div style={tabsContainerStyle}>
             {availableTabs.map((tab) => (
@@ -1010,10 +1122,11 @@ export default function Profile() {
           </div>
         )}
 
-        {/* Content Grid - UPDATED: Uses enhanced GridItem with pagination */}
         {availableTabs.length > 0 && renderGridContent()}
 
-        {/* ADDED: Follow Modals */}
+        {/* ADDED: Profile Actions Sheet */}
+        <ProfileActionsSheet />
+
         <FollowersModal
           open={showFollowersModal}
           onClose={() => setShowFollowersModal(false)}
@@ -1026,7 +1139,6 @@ export default function Profile() {
           profileId={id || ''}
         />
 
-        {/* ADDED: Crop Modal */}
         <CropModal
           open={showCropModal}
           imageSrc={selectedImage}
@@ -1034,21 +1146,26 @@ export default function Profile() {
           onClose={handleCropModalClose}
         />
 
+        {/* UPDATED: EditProfileModal with profile picture options */}
         <EditProfileModal
           open={showEditModal}
           onClose={() => setShowEditModal(false)}
           onSave={handleSaveProfile}
           initial={profile}
+          onProfilePictureChange={() => {
+            setShowEditModal(false);
+            setTimeout(() => setShowProfileActions(true), 100);
+          }}
+          hasProfilePicture={!!displayAvatarUrl}
         />
       </div>
 
-      {/* ADDED: Bottom Navigation */}
       <BottomNav />
     </div>
   );
 }
 
-// STYLES - ALL REMAIN EXACTLY THE SAME (keep all your existing styles)
+// ALL STYLES REMAIN EXACTLY THE SAME AS BEFORE
 const pageContainerStyle: React.CSSProperties = {
   minHeight: '100vh',
   display: 'flex',
@@ -1056,7 +1173,7 @@ const pageContainerStyle: React.CSSProperties = {
   justifyContent: 'center',
   background: 'linear-gradient(135deg, #FFFFFF 0%, #FAF8F5 100%)',
   padding: '20px 0',
-  paddingBottom: '100px', // ADDED: Space for bottom navigation
+  paddingBottom: '100px',
 };
 
 const containerStyle: React.CSSProperties = {
@@ -1083,14 +1200,12 @@ const headerStyle: React.CSSProperties = {
   position: 'relative',
 };
 
-// Add this new style for the menu container
 const menuContainerStyle: React.CSSProperties = {
   position: 'absolute',
   top: '0',
   right: '0'
 };
 
-// NEW: Minimal Social Buttons Styles (completely different from stats)
 const socialButtonsContainerStyle: React.CSSProperties = {
   display: 'flex',
   alignItems: 'center',
@@ -1152,7 +1267,6 @@ const socialButtonDividerStyle: React.CSSProperties = {
   flexShrink: 0,
 };
 
-// NEW: Combined stat styles for Scenes/Remakes
 const combinedStatItemStyle: React.CSSProperties = {
   textAlign: 'center',
   flex: 1,
@@ -1196,7 +1310,6 @@ const secondaryStatLabelStyle: React.CSSProperties = {
   marginLeft: '4px',
 };
 
-// NEW: Private Stats Styles
 const privateStatsContainerStyle: React.CSSProperties = {
   display: 'flex',
   flexDirection: 'column',
@@ -1229,7 +1342,6 @@ const privateStatsSubtextStyle: React.CSSProperties = {
   lineHeight: 1.4,
 };
 
-// Social Links Styles
 const socialLinksContainerStyle: React.CSSProperties = {
   display: 'flex',
   gap: 16,
@@ -1258,7 +1370,6 @@ const avatarContainerStyle: React.CSSProperties = {
   border: '3px solid #FFFFFF',
   boxShadow: '0 8px 32px rgba(0, 0, 0, 0.12)',
   position: 'relative',
-  cursor: 'pointer', // ADDED: Make it clear it's clickable
 };
 
 const avatarStyle: React.CSSProperties = {
@@ -1267,7 +1378,6 @@ const avatarStyle: React.CSSProperties = {
   objectFit: 'cover',
 };
 
-// UPDATED: Avatar overlay style - always visible for own profile
 const avatarOverlayStyle: React.CSSProperties = {
   position: 'absolute',
   top: 0,
@@ -1279,7 +1389,7 @@ const avatarOverlayStyle: React.CSSProperties = {
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
-  opacity: 0.7, // UPDATED: Always visible for own profile
+  opacity: 0.7,
   transition: 'opacity 0.2s ease',
   cursor: 'pointer',
 };
@@ -1506,7 +1616,6 @@ const activeTabButtonStyle: React.CSSProperties = {
   boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
 };
 
-// UPDATED: Grid styles for enhanced GridItem
 const gridStyle: React.CSSProperties = {
   display: 'grid',
   gridTemplateColumns: 'repeat(2, 1fr)',
@@ -1514,7 +1623,6 @@ const gridStyle: React.CSSProperties = {
   width: '100%',
 };
 
-// NEW: Styles for pagination and enhanced empty states
 const emptyStateIconStyle: React.CSSProperties = {
   fontSize: '48px',
   marginBottom: '16px',
