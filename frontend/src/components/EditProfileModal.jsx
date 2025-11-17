@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../assets/lib/supabaseClient';
 
-// UPDATED: Add the new props to the function parameters
-export default function EditProfileModal({ initial, onClose, onSave, open, onProfilePictureChange, hasProfilePicture }) {
+export default function EditProfileModal({ initial, onClose, onSave, open }) {
   const [form, setForm] = useState({
     full_name: initial.full_name || '',
     bio: initial.bio || '',
@@ -176,22 +175,6 @@ export default function EditProfileModal({ initial, onClose, onSave, open, onPro
     cursor: 'not-allowed'
   };
 
-  // ADDED: Profile picture button style
-  const profilePictureButtonStyle = {
-    width: '100%',
-    padding: '12px 16px',
-    background: 'transparent',
-    border: '1px solid rgba(0,0,0,0.15)',
-    borderRadius: '8px',
-    color: '#1A1A1A',
-    fontSize: '14px',
-    fontFamily: "'Cormorant', serif",
-    fontWeight: '500',
-    cursor: 'pointer',
-    marginBottom: '16px',
-    transition: 'all 0.2s ease'
-  };
-
   const isSaveDisabled = usernameError !== null || isCheckingUsername || form.username.length < 3;
 
   return (
@@ -206,22 +189,6 @@ export default function EditProfileModal({ initial, onClose, onSave, open, onPro
         }}>
           Edit Profile
         </h3>
-        
-        {/* ADDED: Profile Picture Button */}
-        <button
-          onClick={onProfilePictureChange}
-          style={profilePictureButtonStyle}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor = '#FAF8F2';
-            e.currentTarget.style.borderColor = 'rgba(0,0,0,0.3)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.backgroundColor = 'transparent';
-            e.currentTarget.style.borderColor = 'rgba(0,0,0,0.15)';
-          }}
-        >
-          {hasProfilePicture ? '📷 Change Profile Picture' : '📷 Add Profile Picture'}
-        </button>
         
         <div style={{ marginBottom: '16px' }}>
           <input 
