@@ -384,6 +384,7 @@ const CharacterCard: React.FC<CharacterCardProps> = React.memo(({
             genre: character.user_genre_tag
           }}
           contentType="character"
+          targetElementId={`card-character-${character.id}`} // ← ADDED: Pass the card element ID
         />
       )}
 

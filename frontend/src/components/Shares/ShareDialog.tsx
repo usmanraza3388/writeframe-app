@@ -17,6 +17,7 @@ interface ShareDialogProps {
     genre?: string;
   };
   contentType: 'scene' | 'monologue' | 'character' | 'frame';
+  targetElementId: string; // ← ADDED: Target element ID for card capture
 }
 
 const ShareDialog: React.FC<ShareDialogProps> = ({
@@ -26,7 +27,8 @@ const ShareDialog: React.FC<ShareDialogProps> = ({
   shareUrl,
   content,
   creator,
-  contentType
+  contentType,
+  targetElementId // ← ADDED: Target element ID for card capture
 }) => {
   const [isDownloading, setIsDownloading] = useState(false);
 
@@ -73,7 +75,7 @@ const ShareDialog: React.FC<ShareDialogProps> = ({
     return templates[contentType];
   };
 
-  // UPDATED: Real download functionality
+  // UPDATED: Real download functionality with actual element ID
   const handleDownload = async () => {
     setIsDownloading(true);
     
@@ -87,9 +89,8 @@ const ShareDialog: React.FC<ShareDialogProps> = ({
         .replace(/[^a-zA-Z0-9]/g, '-')
         .replace(/-+/g, '-');
       
-      // For now, we'll use a placeholder element ID
-      // In STEP 4, we'll pass the actual card element ID
-      const elementId = `card-${contentType}-placeholder`;
+      // Use the actual card element ID passed from the card component
+      const elementId = targetElementId;
       
       const success = await captureCardAsImage({
         elementId,
