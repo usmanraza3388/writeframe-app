@@ -18,24 +18,53 @@ const LandingPage: React.FC = () => {
         height: '812px',
         background: 'var(--background-primary)', // #FFFFFF
         borderRadius: '18px',
-        padding: '80px 32px', // Increased top/bottom padding
+        padding: '80px 32px',
         boxSizing: 'border-box',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        justifyContent: 'center', // Center content vertically
+        justifyContent: 'center',
         textAlign: 'center',
         boxShadow: '0 4px 24px rgba(0, 0, 0, 0.08)',
         border: '1px solid var(--border-transparent)',
-        gap: '32px' // Slightly increased gap
+        gap: '32px'
       }}>
-        {/* Logo with more space */}
-        <div style={{ marginBottom: '20px' }}>
+        {/* Logo and Title Section */}
+        <div style={{ 
+          marginBottom: '20px',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: '16px'
+        }}>
+          {/* Logo Image */}
+          <div style={{
+            width: '64px',
+            height: '64px',
+            borderRadius: '12px',
+            backgroundColor: '#1A1A1A',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            overflow: 'hidden'
+          }}>
+            <img 
+              src="/favicon.ico" 
+              alt="writeFrame Logo"
+              style={{
+                width: '40px',
+                height: '40px',
+                objectFit: 'contain'
+              }}
+            />
+          </div>
+          
+          {/* Title */}
           <h1 style={{
             fontFamily: "'Playfair Display', serif",
             fontSize: '32px',
             fontWeight: 700,
-            color: 'var(--text-primary)', // #000000
+            color: 'var(--text-primary)',
             margin: 0,
             letterSpacing: '-0.02em'
           }}>
@@ -46,31 +75,31 @@ const LandingPage: React.FC = () => {
         {/* Motto Line with better spacing */}
         <div style={{ 
           maxWidth: '280px',
-          marginBottom: '40px' // Added space below motto
+          marginBottom: '40px'
         }}>
           <p style={{
             fontFamily: "'Cormorant', serif",
             fontSize: '20px',
-            color: 'var(--text-secondary)', // #55524F
+            color: 'var(--text-secondary)',
             margin: 0,
             lineHeight: 1.4,
             textAlign: 'center'
           }}>
-            Write scenes. Craft characters. Create your cinematic world.
+            Write Scenes and Monologues. Craft characters and Cinematic Frames. Create your cinematic world.
           </p>
         </div>
 
         {/* CTA Button with consistent spacing */}
         <div style={{ 
           width: '100%',
-          marginBottom: '16px' // Space above secondary link
+          marginBottom: '16px'
         }}>
           <Link 
             to="/signup"
             style={{
               width: '100%',
-              padding: '16px 20px', // Slightly increased padding
-              background: 'var(--text-dark)', // #1A1A1A
+              padding: '16px 20px',
+              background: 'var(--text-dark)',
               color: '#FFFFFF',
               border: 'none',
               borderRadius: '12px',
@@ -99,12 +128,12 @@ const LandingPage: React.FC = () => {
         <Link 
           to="/signin"
           style={{
-            color: 'var(--text-gray)', // #6B7280
+            color: 'var(--text-gray)',
             fontFamily: "'Cormorant', serif",
             fontSize: '14px',
             textDecoration: 'underline',
             transition: 'color 0.2s ease',
-            marginTop: '8px' // Extra space from button
+            marginTop: '8px'
           }}
           onMouseEnter={(e) => {
             e.currentTarget.style.color = 'var(--text-secondary)';
