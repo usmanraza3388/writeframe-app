@@ -265,6 +265,7 @@ const RepostedMonologueCard: React.FC<RepostedMonologueCardProps> = React.memo((
             genre: originalMonologue.user_genre_tag
           }}
           contentType="monologue"
+          targetElementId={`card-monologue-${originalMonologue.id}`} // ← ADDED: Target the embedded monologue card
         />
       )}
 
@@ -408,7 +409,10 @@ const RepostedMonologueCard: React.FC<RepostedMonologueCardProps> = React.memo((
           overflow: 'hidden'
         }}
       >
-        <div style={{ pointerEvents: 'none' }}>
+        <div 
+          id={`card-monologue-${originalMonologue.id}`} // ← ADDED: ID for embedded card download
+          style={{ pointerEvents: 'none' }}
+        >
           <MonologueCard 
             monologue={originalMonologue}
             currentUserId={currentUserId}

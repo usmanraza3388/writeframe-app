@@ -248,6 +248,7 @@ const RepostedFrameCard: React.FC<RepostedFrameCardProps> = React.memo(({
             genre: originalFrame.user?.genre_persona
           }}
           contentType="frame"
+          targetElementId={`card-frame-${originalFrame.id}`} // ← ADDED: Target the embedded frame card
         />
       )}
 
@@ -392,7 +393,10 @@ const RepostedFrameCard: React.FC<RepostedFrameCardProps> = React.memo(({
           overflow: 'hidden'
         }}
       >
-        <div style={{ pointerEvents: 'none' }}>
+        <div 
+          id={`card-frame-${originalFrame.id}`} // ← ADDED: ID for embedded card download
+          style={{ pointerEvents: 'none' }}
+        >
           <FrameCard 
             frame={originalFrame}
             currentUserId={currentUserId}
