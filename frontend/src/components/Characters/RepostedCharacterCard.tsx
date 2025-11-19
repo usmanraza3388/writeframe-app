@@ -305,6 +305,7 @@ const RepostedCharacterCard: React.FC<RepostedCharacterCardProps> = React.memo((
             genre: originalCharacter.user_genre_tag
           }}
           contentType="character"
+          targetElementId={`card-character-${originalCharacter.id}`} // ← ADDED: Target the embedded character card
         />
       )}
 
@@ -448,7 +449,10 @@ const RepostedCharacterCard: React.FC<RepostedCharacterCardProps> = React.memo((
           overflow: 'hidden'
         }}
       >
-        <div style={{ pointerEvents: 'none' }}>
+        <div 
+          id={`card-character-${originalCharacter.id}`} // ← ADDED: ID for embedded card download
+          style={{ pointerEvents: 'none' }}
+        >
           <CharacterCard 
             character={{
               id: originalCharacter.id,
