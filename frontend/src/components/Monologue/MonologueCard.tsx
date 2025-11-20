@@ -82,12 +82,10 @@ interface MonologueCardProps {
 // Add MonologueDescription component BEFORE the main MonologueCard - EXACTLY like SceneCard
 const MonologueDescription: React.FC<{ text: string }> = ({ text }) => {
   const [isExpanded, setIsExpanded] = useState(false);
-  const maxLength = 120;
   const maxLines = 3;
 
-  const needsTruncation = text.length > maxLength;
-  const displayText = isExpanded ? text : 
-    (text.length > maxLength ? `${text.substring(0, maxLength)}...` : text);
+  const needsTruncation = true; // Always show Read More/Less for line-based truncation
+  const displayText = text; // Full text without character limit
 
   return (
     <div>

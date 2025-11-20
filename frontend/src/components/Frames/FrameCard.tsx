@@ -370,12 +370,12 @@ const FrameCard: React.FC<FrameCardProps> = React.memo(({
         />
       )}
 
-      {/* MINIMAL: Visual Frame Card Layout */}
+      {/* MINIMAL: Visual Frame Card Layout - FIXED: Changed height to minHeight and added flex layout */}
       <article 
         id={`card-frame-${frame.id}`} // ← ADDED: Unique ID for card capture
         style={{
           width: 'calc(100% + 32px)',
-          height: '380px',
+          minHeight: '380px', // ← FIXED: Changed from height to minHeight
           marginLeft: '-16px',
           marginRight: '-16px',
           backgroundColor: '#FAF8F2',
@@ -385,7 +385,9 @@ const FrameCard: React.FC<FrameCardProps> = React.memo(({
           position: 'relative',
           borderTop: '2px solid #E5E5E5',
           background: '#FAF8F2',
-          boxShadow: '0 1px 3px rgba(0, 0, 0, 0.08)'
+          boxShadow: '0 1px 3px rgba(0, 0, 0, 0.08)',
+          display: 'flex', // ← FIXED: Added flex layout
+          flexDirection: 'column' // ← FIXED: Stack children vertically
         }}
         aria-label={`Cinematic collage by ${userData.userName}: ${frame.mood_description}`}
         role="article"
@@ -395,7 +397,8 @@ const FrameCard: React.FC<FrameCardProps> = React.memo(({
           display: 'flex',
           alignItems: 'center',
           gap: '8px',
-          marginBottom: '16px'
+          marginBottom: '16px',
+          flexShrink: 0 // ← FIXED: Prevent from shrinking
         }}>
           <div style={{
             width: '16px',
@@ -424,7 +427,8 @@ const FrameCard: React.FC<FrameCardProps> = React.memo(({
           display: 'flex',
           alignItems: 'flex-start',
           justifyContent: 'space-between',
-          marginBottom: '16px'
+          marginBottom: '16px',
+          flexShrink: 0 // ← FIXED: Prevent header from shrinking
         }}>
           {/* User Info */}
           <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
@@ -581,7 +585,8 @@ const FrameCard: React.FC<FrameCardProps> = React.memo(({
         {frame.mood_description && (
           <div style={{ 
             marginBottom: '16px',
-            minHeight: '20px'
+            minHeight: '20px',
+            flexShrink: 0 // ← FIXED: Prevent from shrinking
           }}>
             <h4 style={{
               fontFamily: "'Cormorant', serif",
@@ -610,7 +615,8 @@ const FrameCard: React.FC<FrameCardProps> = React.memo(({
           gap: '6px',
           width: '100%',
           height: '160px',
-          marginBottom: '16px'
+          marginBottom: '16px',
+          flexShrink: 0 // ← FIXED: Prevent from shrinking
         }}>
           {displayImages.map((imageUrl: string, index: number) => (
             <div
@@ -644,14 +650,14 @@ const FrameCard: React.FC<FrameCardProps> = React.memo(({
           ))}
         </div>
 
-        {/* MINIMAL: Action bar */}
+        {/* MINIMAL: Action bar - FIXED: Added marginTop: 'auto' to push to bottom */}
         <footer style={{
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
           paddingTop: '12px',
           borderTop: '1px solid #E5E5E5',
-          marginTop: '12px',
+          marginTop: 'auto', // ← FIXED: This pushes the footer to the bottom
           flexShrink: 0
         }}>
           {/* Left Actions */}
