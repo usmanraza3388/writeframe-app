@@ -719,6 +719,15 @@ export default function Profile() {
           <div style={emptyStateSubtextStyle}>
             {isOwnProfile ? 'Create your first piece to get started' : 'User hasn\'t created any content yet'}
           </div>
+          {/* ADDED: Creation CTA Button for empty states */}
+          {isOwnProfile && (
+            <button
+              onClick={() => navigate(`/compose-${activeTab}`)}
+              style={createButtonStyle}
+            >
+              Create Your First {getTabDisplayName(activeTab)}
+            </button>
+          )}
         </div>
       );
     }
@@ -1656,6 +1665,22 @@ const emptyStateIconStyle: React.CSSProperties = {
   fontSize: '48px',
   marginBottom: '16px',
   opacity: 0.5
+};
+
+// ADDED: Create button style for empty states
+const createButtonStyle: React.CSSProperties = {
+  padding: '14px 24px',
+  background: 'linear-gradient(135deg, #1A1A1A 0%, #2D2D2D 100%)',
+  color: '#FFFFFF',
+  border: 'none',
+  borderRadius: '12px',
+  fontSize: '15px',
+  fontFamily: "'Cormorant', serif",
+  fontWeight: '600',
+  cursor: 'pointer',
+  transition: 'all 0.2s ease',
+  marginTop: '16px',
+  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)'
 };
 
 const loadMoreButtonStyle: React.CSSProperties = {
