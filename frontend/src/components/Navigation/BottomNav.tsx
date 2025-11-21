@@ -188,7 +188,7 @@ const BottomNav: React.FC = () => {
         <div style={{
           position: 'fixed',
           bottom: '80px',
-          left: '50%',
+          left: '35%',
           transform: 'translateX(-50%)',
           background: '#1A1A1A',
           color: 'white',
