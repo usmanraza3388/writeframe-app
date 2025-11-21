@@ -13,6 +13,7 @@ import AuthCallback from "./pages/AuthCallback"; // 👈 ADDED IMPORT
 import Welcome from "./pages/Welcome";
 import GenreSelection from "./pages/GenreSelection";
 import ExpressionSelection from "./pages/ExpressionSelection";
+import StudioReadyGuide from "./pages/StudioReadyGuide"; // 👈 ADDED IMPORT
 import Profile from "./pages/Profile";
 import Dashboard from "./pages/Dashboard";
 import Drafts from "./pages/Drafts";
@@ -148,6 +149,12 @@ function AppContent() {
         <Route
           path="/expression-selection"
           element={session ? <ExpressionSelection /> : <Navigate to="/signup" replace />}
+        />
+        
+        {/* ADDED: Studio Ready Guide Route */}
+        <Route
+          path="/studio-ready"
+          element={session ? <StudioReadyGuide /> : <Navigate to="/signin" replace />}
         />
 
         {/* Profile Route */}
