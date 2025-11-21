@@ -694,6 +694,17 @@ export default function Profile() {
     return icons[activeTab as keyof typeof icons] || '📝';
   };
 
+  // ADDED: Route mapping function to fix navigation issue
+  const getComposerRoute = (tab: string) => {
+    const routeMap = {
+      scenes: '/compose-scene',
+      characters: '/compose-character',
+      monologues: '/compose-monologue',
+      frames: '/compose-frame'
+    };
+    return routeMap[tab as keyof typeof routeMap] || '/compose-scene';
+  };
+
   // FIXED: Use the isolated _id from useProfileData to prevent duplicate keys
   const generateUniqueKey = (item: any) => {
     // Use the guaranteed unique _id from useProfileData
@@ -719,10 +730,10 @@ export default function Profile() {
           <div style={emptyStateSubtextStyle}>
             {isOwnProfile ? 'Create your first piece to get started' : 'User hasn\'t created any content yet'}
           </div>
-          {/* ADDED: Creation CTA Button for empty states */}
+          {/* FIXED: Creation CTA Button with correct route mapping */}
           {isOwnProfile && (
             <button
-              onClick={() => navigate(`/compose-${activeTab}`)}
+              onClick={() => navigate(getComposerRoute(activeTab))}
               style={createButtonStyle}
             >
               Create Your First {getTabDisplayName(activeTab)}
