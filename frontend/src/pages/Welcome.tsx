@@ -96,7 +96,7 @@ export default function Welcome() {
       }}
     >
       <div style={container}>
-        <h1 style={heading}>Welcome to Cineverse</h1>
+        <h1 style={heading}>Welcome to writeFrame</h1>
         <p style={sub}>Where Your Memories Become Cinematic Scenes</p>
 
         {heroImage && <img src={heroImage} alt="Cineverse Hero" style={hero} />}
