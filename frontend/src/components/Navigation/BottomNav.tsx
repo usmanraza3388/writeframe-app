@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -7,6 +7,22 @@ const BottomNav: React.FC = () => {
   const location = useLocation();
   const { user } = useAuth();
   const [showCreationMenu, setShowCreationMenu] = React.useState(false);
+  const [showCreateTooltip, setShowCreateTooltip] = useState(false);
+
+  useEffect(() => {
+    // Check if user has completed onboarding but hasn't seen the tooltip
+    const hasCompletedOnboarding = localStorage.getItem('writeframe_onboarding_complete');
+    const hasSeenTooltip = localStorage.getItem('writeframe_tooltip_seen');
+    
+    if (hasCompletedOnboarding && !hasSeenTooltip) {
+      // Show tooltip after a short delay
+      const timer = setTimeout(() => {
+        setShowCreateTooltip(true);
+      }, 2000); // Show after 2 seconds on home feed
+      
+      return () => clearTimeout(timer);
+    }
+  }, []);
 
   // Icons with theme support
   const HomeIcon = ({ active }: { active: boolean }) => (
@@ -94,9 +110,13 @@ const BottomNav: React.FC = () => {
   const handleCreateClick = (type?: 'scene' | 'monologue' | 'character' | 'frame') => {
     if (type) {
       setShowCreationMenu(false);
+      setShowCreateTooltip(false);
+      localStorage.setItem('writeframe_tooltip_seen', 'true');
       navigate(`/compose-${type}`);
     } else {
       setShowCreationMenu(!showCreationMenu);
+      setShowCreateTooltip(false);
+      localStorage.setItem('writeframe_tooltip_seen', 'true');
     }
   };
 
@@ -161,6 +181,39 @@ const BottomNav: React.FC = () => {
           }}
           onClick={() => setShowCreationMenu(false)}
         />
+      )}
+
+      {/* Create Button Tooltip - Only for first-time users */}
+      {showCreateTooltip && (
+        <div style={{
+          position: 'fixed',
+          bottom: '80px',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          background: '#1A1A1A',
+          color: 'white',
+          padding: '12px 16px',
+          borderRadius: '8px',
+          fontSize: '14px',
+          fontFamily: "'Cormorant', serif",
+          zIndex: 10000,
+          whiteSpace: 'nowrap',
+          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+          animation: 'fadeInUp 0.3s ease-out'
+        }}>
+          <div style={{
+            position: 'absolute',
+            bottom: '-8px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            width: 0,
+            height: 0,
+            borderLeft: '8px solid transparent',
+            borderRight: '8px solid transparent',
+            borderTop: '8px solid #1A1A1A'
+          }}></div>
+          Tap here to create content!
+        </div>
       )}
 
       {/* Creation Menu - LIST LAYOUT */}
@@ -409,6 +462,16 @@ const BottomNav: React.FC = () => {
           @keyframes fadeIn {
             from { opacity: 0; }
             to { opacity: 1; }
+          }
+          @keyframes fadeInUp {
+            from { 
+              opacity: 0;
+              transform: translateX(-50%) translateY(10px);
+            }
+            to { 
+              opacity: 1;
+              transform: translateX(-50%) translateY(0);
+            }
           }
           @keyframes slideUp {
             from { 
