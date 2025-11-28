@@ -42,12 +42,67 @@ export default function CharacterComposer() {
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   
-  // ADDED: WYSIWYG Editor states
+  // ADDED: WYSIWYG Editor states - KEEP THE WYSIWYG
   const bioEditorRef = useRef<HTMLDivElement>(null);
   const [isBioFocused, setIsBioFocused] = useState(false);
   const [showPlaceholder, setShowPlaceholder] = useState(true);
 
-  // ADDED: Handle prompt selection with editor support
+  // ADDED: WYSIWYG Editor handlers - SAME AS SCENE COMPOSER
+  const handleFormat = (command: string, value: string = '') => {
+    // Apply formatting
+    document.execCommand(command, false, value);
+    
+    // Maintain focus on the editor
+    bioEditorRef.current?.focus();
+    
+    // Update content state
+    if (bioEditorRef.current) {
+      const content = bioEditorRef.current.innerHTML;
+      updateField('bio', content);
+    }
+  };
+
+  const handleBioInput = () => {
+    if (bioEditorRef.current) {
+      const content = bioEditorRef.current.innerHTML;
+      updateField('bio', content);
+      
+      const hasContent = content !== '' && 
+                         content !== '<br>' && 
+                         content !== '<div><br></div>' &&
+                         !content.startsWith('<div></div>');
+      
+      setShowPlaceholder(!hasContent);
+    }
+  };
+
+  const handleBioFocus = () => {
+    setIsBioFocused(true);
+    if (showPlaceholder && bioEditorRef.current) {
+      bioEditorRef.current.innerHTML = '';
+      setShowPlaceholder(false);
+    }
+  };
+
+  const handleBioBlur = () => {
+    // Use a longer timeout to prevent toolbar from disappearing when clicking buttons
+    setTimeout(() => {
+      const activeElement = document.activeElement;
+      // Only hide toolbar if focus is not on toolbar buttons
+      if (activeElement && !activeElement.closest('.toolbar-button')) {
+        setIsBioFocused(false);
+        
+        const content = bioEditorRef.current?.innerHTML || '';
+        const isEmpty = content === '' || 
+                        content === '<br>' || 
+                        content === '<div><br></div>' ||
+                        content.startsWith('<div></div>');
+        
+        setShowPlaceholder(isEmpty);
+      }
+    }, 200);
+  };
+
   const handlePromptSelect = (prompt: any) => {
     if (prompt.name) {
       updateField('name', prompt.name);
@@ -84,7 +139,7 @@ export default function CharacterComposer() {
     }
   };
 
-  // FIXED: Load existing character for editing with proper content synchronization
+  // FIXED: Load existing character for editing - USE SAME PATTERN AS SCENE COMPOSER
   useEffect(() => {
     const loadCharacter = async () => {
       if (!characterId) return;
@@ -105,7 +160,7 @@ export default function CharacterComposer() {
           setOriginalStatus(character.status as 'draft' | 'published');
           setShowPublishOption(false);
           
-          // FIXED: Set bio content and update editor in the same operation
+          // FIXED: Set bio content and update editor in the same operation - LIKE SCENE COMPOSER
           const characterBio = character.bio || '';
           updateField('bio', characterBio);
           
@@ -276,62 +331,6 @@ export default function CharacterComposer() {
     setShowVisualRefInput(true);
   };
 
-  // ADDED: WYSIWYG Editor handlers
-  const handleFormat = (command: string, value: string = '') => {
-    // Apply formatting
-    document.execCommand(command, false, value);
-    
-    // Maintain focus on the editor
-    bioEditorRef.current?.focus();
-    
-    // Update content state
-    if (bioEditorRef.current) {
-      const content = bioEditorRef.current.innerHTML;
-      updateField('bio', content);
-    }
-  };
-
-  const handleBioInput = () => {
-    if (bioEditorRef.current) {
-      const content = bioEditorRef.current.innerHTML;
-      updateField('bio', content);
-      
-      const hasContent = content !== '' && 
-                         content !== '<br>' && 
-                         content !== '<div><br></div>' &&
-                         !content.startsWith('<div></div>');
-      
-      setShowPlaceholder(!hasContent);
-    }
-  };
-
-  const handleBioFocus = () => {
-    setIsBioFocused(true);
-    if (showPlaceholder && bioEditorRef.current) {
-      bioEditorRef.current.innerHTML = '';
-      setShowPlaceholder(false);
-    }
-  };
-
-  const handleBioBlur = () => {
-    // Use a longer timeout to prevent toolbar from disappearing when clicking buttons
-    setTimeout(() => {
-      const activeElement = document.activeElement;
-      // Only hide toolbar if focus is not on toolbar buttons
-      if (activeElement && !activeElement.closest('.toolbar-button')) {
-        setIsBioFocused(false);
-        
-        const content = bioEditorRef.current?.innerHTML || '';
-        const isEmpty = content === '' || 
-                        content === '<br>' || 
-                        content === '<div><br></div>' ||
-                        content.startsWith('<div></div>');
-        
-        setShowPlaceholder(isEmpty);
-      }
-    }, 200);
-  };
-
   const containerStyle: React.CSSProperties = {
     width: 375,
     background: '#FFFFFF',
@@ -362,7 +361,7 @@ export default function CharacterComposer() {
     color: '#000000'
   };
 
-  // ADDED: Editor styles
+  // ADDED: Editor styles - KEEP WYSIWYG
   const editorStyle: React.CSSProperties = {
     width: '100%',
     minHeight: 120,
@@ -627,7 +626,7 @@ export default function CharacterComposer() {
             />
           </div>
 
-          {/* UPDATED: Biography Editor with WYSIWYG */}
+          {/* KEEP WYSIWYG EDITOR - FIXED CONTENT LOADING */}
           <div style={{ position: 'relative' }}>
             <label style={{
               display: 'block',
@@ -706,6 +705,7 @@ export default function CharacterComposer() {
             </div>
           </div>
 
+          {/* Rest of the component remains the same... */}
           <div>
             <button
               type="button"
