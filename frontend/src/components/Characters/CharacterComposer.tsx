@@ -45,20 +45,18 @@ export default function CharacterComposer() {
   const [isBioFocused, setIsBioFocused] = useState(false);
   const [showPlaceholder, setShowPlaceholder] = useState(true);
 
-  // Formatting handlers
+  // FIXED: Formatting handlers - improved format function
   const handleFormat = (command: string, value: string = '') => {
-    // Save current selection
-    const selection = window.getSelection();
-    const range = selection?.rangeCount ? selection.getRangeAt(0) : null;
-    
     // Apply formatting
     document.execCommand(command, false, value);
     
-    // Restore focus and selection
+    // Maintain focus on the editor
     bioEditorRef.current?.focus();
-    if (range && selection) {
-      selection.removeAllRanges();
-      selection.addRange(range);
+    
+    // Update content state
+    if (bioEditorRef.current) {
+      const content = bioEditorRef.current.innerHTML;
+      updateField('bio', content);
     }
   };
 
@@ -77,6 +75,7 @@ export default function CharacterComposer() {
     }
   };
 
+  // FIXED: Improved focus handling
   const handleBioFocus = () => {
     setIsBioFocused(true);
     if (showPlaceholder && bioEditorRef.current) {
@@ -85,14 +84,17 @@ export default function CharacterComposer() {
     }
   };
 
+  // FIXED: Improved blur handling
   const handleBioBlur = () => {
-    // Don't hide toolbar immediately - use a slight delay to allow button clicks
+    // Use a longer timeout to prevent toolbar from disappearing when clicking buttons
     setTimeout(() => {
-      if (bioEditorRef.current && !bioEditorRef.current.contains(document.activeElement)) {
+      const activeElement = document.activeElement;
+      // Only hide toolbar if focus is not on toolbar buttons
+      if (activeElement && !activeElement.closest('.toolbar-button')) {
         setIsBioFocused(false);
         
         // FIXED: Better content detection for placeholder
-        const content = bioEditorRef.current.innerHTML;
+        const content = bioEditorRef.current?.innerHTML || '';
         const isEmpty = content === '' || 
                         content === '<br>' || 
                         content === '<div><br></div>' ||
@@ -100,7 +102,7 @@ export default function CharacterComposer() {
         
         setShowPlaceholder(isEmpty);
       }
-    }, 100);
+    }, 200);
   };
 
   const handlePromptSelect = (prompt: any) => {
@@ -139,6 +141,7 @@ export default function CharacterComposer() {
     }
   };
 
+  // FIXED: Load existing character for editing with proper content synchronization
   useEffect(() => {
     const loadCharacter = async () => {
       if (!characterId) return;
@@ -155,15 +158,21 @@ export default function CharacterComposer() {
         if (character) {
           updateField('name', character.name);
           updateField('tagline', character.tagline || '');
-          updateField('bio', character.bio || '');
           setIsEditing(true);
           setOriginalStatus(character.status as 'draft' | 'published');
           setShowPublishOption(false);
           
-          if (bioEditorRef.current && character.bio) {
-            bioEditorRef.current.innerHTML = character.bio;
-            setShowPlaceholder(false);
-          }
+          // FIXED: Set bio content and update editor in the same operation
+          const characterBio = character.bio || '';
+          updateField('bio', characterBio);
+          
+          // Update editor content after a brief delay to ensure DOM is ready
+          setTimeout(() => {
+            if (bioEditorRef.current && characterBio) {
+              bioEditorRef.current.innerHTML = characterBio;
+              setShowPlaceholder(!characterBio.trim());
+            }
+          }, 100);
           
           const { data: visualRefs } = await supabase
             .from('character_visual_references')
@@ -395,6 +404,7 @@ export default function CharacterComposer() {
     marginBottom: '-1px'
   };
 
+  // FIXED: Format button style with class for focus handling
   const formatButtonStyle: React.CSSProperties = {
     padding: '6px 10px',
     background: 'transparent',
@@ -633,6 +643,7 @@ export default function CharacterComposer() {
             <div style={toolbarStyle}>
               <button
                 type="button"
+                className="toolbar-button"
                 onClick={(e) => {
                   e.preventDefault();
                   handleFormat('bold');
@@ -645,6 +656,7 @@ export default function CharacterComposer() {
               </button>
               <button
                 type="button"
+                className="toolbar-button"
                 onClick={(e) => {
                   e.preventDefault();
                   handleFormat('italic');
@@ -657,6 +669,7 @@ export default function CharacterComposer() {
               </button>
               <button
                 type="button"
+                className="toolbar-button"
                 onClick={(e) => {
                   e.preventDefault();
                   handleFormat('insertUnorderedList');
