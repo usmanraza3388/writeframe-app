@@ -146,23 +146,22 @@ export default function CharacterComposer() {
         if (error) throw error;
         
         if (character) {
+          // FIXED: Use the exact same pattern as SceneComposer
+          const characterBio = character.bio || '';
           updateField('name', character.name);
           updateField('tagline', character.tagline || '');
-          updateField('bio', character.bio || '');
+          updateField('bio', characterBio);
           setIsEditing(true);
           setOriginalStatus(character.status as 'draft' | 'published');
           setShowPublishOption(false);
           
-          // FIX: Directly set editor content after state is updated
-          const updateEditorContent = () => {
-            if (bioEditorRef.current && character.bio) {
-              bioEditorRef.current.innerHTML = character.bio;
-              setShowPlaceholder(!character.bio.trim());
+          // FIXED: Update editor content after a brief delay to ensure DOM is ready
+          setTimeout(() => {
+            if (bioEditorRef.current && characterBio) {
+              bioEditorRef.current.innerHTML = characterBio;
+              setShowPlaceholder(!characterBio.trim());
             }
-          };
-          
-          // Set content after React state is processed
-          setTimeout(updateEditorContent, 0);
+          }, 100); // Same 100ms delay as working SceneComposer
           
           const { data: visualRefs } = await supabase
             .from('character_visual_references')
