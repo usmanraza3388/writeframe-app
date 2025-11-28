@@ -99,17 +99,18 @@ export const SceneComposer: React.FC = () => {
   const { createScene, loading, error } = useSceneComposer();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // ADDED: WYSIWYG Editor handlers
+  // FIXED: WYSIWYG Editor handlers - improved format function
   const handleFormat = (command: string, value: string = '') => {
-    const selection = window.getSelection();
-    const range = selection?.rangeCount ? selection.getRangeAt(0) : null;
-    
+    // Prevent default behavior and maintain focus
     document.execCommand(command, false, value);
     
+    // Maintain focus on the editor
     contentEditorRef.current?.focus();
-    if (range && selection) {
-      selection.removeAllRanges();
-      selection.addRange(range);
+    
+    // Update content state
+    if (contentEditorRef.current) {
+      const contentValue = contentEditorRef.current.innerHTML;
+      setContent(contentValue);
     }
   };
 
@@ -127,6 +128,7 @@ export const SceneComposer: React.FC = () => {
     }
   };
 
+  // FIXED: Improved focus handling
   const handleContentFocus = () => {
     setIsContentFocused(true);
     if (showContentPlaceholder && contentEditorRef.current) {
@@ -135,20 +137,26 @@ export const SceneComposer: React.FC = () => {
     }
   };
 
+  // FIXED: Improved blur handling
   const handleContentBlur = () => {
+    // Use a longer timeout to prevent toolbar from disappearing when clicking buttons
     setTimeout(() => {
-      if (contentEditorRef.current && !contentEditorRef.current.contains(document.activeElement)) {
+      const activeElement = document.activeElement;
+      // Only hide toolbar if focus is not on toolbar buttons
+      if (activeElement && !activeElement.closest('.toolbar-button')) {
         setIsContentFocused(false);
         
-        const contentValue = contentEditorRef.current.innerHTML;
-        const isEmpty = contentValue === '' || 
-                        contentValue === '<br>' || 
-                        contentValue === '<div><br></div>' ||
-                        contentValue.startsWith('<div></div>');
-        
-        setShowContentPlaceholder(isEmpty);
+        if (contentEditorRef.current) {
+          const contentValue = contentEditorRef.current.innerHTML;
+          const isEmpty = contentValue === '' || 
+                          contentValue === '<br>' || 
+                          contentValue === '<div><br></div>' ||
+                          contentValue.startsWith('<div></div>');
+          
+          setShowContentPlaceholder(isEmpty);
+        }
       }
-    }, 100);
+    }, 200);
   };
 
   const handlePromptSelect = (prompt: any) => {
@@ -487,6 +495,7 @@ export const SceneComposer: React.FC = () => {
     zIndex: 1
   };
 
+  // FIXED: Toolbar style - always show when editor has focus
   const toolbarStyle: React.CSSProperties = {
     display: isContentFocused ? 'flex' : 'none',
     gap: '8px',
@@ -499,6 +508,7 @@ export const SceneComposer: React.FC = () => {
     marginBottom: '-1px'
   };
 
+  // FIXED: Format button style with class for focus handling
   const formatButtonStyle: React.CSSProperties = {
     padding: '6px 10px',
     background: 'transparent',
@@ -681,6 +691,7 @@ export const SceneComposer: React.FC = () => {
             <div style={toolbarStyle}>
               <button
                 type="button"
+                className="toolbar-button"
                 onClick={(e) => {
                   e.preventDefault();
                   handleFormat('bold');
@@ -693,6 +704,7 @@ export const SceneComposer: React.FC = () => {
               </button>
               <button
                 type="button"
+                className="toolbar-button"
                 onClick={(e) => {
                   e.preventDefault();
                   handleFormat('italic');
@@ -705,6 +717,7 @@ export const SceneComposer: React.FC = () => {
               </button>
               <button
                 type="button"
+                className="toolbar-button"
                 onClick={(e) => {
                   e.preventDefault();
                   handleFormat('insertUnorderedList');
