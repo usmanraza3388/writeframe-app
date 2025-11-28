@@ -45,10 +45,21 @@ export default function CharacterComposer() {
   const [isBioFocused, setIsBioFocused] = useState(false);
   const [showPlaceholder, setShowPlaceholder] = useState(true);
 
-  // Formatting handlers
+  // Formatting handlers - FIXED: Prevent toolbar from disappearing
   const handleFormat = (command: string, value: string = '') => {
+    // Save current selection
+    const selection = window.getSelection();
+    const range = selection?.rangeCount ? selection.getRangeAt(0) : null;
+    
+    // Apply formatting
     document.execCommand(command, false, value);
+    
+    // Restore focus and selection
     bioEditorRef.current?.focus();
+    if (range && selection) {
+      selection.removeAllRanges();
+      selection.addRange(range);
+    }
   };
 
   const handleBioInput = () => {
@@ -68,10 +79,15 @@ export default function CharacterComposer() {
   };
 
   const handleBioBlur = () => {
-    setIsBioFocused(false);
-    if (bioEditorRef.current && (bioEditorRef.current.innerHTML === '<br>' || bioEditorRef.current.innerHTML === '')) {
-      setShowPlaceholder(true);
-    }
+    // Don't hide toolbar immediately - use a slight delay to allow button clicks
+    setTimeout(() => {
+      if (bioEditorRef.current && !bioEditorRef.current.contains(document.activeElement)) {
+        setIsBioFocused(false);
+        if (bioEditorRef.current.innerHTML === '<br>' || bioEditorRef.current.innerHTML === '') {
+          setShowPlaceholder(true);
+        }
+      }
+    }, 100);
   };
 
   const handlePromptSelect = (prompt: any) => {
@@ -351,7 +367,8 @@ export default function CharacterComposer() {
     fontFamily: "'Garamond', serif",
     fontSize: 15,
     pointerEvents: 'none',
-    userSelect: 'none'
+    userSelect: 'none',
+    display: showPlaceholder ? 'block' : 'none' // FIXED: Completely hide when not needed
   };
 
   const toolbarStyle: React.CSSProperties = {
@@ -586,7 +603,7 @@ export default function CharacterComposer() {
             />
           </div>
 
-          {/* UPDATED: Biography Editor with WYSIWYG formatting */}
+          {/* FIXED: Biography Editor with proper placeholder and toolbar behavior */}
           <div style={{ position: 'relative' }}>
             <label style={{
               display: 'block',
@@ -604,7 +621,10 @@ export default function CharacterComposer() {
             <div style={toolbarStyle}>
               <button
                 type="button"
-                onClick={() => handleFormat('bold')}
+                onClick={(e) => {
+                  e.preventDefault();
+                  handleFormat('bold');
+                }}
                 style={formatButtonStyle}
                 onMouseOver={(e) => e.currentTarget.style.background = '#F0EDE4'}
                 onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
@@ -613,7 +633,10 @@ export default function CharacterComposer() {
               </button>
               <button
                 type="button"
-                onClick={() => handleFormat('italic')}
+                onClick={(e) => {
+                  e.preventDefault();
+                  handleFormat('italic');
+                }}
                 style={formatButtonStyle}
                 onMouseOver={(e) => e.currentTarget.style.background = '#F0EDE4'}
                 onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
@@ -622,7 +645,10 @@ export default function CharacterComposer() {
               </button>
               <button
                 type="button"
-                onClick={() => handleFormat('insertUnorderedList')}
+                onClick={(e) => {
+                  e.preventDefault();
+                  handleFormat('insertUnorderedList');
+                }}
                 style={formatButtonStyle}
                 onMouseOver={(e) => e.currentTarget.style.background = '#F0EDE4'}
                 onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
@@ -642,7 +668,7 @@ export default function CharacterComposer() {
               suppressContentEditableWarning={true}
             />
             
-            {/* Placeholder */}
+            {/* Placeholder - FIXED: Completely hidden when focused */}
             {showPlaceholder && (
               <div style={placeholderStyle}>
                 Describe your character's story, personality, and development...
