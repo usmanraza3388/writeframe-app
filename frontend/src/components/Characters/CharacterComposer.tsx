@@ -41,70 +41,13 @@ export default function CharacterComposer() {
   const [isInspirationOpen, setIsInspirationOpen] = useState(false);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  // ADDED: WYSIWYG Editor states
   const bioEditorRef = useRef<HTMLDivElement>(null);
   const [isBioFocused, setIsBioFocused] = useState(false);
   const [showPlaceholder, setShowPlaceholder] = useState(true);
 
-  // FIXED: Formatting handlers - improved format function
-  const handleFormat = (command: string, value: string = '') => {
-    // Apply formatting
-    document.execCommand(command, false, value);
-    
-    // Maintain focus on the editor
-    bioEditorRef.current?.focus();
-    
-    // Update content state
-    if (bioEditorRef.current) {
-      const content = bioEditorRef.current.innerHTML;
-      updateField('bio', content);
-    }
-  };
-
-  const handleBioInput = () => {
-    if (bioEditorRef.current) {
-      const content = bioEditorRef.current.innerHTML;
-      updateField('bio', content);
-      
-      // FIXED: Check if content is actually empty (not just <br> or empty string)
-      const hasContent = content !== '' && 
-                         content !== '<br>' && 
-                         content !== '<div><br></div>' &&
-                         !content.startsWith('<div></div>');
-      
-      setShowPlaceholder(!hasContent);
-    }
-  };
-
-  // FIXED: Improved focus handling
-  const handleBioFocus = () => {
-    setIsBioFocused(true);
-    if (showPlaceholder && bioEditorRef.current) {
-      bioEditorRef.current.innerHTML = '';
-      setShowPlaceholder(false);
-    }
-  };
-
-  // FIXED: Improved blur handling
-  const handleBioBlur = () => {
-    // Use a longer timeout to prevent toolbar from disappearing when clicking buttons
-    setTimeout(() => {
-      const activeElement = document.activeElement;
-      // Only hide toolbar if focus is not on toolbar buttons
-      if (activeElement && !activeElement.closest('.toolbar-button')) {
-        setIsBioFocused(false);
-        
-        // FIXED: Better content detection for placeholder
-        const content = bioEditorRef.current?.innerHTML || '';
-        const isEmpty = content === '' || 
-                        content === '<br>' || 
-                        content === '<div><br></div>' ||
-                        content.startsWith('<div></div>');
-        
-        setShowPlaceholder(isEmpty);
-      }
-    }, 200);
-  };
-
+  // ADDED: Handle prompt selection with editor support
   const handlePromptSelect = (prompt: any) => {
     if (prompt.name) {
       updateField('name', prompt.name);
@@ -195,6 +138,7 @@ export default function CharacterComposer() {
     loadCharacter();
   }, [characterId]);
 
+  // Smart button logic - show publish option when content is substantial (CREATE MODE ONLY)
   useEffect(() => {
     if (!isEditing) {
       const hasSubstantialContent = 
@@ -231,6 +175,7 @@ export default function CharacterComposer() {
       if (result) {
         alert(publish ? 'Character published successfully!' : 'Character saved as draft!');
         resetForm();
+        // Clear editor
         if (bioEditorRef.current) {
           bioEditorRef.current.innerHTML = '';
           setShowPlaceholder(true);
@@ -276,6 +221,7 @@ export default function CharacterComposer() {
       }
 
       alert('Character updated successfully!');
+      
       navigate(`/home-feed#character-${characterId}`);
       
     } catch (err) {
@@ -330,6 +276,62 @@ export default function CharacterComposer() {
     setShowVisualRefInput(true);
   };
 
+  // ADDED: WYSIWYG Editor handlers
+  const handleFormat = (command: string, value: string = '') => {
+    // Apply formatting
+    document.execCommand(command, false, value);
+    
+    // Maintain focus on the editor
+    bioEditorRef.current?.focus();
+    
+    // Update content state
+    if (bioEditorRef.current) {
+      const content = bioEditorRef.current.innerHTML;
+      updateField('bio', content);
+    }
+  };
+
+  const handleBioInput = () => {
+    if (bioEditorRef.current) {
+      const content = bioEditorRef.current.innerHTML;
+      updateField('bio', content);
+      
+      const hasContent = content !== '' && 
+                         content !== '<br>' && 
+                         content !== '<div><br></div>' &&
+                         !content.startsWith('<div></div>');
+      
+      setShowPlaceholder(!hasContent);
+    }
+  };
+
+  const handleBioFocus = () => {
+    setIsBioFocused(true);
+    if (showPlaceholder && bioEditorRef.current) {
+      bioEditorRef.current.innerHTML = '';
+      setShowPlaceholder(false);
+    }
+  };
+
+  const handleBioBlur = () => {
+    // Use a longer timeout to prevent toolbar from disappearing when clicking buttons
+    setTimeout(() => {
+      const activeElement = document.activeElement;
+      // Only hide toolbar if focus is not on toolbar buttons
+      if (activeElement && !activeElement.closest('.toolbar-button')) {
+        setIsBioFocused(false);
+        
+        const content = bioEditorRef.current?.innerHTML || '';
+        const isEmpty = content === '' || 
+                        content === '<br>' || 
+                        content === '<div><br></div>' ||
+                        content.startsWith('<div></div>');
+        
+        setShowPlaceholder(isEmpty);
+      }
+    }, 200);
+  };
+
   const containerStyle: React.CSSProperties = {
     width: 375,
     background: '#FFFFFF',
@@ -360,6 +362,7 @@ export default function CharacterComposer() {
     color: '#000000'
   };
 
+  // ADDED: Editor styles
   const editorStyle: React.CSSProperties = {
     width: '100%',
     minHeight: 120,
@@ -404,7 +407,6 @@ export default function CharacterComposer() {
     marginBottom: '-1px'
   };
 
-  // FIXED: Format button style with class for focus handling
   const formatButtonStyle: React.CSSProperties = {
     padding: '6px 10px',
     background: 'transparent',
@@ -625,7 +627,7 @@ export default function CharacterComposer() {
             />
           </div>
 
-          {/* FIXED: Biography Editor with proper placeholder behavior */}
+          {/* UPDATED: Biography Editor with WYSIWYG */}
           <div style={{ position: 'relative' }}>
             <label style={{
               display: 'block',
@@ -695,7 +697,7 @@ export default function CharacterComposer() {
                 suppressContentEditableWarning={true}
               />
               
-              {/* Placeholder - FIXED: Only shows when there's no content */}
+              {/* Placeholder */}
               {showPlaceholder && (
                 <div style={placeholderStyle}>
                   Describe your character's story, personality, and development...
