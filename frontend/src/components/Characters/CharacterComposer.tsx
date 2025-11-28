@@ -2,7 +2,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { useCharacterComposer } from '../../hooks/useCharacterComposer';
-import { useSearchParams, useNavigate, useLocation } from 'react-router-dom'; // ADD: useLocation
+import { useSearchParams, useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '../../assets/lib/supabaseClient';
 import { promptsData } from '../../data/promptsData';
 import InspirationBottomSheet from '../InspirationBottomSheet/InspirationBottomSheet';
@@ -11,9 +11,8 @@ export default function CharacterComposer() {
   const [searchParams] = useSearchParams();
   const characterId = searchParams.get('id');
   const navigate = useNavigate();
-  const location = useLocation(); // ADD: useLocation hook
+  const location = useLocation();
   
-  // ADD: Get return path with fallback to home feed
   const returnPath = location.state?.from || '/home-feed';
   
   const {
@@ -36,16 +35,45 @@ export default function CharacterComposer() {
   const [loadingCharacter, setLoadingCharacter] = useState(false);
   const [originalStatus, setOriginalStatus] = useState<'draft' | 'published'>('draft');
   
-  // ADD: Separate loading states for publish vs draft
   const [isPublishing, setIsPublishing] = useState(false);
   const [isSavingDraft, setIsSavingDraft] = useState(false);
   
-  // ADD: Inspiration bottom sheet state
   const [isInspirationOpen, setIsInspirationOpen] = useState(false);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const bioEditorRef = useRef<HTMLDivElement>(null);
+  const [isBioFocused, setIsBioFocused] = useState(false);
+  const [showPlaceholder, setShowPlaceholder] = useState(true);
 
-  // ADD: Handle prompt selection
+  // Formatting handlers
+  const handleFormat = (command: string, value: string = '') => {
+    document.execCommand(command, false, value);
+    bioEditorRef.current?.focus();
+  };
+
+  const handleBioInput = () => {
+    if (bioEditorRef.current) {
+      const content = bioEditorRef.current.innerHTML;
+      updateField('bio', content);
+      setShowPlaceholder(content === '<br>' || content === '');
+    }
+  };
+
+  const handleBioFocus = () => {
+    setIsBioFocused(true);
+    if (showPlaceholder && bioEditorRef.current) {
+      bioEditorRef.current.innerHTML = '';
+      setShowPlaceholder(false);
+    }
+  };
+
+  const handleBioBlur = () => {
+    setIsBioFocused(false);
+    if (bioEditorRef.current && (bioEditorRef.current.innerHTML === '<br>' || bioEditorRef.current.innerHTML === '')) {
+      setShowPlaceholder(true);
+    }
+  };
+
   const handlePromptSelect = (prompt: any) => {
     if (prompt.name) {
       updateField('name', prompt.name);
@@ -53,20 +81,20 @@ export default function CharacterComposer() {
     if (prompt.tagline) {
       updateField('tagline', prompt.tagline);
     }
-    if (prompt.bio) {
+    if (prompt.bio && bioEditorRef.current) {
+      bioEditorRef.current.innerHTML = prompt.bio;
       updateField('bio', prompt.bio);
+      setShowPlaceholder(false);
     }
     setIsInspirationOpen(false);
   };
 
-  // ADD: Back Arrow SVG Component
   const BackArrowIcon = () => (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
       <path d="M19 12H5M12 19l-7-7 7-7"/>
     </svg>
   );
 
-  // UPDATE: Back handler with return path logic
   const handleBack = () => {
     const hasContent = characterData.name !== '' || characterData.tagline !== '' || characterData.bio !== '' || visualReferences.length > 0;
     
@@ -75,7 +103,6 @@ export default function CharacterComposer() {
       if (!confirmLeave) return;
     }
     
-    // Smart navigation: edit mode goes to home feed with hash, create mode goes to return path
     if (isEditing && characterId) {
       navigate(`/home-feed#character-${characterId}`);
     } else {
@@ -83,7 +110,6 @@ export default function CharacterComposer() {
     }
   };
 
-  // ADD: Load existing character for editing
   useEffect(() => {
     const loadCharacter = async () => {
       if (!characterId) return;
@@ -98,7 +124,6 @@ export default function CharacterComposer() {
 
         if (error) throw error;
         if (character) {
-          // Update character data
           updateField('name', character.name);
           updateField('tagline', character.tagline || '');
           updateField('bio', character.bio || '');
@@ -106,7 +131,11 @@ export default function CharacterComposer() {
           setOriginalStatus(character.status as 'draft' | 'published');
           setShowPublishOption(false);
           
-          // Load visual references
+          if (bioEditorRef.current && character.bio) {
+            bioEditorRef.current.innerHTML = character.bio;
+            setShowPlaceholder(false);
+          }
+          
           const { data: visualRefs } = await supabase
             .from('character_visual_references')
             .select('*')
@@ -128,7 +157,6 @@ export default function CharacterComposer() {
     loadCharacter();
   }, [characterId]);
 
-  // Smart button logic - show publish option when content is substantial (CREATE MODE ONLY)
   useEffect(() => {
     if (!isEditing) {
       const hasSubstantialContent = 
@@ -140,7 +168,6 @@ export default function CharacterComposer() {
     }
   }, [characterData.name, characterData.tagline, characterData.bio, isEditing]);
 
-  // UPDATE: Handle submit with separate loading states for publish vs draft
   const handleSubmit = async (e: React.FormEvent, publish: boolean = false) => {
     e.preventDefault();
     
@@ -149,7 +176,6 @@ export default function CharacterComposer() {
       return;
     }
 
-    // Set the correct loading state
     if (publish) {
       setIsPublishing(true);
     } else {
@@ -157,25 +183,26 @@ export default function CharacterComposer() {
     }
 
     try {
-      // EDIT MODE: Completely separate logic
       if (isEditing && characterId) {
         await handleEditUpdate();
         return;
       }
       
-      // CREATE MODE: Original logic completely unchanged
       const result = await submitCharacter(publish ? 'published' : 'draft');
       
       if (result) {
         alert(publish ? 'Character published successfully!' : 'Character saved as draft!');
         resetForm();
+        if (bioEditorRef.current) {
+          bioEditorRef.current.innerHTML = '';
+          setShowPlaceholder(true);
+        }
         setShowVisualRefInput(false);
         setShowPublishOption(false);
       }
     } catch (err) {
       console.error('Submit error:', err);
     } finally {
-      // Reset the correct loading state
       if (publish) {
         setIsPublishing(false);
       } else {
@@ -184,7 +211,6 @@ export default function CharacterComposer() {
     }
   };
 
-  // ADD: Separate edit mode update handler
   const handleEditUpdate = async () => {
     if (!characterId) return;
     
@@ -202,7 +228,6 @@ export default function CharacterComposer() {
 
       if (error) throw error;
 
-      // Update visual references
       await supabase.from('character_visual_references').delete().eq('character_id', characterId);
       if (visualReferences.length > 0) {
         const visualRefInserts = visualReferences.map(ref => ({
@@ -213,7 +238,6 @@ export default function CharacterComposer() {
       }
 
       alert('Character updated successfully!');
-      
       navigate(`/home-feed#character-${characterId}`);
       
     } catch (err) {
@@ -222,7 +246,6 @@ export default function CharacterComposer() {
     }
   };
 
-  // UPDATE: Modified handleAddVisualReference to prevent form submission
   const handleAddVisualReference = (e?: React.MouseEvent) => {
     if (e) e.preventDefault();
     if (tempImageUrl.trim()) {
@@ -231,28 +254,23 @@ export default function CharacterComposer() {
     }
   };
 
-  // UPDATED: Handle file upload - now uses the updated addVisualReference that handles storage upload
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      // Validate file type
       if (!file.type.startsWith('image/')) {
         alert('Please select an image file (JPEG, PNG, GIF, etc.)');
         return;
       }
 
-      // Create object URL for preview - UPDATED: addVisualReference now handles storage upload
       const objectUrl = URL.createObjectURL(file);
       addVisualReference(objectUrl);
       
-      // Reset file input
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
     }
   };
 
-  // UPDATED: Handle paste event for images - now uses the updated addVisualReference that handles storage upload
   const handlePaste = (event: React.ClipboardEvent) => {
     const items = event.clipboardData?.items;
     if (items) {
@@ -274,7 +292,6 @@ export default function CharacterComposer() {
     setShowVisualRefInput(true);
   };
 
-  // UPDATE: Container style with position relative for back arrow
   const containerStyle: React.CSSProperties = {
     width: 375,
     background: '#FFFFFF',
@@ -305,14 +322,63 @@ export default function CharacterComposer() {
     color: '#000000'
   };
 
-  const textareaStyle: React.CSSProperties = {
-    ...inputStyle,
-    height: 120,
+  const editorStyle: React.CSSProperties = {
+    width: '100%',
+    minHeight: 120,
+    display: 'block',
+    boxSizing: 'border-box',
+    padding: '12px 16px',
+    borderRadius: 12,
+    border: '1px solid rgba(0,0,0,0.12)',
+    background: '#FAF8F2',
+    outline: 'none',
+    fontSize: 15,
+    margin: 0,
+    fontFamily: "'Garamond', serif",
+    color: '#000000',
     resize: 'none',
-    fontFamily: "'Garamond', serif"
+    overflow: 'auto',
+    lineHeight: '1.4',
+    position: 'relative'
   };
 
-  // Button styles
+  const placeholderStyle: React.CSSProperties = {
+    position: 'absolute',
+    top: '12px',
+    left: '16px',
+    right: '16px',
+    color: '#6B7280',
+    fontFamily: "'Garamond', serif",
+    fontSize: 15,
+    pointerEvents: 'none',
+    userSelect: 'none'
+  };
+
+  const toolbarStyle: React.CSSProperties = {
+    display: isBioFocused ? 'flex' : 'none',
+    gap: '8px',
+    padding: '8px 12px',
+    background: '#FAF8F2',
+    border: '1px solid rgba(0,0,0,0.12)',
+    borderBottom: 'none',
+    borderTopLeftRadius: 12,
+    borderTopRightRadius: 12,
+    marginBottom: '-1px'
+  };
+
+  const formatButtonStyle: React.CSSProperties = {
+    padding: '6px 10px',
+    background: 'transparent',
+    border: '1px solid rgba(0,0,0,0.2)',
+    borderRadius: 6,
+    cursor: 'pointer',
+    fontSize: 14,
+    fontFamily: "'Cormorant', serif",
+    fontWeight: 600,
+    color: '#000000',
+    transition: 'all 0.2s ease'
+  };
+
   const actionButtonStyle: React.CSSProperties = {
     width: '100%',
     padding: '16px',
@@ -328,7 +394,6 @@ export default function CharacterComposer() {
     transition: 'all 0.2s ease'
   };
 
-  // Smart button styles - ONLY FOR CREATE MODE
   const draftButtonStyle: React.CSSProperties = {
     width: showPublishOption ? '48%' : '100%',
     height: 50,
@@ -359,7 +424,6 @@ export default function CharacterComposer() {
     transition: 'all 0.3s ease'
   };
 
-  // EDIT MODE: Single update button style
   const updateButtonStyle: React.CSSProperties = {
     width: '100%',
     height: 50,
@@ -375,7 +439,6 @@ export default function CharacterComposer() {
     transition: 'all 0.3s ease'
   };
 
-  // NEW: Tab button style
   const tabButtonStyle = (isActive: boolean): React.CSSProperties => ({
     flex: 1,
     padding: '12px 16px',
@@ -389,7 +452,6 @@ export default function CharacterComposer() {
     transition: 'all 0.2s ease'
   });
 
-  // ADD: Loading state
   if (loadingCharacter) {
     return (
       <div style={{
@@ -422,7 +484,6 @@ export default function CharacterComposer() {
       background: '#FFFFFF'
     }}>
       <div style={containerStyle}>
-        {/* UPDATE: Back Arrow Button - Show in BOTH create and edit modes */}
         <button
           type="button"
           onClick={handleBack}
@@ -455,7 +516,6 @@ export default function CharacterComposer() {
           <BackArrowIcon />
         </button>
 
-        {/* UPDATE: Header text for editing */}
         <div style={{ textAlign: 'center', marginBottom: 8 }}>
           <h1 style={{
             fontFamily: "'Playfair Display', serif",
@@ -482,7 +542,6 @@ export default function CharacterComposer() {
         </div>
 
         <form onSubmit={(e) => handleSubmit(e, false)} style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-          {/* Character Name Input */}
           <div>
             <label style={{
               display: 'block',
@@ -505,7 +564,6 @@ export default function CharacterComposer() {
             />
           </div>
 
-          {/* Tagline or Trait Input */}
           <div>
             <label style={{
               display: 'block',
@@ -528,8 +586,8 @@ export default function CharacterComposer() {
             />
           </div>
 
-          {/* Biography Textarea */}
-          <div>
+          {/* UPDATED: Biography Editor with WYSIWYG formatting */}
+          <div style={{ position: 'relative' }}>
             <label style={{
               display: 'block',
               fontFamily: "'Playfair Display', serif",
@@ -541,16 +599,57 @@ export default function CharacterComposer() {
             }}>
               Give your character an arc, characteristics and back story...
             </label>
-            <textarea
-              value={characterData.bio}
-              onChange={(e) => updateField('bio', e.target.value)}
-              rows={4}
-              placeholder="Describe your character's story, personality, and development..."
-              style={textareaStyle}
+            
+            {/* Formatting Toolbar */}
+            <div style={toolbarStyle}>
+              <button
+                type="button"
+                onClick={() => handleFormat('bold')}
+                style={formatButtonStyle}
+                onMouseOver={(e) => e.currentTarget.style.background = '#F0EDE4'}
+                onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
+              >
+                <strong>B</strong>
+              </button>
+              <button
+                type="button"
+                onClick={() => handleFormat('italic')}
+                style={formatButtonStyle}
+                onMouseOver={(e) => e.currentTarget.style.background = '#F0EDE4'}
+                onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
+              >
+                <em>I</em>
+              </button>
+              <button
+                type="button"
+                onClick={() => handleFormat('insertUnorderedList')}
+                style={formatButtonStyle}
+                onMouseOver={(e) => e.currentTarget.style.background = '#F0EDE4'}
+                onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
+              >
+                • List
+              </button>
+            </div>
+
+            {/* WYSIWYG Editor */}
+            <div
+              ref={bioEditorRef}
+              contentEditable
+              onInput={handleBioInput}
+              onFocus={handleBioFocus}
+              onBlur={handleBioBlur}
+              style={editorStyle}
+              suppressContentEditableWarning={true}
             />
+            
+            {/* Placeholder */}
+            {showPlaceholder && (
+              <div style={placeholderStyle}>
+                Describe your character's story, personality, and development...
+              </div>
+            )}
           </div>
 
-          {/* Add Visual References Section */}
           <div>
             <button
               type="button"
@@ -562,10 +661,8 @@ export default function CharacterComposer() {
               Add Visual References
             </button>
             
-            {/* Visual references input - ENHANCED WITH FILE UPLOAD */}
             {(showVisualRefInput || visualReferences.length > 0) && (
               <div style={{ marginTop: 16 }}>
-                {/* Upload Method Tabs */}
                 <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
                   <button
                     type="button"
@@ -583,7 +680,6 @@ export default function CharacterComposer() {
                   </button>
                 </div>
 
-                {/* URL Input */}
                 {uploadMethod === 'url' && (
                   <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
                     <input
@@ -616,7 +712,6 @@ export default function CharacterComposer() {
                   </div>
                 )}
 
-                {/* File Upload Input */}
                 {uploadMethod === 'file' && (
                   <div style={{ marginBottom: 12 }}>
                     <input
@@ -658,7 +753,6 @@ export default function CharacterComposer() {
                   </div>
                 )}
                 
-                {/* Visual references list WITH PREVIEW */}
                 {visualReferences.map((ref) => (
                   <div key={ref.id} style={{
                     display: 'flex',
@@ -669,7 +763,6 @@ export default function CharacterComposer() {
                     borderRadius: 8,
                     marginBottom: 8
                   }}>
-                    {/* Image Preview */}
                     <div style={{
                       width: '40px',
                       height: '40px',
@@ -722,7 +815,6 @@ export default function CharacterComposer() {
             )}
           </div>
 
-          {/* ADDED: Inspiration Trigger Button */}
           <div style={{ textAlign: 'center', marginTop: '10px' }}>
             <button
               type="button"
@@ -752,7 +844,6 @@ export default function CharacterComposer() {
             </button>
           </div>
 
-          {/* Error Display */}
           {error && (
             <div style={{
               background: '#FEF2F2',
@@ -767,7 +858,6 @@ export default function CharacterComposer() {
             </div>
           )}
 
-          {/* COMPLETELY SEPARATE BUTTON SYSTEMS */}
           <div style={{ 
             display: 'flex', 
             gap: '4%', 
@@ -775,7 +865,6 @@ export default function CharacterComposer() {
             alignItems: 'center'
           }}>
             {isEditing ? (
-              /* EDIT MODE: Single Update Button */
               <button
                 type="submit"
                 disabled={isLoading}
@@ -790,7 +879,6 @@ export default function CharacterComposer() {
                 {isLoading ? 'Updating...' : 'Update'}
               </button>
             ) : (
-              /* CREATE MODE: Updated dual button system with separate loading states */
               <>
                 <button
                   type="submit"
@@ -827,7 +915,6 @@ export default function CharacterComposer() {
           </div>
         </form>
 
-        {/* ADDED: Inspiration Bottom Sheet */}
         <InspirationBottomSheet
           isOpen={isInspirationOpen}
           onClose={() => setIsInspirationOpen(false)}
