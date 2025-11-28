@@ -42,20 +42,14 @@ export default function CharacterComposer() {
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   
-  // ADDED: WYSIWYG Editor states - KEEP THE WYSIWYG
   const bioEditorRef = useRef<HTMLDivElement>(null);
   const [isBioFocused, setIsBioFocused] = useState(false);
   const [showPlaceholder, setShowPlaceholder] = useState(true);
 
-  // ADDED: WYSIWYG Editor handlers - SAME AS SCENE COMPOSER
   const handleFormat = (command: string, value: string = '') => {
-    // Apply formatting
     document.execCommand(command, false, value);
-    
-    // Maintain focus on the editor
     bioEditorRef.current?.focus();
     
-    // Update content state
     if (bioEditorRef.current) {
       const content = bioEditorRef.current.innerHTML;
       updateField('bio', content);
@@ -85,10 +79,8 @@ export default function CharacterComposer() {
   };
 
   const handleBioBlur = () => {
-    // Use a longer timeout to prevent toolbar from disappearing when clicking buttons
     setTimeout(() => {
       const activeElement = document.activeElement;
-      // Only hide toolbar if focus is not on toolbar buttons
       if (activeElement && !activeElement.closest('.toolbar-button')) {
         setIsBioFocused(false);
         
@@ -139,7 +131,6 @@ export default function CharacterComposer() {
     }
   };
 
-  // FIXED: Load existing character for editing - USE SAME PATTERN AS SCENE COMPOSER
   useEffect(() => {
     const loadCharacter = async () => {
       if (!characterId) return;
@@ -153,24 +144,25 @@ export default function CharacterComposer() {
           .single();
 
         if (error) throw error;
+        
         if (character) {
           updateField('name', character.name);
           updateField('tagline', character.tagline || '');
+          updateField('bio', character.bio || '');
           setIsEditing(true);
           setOriginalStatus(character.status as 'draft' | 'published');
           setShowPublishOption(false);
           
-          // FIXED: Set bio content and update editor in the same operation - LIKE SCENE COMPOSER
-          const characterBio = character.bio || '';
-          updateField('bio', characterBio);
-          
-          // Update editor content after a brief delay to ensure DOM is ready
-          setTimeout(() => {
-            if (bioEditorRef.current && characterBio) {
-              bioEditorRef.current.innerHTML = characterBio;
-              setShowPlaceholder(!characterBio.trim());
+          // FIX: Directly set editor content after state is updated
+          const updateEditorContent = () => {
+            if (bioEditorRef.current && character.bio) {
+              bioEditorRef.current.innerHTML = character.bio;
+              setShowPlaceholder(!character.bio.trim());
             }
-          }, 100);
+          };
+          
+          // Set content after React state is processed
+          setTimeout(updateEditorContent, 0);
           
           const { data: visualRefs } = await supabase
             .from('character_visual_references')
@@ -193,7 +185,6 @@ export default function CharacterComposer() {
     loadCharacter();
   }, [characterId]);
 
-  // Smart button logic - show publish option when content is substantial (CREATE MODE ONLY)
   useEffect(() => {
     if (!isEditing) {
       const hasSubstantialContent = 
@@ -230,7 +221,6 @@ export default function CharacterComposer() {
       if (result) {
         alert(publish ? 'Character published successfully!' : 'Character saved as draft!');
         resetForm();
-        // Clear editor
         if (bioEditorRef.current) {
           bioEditorRef.current.innerHTML = '';
           setShowPlaceholder(true);
@@ -276,7 +266,6 @@ export default function CharacterComposer() {
       }
 
       alert('Character updated successfully!');
-      
       navigate(`/home-feed#character-${characterId}`);
       
     } catch (err) {
@@ -361,7 +350,6 @@ export default function CharacterComposer() {
     color: '#000000'
   };
 
-  // ADDED: Editor styles - KEEP WYSIWYG
   const editorStyle: React.CSSProperties = {
     width: '100%',
     minHeight: 120,
@@ -626,7 +614,6 @@ export default function CharacterComposer() {
             />
           </div>
 
-          {/* KEEP WYSIWYG EDITOR - FIXED CONTENT LOADING */}
           <div style={{ position: 'relative' }}>
             <label style={{
               display: 'block',
@@ -640,7 +627,6 @@ export default function CharacterComposer() {
               Give your character an arc, characteristics and back story...
             </label>
             
-            {/* Formatting Toolbar */}
             <div style={toolbarStyle}>
               <button
                 type="button"
@@ -683,9 +669,7 @@ export default function CharacterComposer() {
               </button>
             </div>
 
-            {/* Editor Container */}
             <div style={{ position: 'relative' }}>
-              {/* WYSIWYG Editor */}
               <div
                 ref={bioEditorRef}
                 contentEditable
@@ -696,7 +680,6 @@ export default function CharacterComposer() {
                 suppressContentEditableWarning={true}
               />
               
-              {/* Placeholder */}
               {showPlaceholder && (
                 <div style={placeholderStyle}>
                   Describe your character's story, personality, and development...
@@ -705,7 +688,6 @@ export default function CharacterComposer() {
             </div>
           </div>
 
-          {/* Rest of the component remains the same... */}
           <div>
             <button
               type="button"
