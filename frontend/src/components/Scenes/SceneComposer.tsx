@@ -6,6 +6,7 @@ import { supabase } from '../../assets/lib/supabaseClient';
 import { useSearchParams, useNavigate, useLocation } from 'react-router-dom';
 import { promptsData } from '../../data/promptsData';
 import InspirationBottomSheet from '../InspirationBottomSheet/InspirationBottomSheet';
+import MDEditor from '@uiw/react-md-editor'; // ADDED: MDEditor import
 
 // ADDED: URL Input Component
 const UrlImageInput: React.FC<{ onAddImage: (url: string) => void }> = ({ onAddImage }) => {
@@ -378,11 +379,7 @@ export const SceneComposer: React.FC = () => {
     fontFamily: "'Cormorant', serif"
   };
 
-  const textareaStyle: React.CSSProperties = {
-    ...inputStyle,
-    height: 220,
-    resize: 'none'
-  };
+  // REMOVED: textareaStyle since it's no longer used
 
   // ADDED: Tab button style
   const tabButtonStyle = (isActive: boolean): React.CSSProperties => ({
@@ -548,13 +545,34 @@ export const SceneComposer: React.FC = () => {
           </div>
 
           <div>
-            <textarea
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              placeholder="Write a monologue, moment, or memory..."
-              required
-              style={textareaStyle}
-            />
+            {/* REPLACED: Textarea with MDEditor - ONLY THIS SECTION CHANGED */}
+            <div data-color-mode="light">
+              <MDEditor
+                value={content}
+                onChange={(value) => setContent(value || '')}
+                preview="edit"
+                height={220}
+                style={{
+                  borderRadius: 12,
+                  border: '1px solid rgba(0,0,0,0.12)',
+                  fontFamily: "'Cormorant', serif",
+                  fontSize: 15,
+                  background: '#FAF8F2'
+                }}
+                textareaProps={{
+                  placeholder: "Write a monologue, moment, or memory...",
+                }}
+                previewOptions={{
+                  className: 'custom-preview',
+                  style: {
+                    fontFamily: "'Cormorant', serif",
+                    fontSize: 15,
+                    padding: '12px 16px',
+                    background: '#FAF8F2'
+                  }
+                }}
+              />
+            </div>
           </div>
 
           {/* UPDATED: Image Upload Section with Preview */}
