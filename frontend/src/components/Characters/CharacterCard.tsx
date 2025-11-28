@@ -90,13 +90,15 @@ const MenuIcon = () => (
   </svg>
 );
 
-// CharacterDescription component
+// CharacterDescription component - FIXED
 const CharacterDescription: React.FC<{ text: string }> = ({ text }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const maxLength = 120;
   const maxLines = 3;
 
   const needsTruncation = text && text.length > maxLength;
+  
+  // For truncated view, we need to handle line breaks differently
   const displayText = isExpanded ? text : 
     (text && text.length > maxLength ? `${text.substring(0, maxLength)}...` : text);
 
@@ -111,9 +113,16 @@ const CharacterDescription: React.FC<{ text: string }> = ({ text }) => {
         color: '#000000',
         lineHeight: '1.4',
         maxHeight: isExpanded ? 'none' : `${maxLines * 1.4}em`,
-        overflow: 'hidden'
+        overflow: 'hidden',
+        whiteSpace: 'pre-line' // ← ADDED: This preserves line breaks and paragraphs
       }}>
-        {displayText}
+        {isExpanded || !needsTruncation ? (
+          // When expanded or no truncation needed, show with proper line breaks
+          text
+        ) : (
+          // When truncated, show simple truncated text
+          displayText
+        )}
       </div>
       
       {needsTruncation && (

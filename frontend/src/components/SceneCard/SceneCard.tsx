@@ -72,7 +72,8 @@ const SceneDescription: React.FC<{ text: string }> = ({ text }) => {
         color: '#55524F',
         lineHeight: '1.4',
         maxHeight: isExpanded ? 'none' : `${maxLines * 1.4}em`,
-        overflow: 'hidden'
+        overflow: 'hidden',
+        whiteSpace: 'pre-line' // ← ADDED: This preserves line breaks and paragraphs
       }}>
         {displayText}
       </div>

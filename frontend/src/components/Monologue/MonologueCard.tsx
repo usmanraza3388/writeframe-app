@@ -79,7 +79,7 @@ interface MonologueCardProps {
   onAction?: (action: string, monologueId: string) => void;
 }
 
-// Add MonologueDescription component BEFORE the main MonologueCard - EXACTLY like SceneCard
+// Add MonologueDescription component BEFORE the main MonologueCard - FIXED
 const MonologueDescription: React.FC<{ text: string }> = ({ text }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const maxLines = 3;
@@ -96,7 +96,8 @@ const MonologueDescription: React.FC<{ text: string }> = ({ text }) => {
         color: '#55524F',
         lineHeight: '1.4',
         maxHeight: isExpanded ? 'none' : `${maxLines * 1.4}em`,
-        overflow: 'hidden'
+        overflow: 'hidden',
+        whiteSpace: 'pre-line' // ← ADDED: This preserves line breaks and paragraphs
       }}>
         {displayText}
       </div>
