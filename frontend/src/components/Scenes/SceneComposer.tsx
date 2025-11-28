@@ -95,7 +95,6 @@ export const SceneComposer: React.FC = () => {
   const contentEditorRef = useRef<HTMLDivElement>(null);
   const [isContentFocused, setIsContentFocused] = useState(false);
   const [showContentPlaceholder, setShowContentPlaceholder] = useState(true);
-  const [isInitialLoad, setIsInitialLoad] = useState(true);
   
   const { createScene, loading, error } = useSceneComposer();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -175,7 +174,7 @@ export const SceneComposer: React.FC = () => {
     }
   }, [title, content, isEditing]);
 
-  // FIXED: Load existing scene for editing - use a separate useEffect to sync editor content
+  // FIXED: Load existing scene for editing with proper content synchronization
   useEffect(() => {
     const loadScene = async () => {
       if (!sceneId) return;
@@ -191,7 +190,6 @@ export const SceneComposer: React.FC = () => {
         if (error) throw error;
         if (scene) {
           setTitle(scene.title);
-          setContent(scene.content_text || '');
           setIsEditing(true);
           setOriginalStatus(scene.status as 'draft' | 'published');
           setShowPublishOption(false);
@@ -211,6 +209,18 @@ export const SceneComposer: React.FC = () => {
           if (moods) {
             setSelectedMoods(moods.map(m => m.mood));
           }
+
+          // FIXED: Set content and update editor in the same operation
+          const sceneContent = scene.content_text || '';
+          setContent(sceneContent);
+          
+          // Update editor content after a brief delay to ensure DOM is ready
+          setTimeout(() => {
+            if (contentEditorRef.current && sceneContent) {
+              contentEditorRef.current.innerHTML = sceneContent;
+              setShowContentPlaceholder(!sceneContent.trim());
+            }
+          }, 100);
         }
       } catch (err) {
         console.error('Error loading scene:', err);
@@ -222,16 +232,6 @@ export const SceneComposer: React.FC = () => {
 
     loadScene();
   }, [sceneId]);
-
-  // FIXED: Separate useEffect to sync editor content after state is updated
-  useEffect(() => {
-    if (isEditing && content && contentEditorRef.current && isInitialLoad) {
-      // Set the editor content only on initial load when editing
-      contentEditorRef.current.innerHTML = content;
-      setShowContentPlaceholder(!content.trim());
-      setIsInitialLoad(false);
-    }
-  }, [content, isEditing, isInitialLoad]);
 
   const handleBack = () => {
     const hasContent = title !== '' || content !== '' || selectedImage !== null || imagePreviewUrl !== '';
