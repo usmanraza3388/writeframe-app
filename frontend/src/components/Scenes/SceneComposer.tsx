@@ -95,6 +95,7 @@ export const SceneComposer: React.FC = () => {
   const contentEditorRef = useRef<HTMLDivElement>(null);
   const [isContentFocused, setIsContentFocused] = useState(false);
   const [showContentPlaceholder, setShowContentPlaceholder] = useState(true);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
   
   const { createScene, loading, error } = useSceneComposer();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -174,7 +175,7 @@ export const SceneComposer: React.FC = () => {
     }
   }, [title, content, isEditing]);
 
-  // Load existing scene for editing - FIXED: Added setTimeout for editor content
+  // FIXED: Load existing scene for editing - use a separate useEffect to sync editor content
   useEffect(() => {
     const loadScene = async () => {
       if (!sceneId) return;
@@ -194,14 +195,6 @@ export const SceneComposer: React.FC = () => {
           setIsEditing(true);
           setOriginalStatus(scene.status as 'draft' | 'published');
           setShowPublishOption(false);
-          
-          // FIX: Set content in editor AFTER state is updated using setTimeout
-          setTimeout(() => {
-            if (contentEditorRef.current && scene.content_text) {
-              contentEditorRef.current.innerHTML = scene.content_text;
-              setShowContentPlaceholder(false);
-            }
-          }, 0);
           
           // Load scene image for preview if it exists
           if (scene.image_path) {
@@ -229,6 +222,16 @@ export const SceneComposer: React.FC = () => {
 
     loadScene();
   }, [sceneId]);
+
+  // FIXED: Separate useEffect to sync editor content after state is updated
+  useEffect(() => {
+    if (isEditing && content && contentEditorRef.current && isInitialLoad) {
+      // Set the editor content only on initial load when editing
+      contentEditorRef.current.innerHTML = content;
+      setShowContentPlaceholder(!content.trim());
+      setIsInitialLoad(false);
+    }
+  }, [content, isEditing, isInitialLoad]);
 
   const handleBack = () => {
     const hasContent = title !== '' || content !== '' || selectedImage !== null || imagePreviewUrl !== '';
