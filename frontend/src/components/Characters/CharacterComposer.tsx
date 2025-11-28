@@ -45,7 +45,7 @@ export default function CharacterComposer() {
   const [isBioFocused, setIsBioFocused] = useState(false);
   const [showPlaceholder, setShowPlaceholder] = useState(true);
 
-  // Formatting handlers - FIXED: Prevent toolbar from disappearing
+  // Formatting handlers
   const handleFormat = (command: string, value: string = '') => {
     // Save current selection
     const selection = window.getSelection();
@@ -66,7 +66,14 @@ export default function CharacterComposer() {
     if (bioEditorRef.current) {
       const content = bioEditorRef.current.innerHTML;
       updateField('bio', content);
-      setShowPlaceholder(content === '<br>' || content === '');
+      
+      // FIXED: Check if content is actually empty (not just <br> or empty string)
+      const hasContent = content !== '' && 
+                         content !== '<br>' && 
+                         content !== '<div><br></div>' &&
+                         !content.startsWith('<div></div>');
+      
+      setShowPlaceholder(!hasContent);
     }
   };
 
@@ -83,9 +90,15 @@ export default function CharacterComposer() {
     setTimeout(() => {
       if (bioEditorRef.current && !bioEditorRef.current.contains(document.activeElement)) {
         setIsBioFocused(false);
-        if (bioEditorRef.current.innerHTML === '<br>' || bioEditorRef.current.innerHTML === '') {
-          setShowPlaceholder(true);
-        }
+        
+        // FIXED: Better content detection for placeholder
+        const content = bioEditorRef.current.innerHTML;
+        const isEmpty = content === '' || 
+                        content === '<br>' || 
+                        content === '<div><br></div>' ||
+                        content.startsWith('<div></div>');
+        
+        setShowPlaceholder(isEmpty);
       }
     }, 100);
   };
@@ -354,8 +367,7 @@ export default function CharacterComposer() {
     color: '#000000',
     resize: 'none',
     overflow: 'auto',
-    lineHeight: '1.4',
-    position: 'relative'
+    lineHeight: '1.4'
   };
 
   const placeholderStyle: React.CSSProperties = {
@@ -368,7 +380,7 @@ export default function CharacterComposer() {
     fontSize: 15,
     pointerEvents: 'none',
     userSelect: 'none',
-    display: showPlaceholder ? 'block' : 'none' // FIXED: Completely hide when not needed
+    zIndex: 1
   };
 
   const toolbarStyle: React.CSSProperties = {
@@ -603,7 +615,7 @@ export default function CharacterComposer() {
             />
           </div>
 
-          {/* FIXED: Biography Editor with proper placeholder and toolbar behavior */}
+          {/* FIXED: Biography Editor with proper placeholder behavior */}
           <div style={{ position: 'relative' }}>
             <label style={{
               display: 'block',
@@ -657,23 +669,26 @@ export default function CharacterComposer() {
               </button>
             </div>
 
-            {/* WYSIWYG Editor */}
-            <div
-              ref={bioEditorRef}
-              contentEditable
-              onInput={handleBioInput}
-              onFocus={handleBioFocus}
-              onBlur={handleBioBlur}
-              style={editorStyle}
-              suppressContentEditableWarning={true}
-            />
-            
-            {/* Placeholder - FIXED: Completely hidden when focused */}
-            {showPlaceholder && (
-              <div style={placeholderStyle}>
-                Describe your character's story, personality, and development...
-              </div>
-            )}
+            {/* Editor Container */}
+            <div style={{ position: 'relative' }}>
+              {/* WYSIWYG Editor */}
+              <div
+                ref={bioEditorRef}
+                contentEditable
+                onInput={handleBioInput}
+                onFocus={handleBioFocus}
+                onBlur={handleBioBlur}
+                style={editorStyle}
+                suppressContentEditableWarning={true}
+              />
+              
+              {/* Placeholder - FIXED: Only shows when there's no content */}
+              {showPlaceholder && (
+                <div style={placeholderStyle}>
+                  Describe your character's story, personality, and development...
+                </div>
+              )}
+            </div>
           </div>
 
           <div>
