@@ -6,7 +6,6 @@ import { supabase } from '../../assets/lib/supabaseClient';
 import { useSearchParams, useNavigate, useLocation } from 'react-router-dom';
 import { promptsData } from '../../data/promptsData';
 import InspirationBottomSheet from '../InspirationBottomSheet/InspirationBottomSheet';
-import MDEditor from '@uiw/react-md-editor'; // ADDED: MDEditor import
 
 // ADDED: URL Input Component
 const UrlImageInput: React.FC<{ onAddImage: (url: string) => void }> = ({ onAddImage }) => {
@@ -92,15 +91,74 @@ export const SceneComposer: React.FC = () => {
   
   const [isInspirationOpen, setIsInspirationOpen] = useState<boolean>(false);
   
+  // ADDED: WYSIWYG Editor states
+  const contentEditorRef = useRef<HTMLDivElement>(null);
+  const [isContentFocused, setIsContentFocused] = useState(false);
+  const [showContentPlaceholder, setShowContentPlaceholder] = useState(true);
+  
   const { createScene, loading, error } = useSceneComposer();
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // ADDED: WYSIWYG Editor handlers
+  const handleFormat = (command: string, value: string = '') => {
+    const selection = window.getSelection();
+    const range = selection?.rangeCount ? selection.getRangeAt(0) : null;
+    
+    document.execCommand(command, false, value);
+    
+    contentEditorRef.current?.focus();
+    if (range && selection) {
+      selection.removeAllRanges();
+      selection.addRange(range);
+    }
+  };
+
+  const handleContentInput = () => {
+    if (contentEditorRef.current) {
+      const contentValue = contentEditorRef.current.innerHTML;
+      setContent(contentValue);
+      
+      const hasContent = contentValue !== '' && 
+                         contentValue !== '<br>' && 
+                         contentValue !== '<div><br></div>' &&
+                         !contentValue.startsWith('<div></div>');
+      
+      setShowContentPlaceholder(!hasContent);
+    }
+  };
+
+  const handleContentFocus = () => {
+    setIsContentFocused(true);
+    if (showContentPlaceholder && contentEditorRef.current) {
+      contentEditorRef.current.innerHTML = '';
+      setShowContentPlaceholder(false);
+    }
+  };
+
+  const handleContentBlur = () => {
+    setTimeout(() => {
+      if (contentEditorRef.current && !contentEditorRef.current.contains(document.activeElement)) {
+        setIsContentFocused(false);
+        
+        const contentValue = contentEditorRef.current.innerHTML;
+        const isEmpty = contentValue === '' || 
+                        contentValue === '<br>' || 
+                        contentValue === '<div><br></div>' ||
+                        contentValue.startsWith('<div></div>');
+        
+        setShowContentPlaceholder(isEmpty);
+      }
+    }, 100);
+  };
 
   const handlePromptSelect = (prompt: any) => {
     if (prompt.title) {
       setTitle(prompt.title);
     }
-    if (prompt.description) {
+    if (prompt.description && contentEditorRef.current) {
+      contentEditorRef.current.innerHTML = prompt.description;
       setContent(prompt.description);
+      setShowContentPlaceholder(false);
     }
     setIsInspirationOpen(false);
   };
@@ -136,6 +194,12 @@ export const SceneComposer: React.FC = () => {
           setIsEditing(true);
           setOriginalStatus(scene.status as 'draft' | 'published');
           setShowPublishOption(false);
+          
+          // Set content in editor
+          if (contentEditorRef.current && scene.content_text) {
+            contentEditorRef.current.innerHTML = scene.content_text;
+            setShowContentPlaceholder(false);
+          }
           
           // Load scene image for preview if it exists
           if (scene.image_path) {
@@ -277,6 +341,12 @@ export const SceneComposer: React.FC = () => {
         setImagePreviewUrl('');
         setShowPublishOption(false);
         
+        // Clear editor
+        if (contentEditorRef.current) {
+          contentEditorRef.current.innerHTML = '';
+          setShowContentPlaceholder(true);
+        }
+        
         // UPDATED: Use alerts instead of notifications
         if (publish) {
           alert('Scene published successfully!');
@@ -379,7 +449,63 @@ export const SceneComposer: React.FC = () => {
     fontFamily: "'Cormorant', serif"
   };
 
-  // REMOVED: textareaStyle since it's no longer used
+  // ADDED: Editor styles
+  const editorStyle: React.CSSProperties = {
+    width: '100%',
+    minHeight: 220,
+    display: 'block',
+    boxSizing: 'border-box',
+    padding: '12px 16px',
+    borderRadius: 12,
+    border: '1px solid rgba(0,0,0,0.12)',
+    background: '#FAF8F2',
+    outline: 'none',
+    fontSize: 15,
+    margin: 0,
+    fontFamily: "'Cormorant', serif",
+    color: '#000000',
+    resize: 'none',
+    overflow: 'auto',
+    lineHeight: '1.4'
+  };
+
+  const placeholderStyle: React.CSSProperties = {
+    position: 'absolute',
+    top: '12px',
+    left: '16px',
+    right: '16px',
+    color: '#6B7280',
+    fontFamily: "'Cormorant', serif",
+    fontSize: 15,
+    pointerEvents: 'none',
+    userSelect: 'none',
+    zIndex: 1
+  };
+
+  const toolbarStyle: React.CSSProperties = {
+    display: isContentFocused ? 'flex' : 'none',
+    gap: '8px',
+    padding: '8px 12px',
+    background: '#FAF8F2',
+    border: '1px solid rgba(0,0,0,0.12)',
+    borderBottom: 'none',
+    borderTopLeftRadius: 12,
+    borderTopRightRadius: 12,
+    marginBottom: '-1px'
+  };
+
+  const formatButtonStyle: React.CSSProperties = {
+    padding: '6px 10px',
+    background: 'transparent',
+    border: '1px solid rgba(0,0,0,0.2)',
+    borderRadius: 6,
+    cursor: 'pointer',
+    fontSize: 14,
+    fontFamily: "'Cormorant', serif",
+    fontWeight: 600,
+    color: '#000000',
+    transition: 'all 0.2s ease'
+  };
 
   // ADDED: Tab button style
   const tabButtonStyle = (isActive: boolean): React.CSSProperties => ({
@@ -544,34 +670,67 @@ export const SceneComposer: React.FC = () => {
             />
           </div>
 
-          <div>
-            {/* REPLACED: Textarea with MDEditor - ONLY THIS SECTION CHANGED */}
-            <div data-color-mode="light">
-              <MDEditor
-                value={content}
-                onChange={(value) => setContent(value || '')}
-                preview="edit"
-                height={220}
-                style={{
-                  borderRadius: 12,
-                  border: '1px solid rgba(0,0,0,0.12)',
-                  fontFamily: "'Cormorant', serif",
-                  fontSize: 15,
-                  background: '#FAF8F2'
+          {/* UPDATED: Scene Content with WYSIWYG Editor */}
+          <div style={{ position: 'relative' }}>
+            {/* Formatting Toolbar */}
+            <div style={toolbarStyle}>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  handleFormat('bold');
                 }}
-                textareaProps={{
-                  placeholder: "Write a monologue, moment, or memory...",
+                style={formatButtonStyle}
+                onMouseOver={(e) => e.currentTarget.style.background = '#F0EDE4'}
+                onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
+              >
+                <strong>B</strong>
+              </button>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  handleFormat('italic');
                 }}
-                previewOptions={{
-                  className: 'custom-preview',
-                  style: {
-                    fontFamily: "'Cormorant', serif",
-                    fontSize: 15,
-                    padding: '12px 16px',
-                    background: '#FAF8F2'
-                  }
+                style={formatButtonStyle}
+                onMouseOver={(e) => e.currentTarget.style.background = '#F0EDE4'}
+                onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
+              >
+                <em>I</em>
+              </button>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  handleFormat('insertUnorderedList');
                 }}
+                style={formatButtonStyle}
+                onMouseOver={(e) => e.currentTarget.style.background = '#F0EDE4'}
+                onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
+              >
+                • List
+              </button>
+            </div>
+
+            {/* Editor Container */}
+            <div style={{ position: 'relative' }}>
+              {/* WYSIWYG Editor */}
+              <div
+                ref={contentEditorRef}
+                contentEditable
+                onInput={handleContentInput}
+                onFocus={handleContentFocus}
+                onBlur={handleContentBlur}
+                style={editorStyle}
+                suppressContentEditableWarning={true}
               />
+              
+              {/* Placeholder */}
+              {showContentPlaceholder && (
+                <div style={placeholderStyle}>
+                  Write a monologue, moment, or memory...
+                </div>
+              )}
             </div>
           </div>
 
