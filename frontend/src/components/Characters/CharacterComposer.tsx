@@ -46,6 +46,14 @@ export default function CharacterComposer() {
   const [isBioFocused, setIsBioFocused] = useState(false);
   const [showPlaceholder, setShowPlaceholder] = useState(true);
 
+  // Sync the editor content when characterData.bio changes
+  useEffect(() => {
+    if (bioEditorRef.current && characterData.bio !== bioEditorRef.current.innerHTML) {
+      bioEditorRef.current.innerHTML = characterData.bio;
+      setShowPlaceholder(!characterData.bio.trim());
+    }
+  }, [characterData.bio]);
+
   const handleFormat = (command: string, value: string = '') => {
     document.execCommand(command, false, value);
     bioEditorRef.current?.focus();
@@ -148,16 +156,10 @@ export default function CharacterComposer() {
         if (character) {
           updateField('name', character.name);
           updateField('tagline', character.tagline || '');
+          updateField('bio', character.bio || '');
           setIsEditing(true);
           setOriginalStatus(character.status as 'draft' | 'published');
           setShowPublishOption(false);
-          
-          setTimeout(() => {
-            if (bioEditorRef.current && character.bio) {
-              bioEditorRef.current.innerHTML = character.bio;
-              setShowPlaceholder(!character.bio.trim());
-            }
-          }, 0);
           
           const { data: visualRefs } = await supabase
             .from('character_visual_references')
