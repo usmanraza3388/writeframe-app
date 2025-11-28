@@ -174,7 +174,7 @@ export const SceneComposer: React.FC = () => {
     }
   }, [title, content, isEditing]);
 
-  // Load existing scene for editing
+  // Load existing scene for editing - FIXED: Added setTimeout for editor content
   useEffect(() => {
     const loadScene = async () => {
       if (!sceneId) return;
@@ -195,11 +195,13 @@ export const SceneComposer: React.FC = () => {
           setOriginalStatus(scene.status as 'draft' | 'published');
           setShowPublishOption(false);
           
-          // Set content in editor
-          if (contentEditorRef.current && scene.content_text) {
-            contentEditorRef.current.innerHTML = scene.content_text;
-            setShowContentPlaceholder(false);
-          }
+          // FIX: Set content in editor AFTER state is updated using setTimeout
+          setTimeout(() => {
+            if (contentEditorRef.current && scene.content_text) {
+              contentEditorRef.current.innerHTML = scene.content_text;
+              setShowContentPlaceholder(false);
+            }
+          }, 0);
           
           // Load scene image for preview if it exists
           if (scene.image_path) {
