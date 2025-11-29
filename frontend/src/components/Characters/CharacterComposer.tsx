@@ -145,6 +145,8 @@ export default function CharacterComposer() {
       
       try {
         setLoadingCharacter(true);
+        console.log('🔍 Starting to load character:', characterId);
+        
         const { data: character, error } = await supabase
           .from('characters')
           .select('*')
@@ -154,6 +156,10 @@ export default function CharacterComposer() {
         if (error) throw error;
         
         if (character) {
+          console.log('🔍 Character loaded:', character);
+          console.log('🔍 Character bio content:', character.bio);
+          console.log('🔍 Bio editor ref available:', !!bioEditorRef.current);
+          
           updateField('name', character.name);
           updateField('tagline', character.tagline || '');
           setIsEditing(true);
@@ -164,11 +170,20 @@ export default function CharacterComposer() {
           const characterBio = character.bio || '';
           updateField('bio', characterBio);
           
+          console.log('🔍 After updateField, characterData.bio should be:', characterBio);
+          
           // Update editor content after a brief delay to ensure DOM is ready
           setTimeout(() => {
+            console.log('🔍 In setTimeout - bioEditorRef.current:', !!bioEditorRef.current);
+            console.log('🔍 In setTimeout - characterBio:', characterBio);
+            
             if (bioEditorRef.current && characterBio) {
+              console.log('🔍 Setting editor content to:', characterBio);
               bioEditorRef.current.innerHTML = characterBio;
               setShowPlaceholder(!characterBio.trim());
+              console.log('🔍 Editor content set, should be visible now');
+            } else {
+              console.log('🔍 Could not set editor - ref:', !!bioEditorRef.current, 'bio:', !!characterBio);
             }
           }, 100);
           
