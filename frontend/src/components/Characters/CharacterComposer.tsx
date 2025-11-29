@@ -137,7 +137,7 @@ export default function CharacterComposer() {
     }
   };
 
-  // UPDATED: Load existing character for editing with proper WYSIWYG population
+  // UPDATED: Load existing character for editing with proper HTML handling
   useEffect(() => {
     const loadCharacter = async () => {
       if (!characterId) return;
@@ -155,22 +155,11 @@ export default function CharacterComposer() {
           // Update character data
           updateField('name', character.name);
           updateField('tagline', character.tagline || '');
-          if (character.bio) {
-             updateField('bio', character.bio);
-           } else {
-             updateField('bio', '');
-           }
+          updateField('bio', character.bio || '');
+          
           setIsEditing(true);
           setOriginalStatus(character.status as 'draft' | 'published');
           setShowPublishOption(false);
-          
-          // FIXED: Wait for component to render and then populate WYSIWYG editor
-          setTimeout(() => {
-            if (bioEditorRef.current && character.bio) {
-              bioEditorRef.current.innerHTML = character.bio;
-              setShowBioPlaceholder(!character.bio.trim());
-            }
-          }, 0);
           
           // Load visual references
           const { data: visualRefs } = await supabase
@@ -183,6 +172,16 @@ export default function CharacterComposer() {
               addVisualReference(ref.image_url);
             });
           }
+
+          // FIXED: Populate WYSIWYG editor with proper HTML handling
+          setTimeout(() => {
+            if (bioEditorRef.current && character.bio) {
+              // Use insertAdjacentHTML to properly render HTML content
+              bioEditorRef.current.innerHTML = '';
+              bioEditorRef.current.insertAdjacentHTML('beforeend', character.bio);
+              setShowBioPlaceholder(!character.bio.trim());
+            }
+          }, 100);
         }
       } catch (err) {
         console.error('Error loading character:', err);
@@ -193,14 +192,6 @@ export default function CharacterComposer() {
 
     loadCharacter();
   }, [characterId]);
-
-  // FIXED: Also initialize WYSIWYG when component mounts for create mode
-  useEffect(() => {
-    if (!isEditing && characterData.bio && bioEditorRef.current) {
-      bioEditorRef.current.innerHTML = characterData.bio;
-      setShowBioPlaceholder(!characterData.bio.trim());
-    }
-  }, [isEditing, characterData.bio]);
 
   // Smart button logic - show publish option when content is substantial (CREATE MODE ONLY)
   useEffect(() => {
