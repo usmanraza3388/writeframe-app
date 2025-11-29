@@ -155,7 +155,7 @@ export default function CharacterComposer() {
           // Update character data
           updateField('name', character.name);
           updateField('tagline', character.tagline || '');
-          updateField('bio', character.bio || '');
+          updateField('bio', character.bio ?? '');
           setIsEditing(true);
           setOriginalStatus(character.status as 'draft' | 'published');
           setShowPublishOption(false);
