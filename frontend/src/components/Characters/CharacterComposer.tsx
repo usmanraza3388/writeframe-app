@@ -156,10 +156,15 @@ export default function CharacterComposer() {
         if (character) {
           updateField('name', character.name);
           updateField('tagline', character.tagline || '');
-          updateField('bio', character.bio || '');
           setIsEditing(true);
           setOriginalStatus(character.status as 'draft' | 'published');
           setShowPublishOption(false);
+          
+          // Set editor content directly - no state update needed
+          if (bioEditorRef.current && character.bio) {
+            bioEditorRef.current.innerHTML = character.bio;
+            setShowPlaceholder(!character.bio.trim());
+          }
           
           const { data: visualRefs } = await supabase
             .from('character_visual_references')
