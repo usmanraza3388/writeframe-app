@@ -160,11 +160,17 @@ export default function CharacterComposer() {
           setOriginalStatus(character.status as 'draft' | 'published');
           setShowPublishOption(false);
           
-          // Set editor content directly - no state update needed
-          if (bioEditorRef.current && character.bio) {
-            bioEditorRef.current.innerHTML = character.bio;
-            setShowPlaceholder(!character.bio.trim());
-          }
+          // FIXED: Use exact same pattern as SceneComposer
+          const characterBio = character.bio || '';
+          updateField('bio', characterBio);
+          
+          // Update editor content after a brief delay to ensure DOM is ready
+          setTimeout(() => {
+            if (bioEditorRef.current && characterBio) {
+              bioEditorRef.current.innerHTML = characterBio;
+              setShowPlaceholder(!characterBio.trim());
+            }
+          }, 100);
           
           const { data: visualRefs } = await supabase
             .from('character_visual_references')
