@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useMonologueComposer } from '../../hooks/useMonologueComposer';
 import { useSearchParams, useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '../../assets/lib/supabaseClient';
@@ -22,77 +22,18 @@ export const MonologueComposer: React.FC = () => {
   const [originalStatus, setOriginalStatus] = useState<'draft' | 'published'>('draft');
   const [isInspirationOpen, setIsInspirationOpen] = useState(false);
   
-  // ADD: Separate loading states for publish vs draft
+  // Separate loading states for publish vs draft
   const [isPublishing, setIsPublishing] = useState(false);
   const [isSavingDraft, setIsSavingDraft] = useState(false);
   
-  // ADDED: WYSIWYG Editor states
-  const contentEditorRef = useRef<HTMLDivElement>(null);
-  const [isContentFocused, setIsContentFocused] = useState(false);
-  const [showContentPlaceholder, setShowContentPlaceholder] = useState(true);
-  
   const { createMonologue, isLoading, error } = useMonologueComposer();
-
-  // ADDED: WYSIWYG Editor handlers
-  const handleFormat = (command: string, value: string = '') => {
-    const selection = window.getSelection();
-    const range = selection?.rangeCount ? selection.getRangeAt(0) : null;
-    
-    document.execCommand(command, false, value);
-    
-    contentEditorRef.current?.focus();
-    if (range && selection) {
-      selection.removeAllRanges();
-      selection.addRange(range);
-    }
-  };
-
-  const handleContentInput = () => {
-    if (contentEditorRef.current) {
-      const contentValue = contentEditorRef.current.innerHTML;
-      setContent(contentValue);
-      
-      const hasContent = contentValue !== '' && 
-                         contentValue !== '<br>' && 
-                         contentValue !== '<div><br></div>' &&
-                         !contentValue.startsWith('<div></div>');
-      
-      setShowContentPlaceholder(!hasContent);
-    }
-  };
-
-  const handleContentFocus = () => {
-    setIsContentFocused(true);
-    if (showContentPlaceholder && contentEditorRef.current) {
-      contentEditorRef.current.innerHTML = '';
-      setShowContentPlaceholder(false);
-    }
-  };
-
-  const handleContentBlur = () => {
-    setTimeout(() => {
-      if (contentEditorRef.current && !contentEditorRef.current.contains(document.activeElement)) {
-        setIsContentFocused(false);
-        
-        const contentValue = contentEditorRef.current.innerHTML;
-        const isEmpty = contentValue === '' || 
-                        contentValue === '<br>' || 
-                        contentValue === '<div><br></div>' ||
-                        contentValue.startsWith('<div></div>');
-        
-        setShowContentPlaceholder(isEmpty);
-      }
-    }, 100);
-  };
 
   const handlePromptSelect = (prompt: any) => {
     if (prompt.title) {
       setTitle(prompt.title);
     }
-    if (prompt.content && contentEditorRef.current) {
-      contentEditorRef.current.innerHTML = prompt.content;
+    if (prompt.content) {
       setContent(prompt.content);
-      setShowContentPlaceholder(false);
     }
     setIsInspirationOpen(false);
   };
@@ -117,12 +58,6 @@ export const MonologueComposer: React.FC = () => {
           setIsEditing(true);
           setOriginalStatus(monologue.status as 'draft' | 'published');
           setShowPublishOption(false);
-          
-          // Set content in editor
-          if (contentEditorRef.current && monologue.content_text) {
-            contentEditorRef.current.innerHTML = monologue.content_text;
-            setShowContentPlaceholder(false);
-          }
           
           // Load emotional tone
           const { data: emotionalTags } = await supabase
@@ -177,7 +112,7 @@ export const MonologueComposer: React.FC = () => {
     </svg>
   );
 
-  // UPDATED: Handle submit with separate loading states
+  // Handle submit with separate loading states
   const handleSubmit = async (publish: boolean = false) => {
     if (!title.trim() || !content.trim()) {
       alert('Please fill in both title and content');
@@ -216,13 +151,6 @@ export const MonologueComposer: React.FC = () => {
       setContent('');
       setEmotionalTone('');
       setShowPublishOption(false);
-      
-      // Clear editor
-      if (contentEditorRef.current) {
-        contentEditorRef.current.innerHTML = '';
-        setShowContentPlaceholder(true);
-      }
-      
       alert(publish ? 'Monologue published successfully!' : 'Monologue saved as draft!');
     } catch (err) {
       console.error('Failed to create monologue:', err);
@@ -299,62 +227,10 @@ export const MonologueComposer: React.FC = () => {
     fontFamily: "'Cormorant', serif"
   };
 
-  // ADDED: Editor styles
-  const editorStyle: React.CSSProperties = {
-    width: '100%',
-    minHeight: 220,
-    display: 'block',
-    boxSizing: 'border-box',
-    padding: '12px 16px',
-    borderRadius: 12,
-    border: '1px solid rgba(0,0,0,0.12)',
-    background: '#FAF8F2',
-    outline: 'none',
-    fontSize: 15,
-    margin: 0,
-    fontFamily: "'Cormorant', serif",
-    color: '#000000',
-    resize: 'none',
-    overflow: 'auto',
-    lineHeight: '1.4'
-  };
-
-  const placeholderStyle: React.CSSProperties = {
-    position: 'absolute',
-    top: '12px',
-    left: '16px',
-    right: '16px',
-    color: '#6B7280',
-    fontFamily: "'Cormorant', serif",
-    fontSize: 15,
-    pointerEvents: 'none',
-    userSelect: 'none',
-    zIndex: 1
-  };
-
-  const toolbarStyle: React.CSSProperties = {
-    display: isContentFocused ? 'flex' : 'none',
-    gap: '8px',
-    padding: '8px 12px',
-    background: '#FAF8F2',
-    border: '1px solid rgba(0,0,0,0.12)',
-    borderBottom: 'none',
-    borderTopLeftRadius: 12,
-    borderTopRightRadius: 12,
-    marginBottom: '-1px'
-  };
-
-  const formatButtonStyle: React.CSSProperties = {
-    padding: '6px 10px',
-    background: 'transparent',
-    border: '1px solid rgba(0,0,0,0.2)',
-    borderRadius: 6,
-    cursor: 'pointer',
-    fontSize: 14,
-    fontFamily: "'Cormorant', serif",
-    fontWeight: 600,
-    color: '#000000',
-    transition: 'all 0.2s ease'
+  const textareaStyle: React.CSSProperties = {
+    ...inputStyle,
+    height: 220,
+    resize: 'none'
   };
 
   const selectStyle: React.CSSProperties = {
@@ -517,8 +393,7 @@ export const MonologueComposer: React.FC = () => {
             />
           </div>
 
-          {/* UPDATED: Monologue Content with WYSIWYG Editor */}
-          <div style={{ position: 'relative' }}>
+          <div>
             <label style={{
               display: 'block',
               fontFamily: "'Playfair Display', serif",
@@ -528,69 +403,13 @@ export const MonologueComposer: React.FC = () => {
             }}>
               Pour your inner world into words
             </label>
-            
-            {/* Formatting Toolbar */}
-            <div style={toolbarStyle}>
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.preventDefault();
-                  handleFormat('bold');
-                }}
-                style={formatButtonStyle}
-                onMouseOver={(e) => e.currentTarget.style.background = '#F0EDE4'}
-                onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
-              >
-                <strong>B</strong>
-              </button>
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.preventDefault();
-                  handleFormat('italic');
-                }}
-                style={formatButtonStyle}
-                onMouseOver={(e) => e.currentTarget.style.background = '#F0EDE4'}
-                onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
-              >
-                <em>I</em>
-              </button>
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.preventDefault();
-                  handleFormat('insertUnorderedList');
-                }}
-                style={formatButtonStyle}
-                onMouseOver={(e) => e.currentTarget.style.background = '#F0EDE4'}
-                onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
-              >
-                • List
-              </button>
-            </div>
-
-            {/* Editor Container */}
-            <div style={{ position: 'relative' }}>
-              {/* WYSIWYG Editor */}
-              <div
-                ref={contentEditorRef}
-                contentEditable
-                onInput={handleContentInput}
-                onFocus={handleContentFocus}
-                onBlur={handleContentBlur}
-                style={editorStyle}
-                suppressContentEditableWarning={true}
-              />
-              
-              {/* Placeholder */}
-              {showContentPlaceholder && (
-                <div style={placeholderStyle}>
-                  Express your thoughts...
-                </div>
-              )}
-            </div>
-            
-            {/* Character Counter */}
+            <textarea
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+              placeholder="Express your thoughts..."
+              style={textareaStyle}
+              maxLength={500}
+            />
             <div style={{
               textAlign: 'right',
               fontSize: 14,

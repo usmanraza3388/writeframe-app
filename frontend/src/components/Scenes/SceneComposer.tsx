@@ -91,82 +91,15 @@ export const SceneComposer: React.FC = () => {
   
   const [isInspirationOpen, setIsInspirationOpen] = useState<boolean>(false);
   
-  // ADDED: WYSIWYG Editor states
-  const contentEditorRef = useRef<HTMLDivElement>(null);
-  const [isContentFocused, setIsContentFocused] = useState(false);
-  const [showContentPlaceholder, setShowContentPlaceholder] = useState(true);
-  
   const { createScene, loading, error } = useSceneComposer();
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  // FIXED: WYSIWYG Editor handlers - improved format function
-  const handleFormat = (command: string, value: string = '') => {
-    // Prevent default behavior and maintain focus
-    document.execCommand(command, false, value);
-    
-    // Maintain focus on the editor
-    contentEditorRef.current?.focus();
-    
-    // Update content state
-    if (contentEditorRef.current) {
-      const contentValue = contentEditorRef.current.innerHTML;
-      setContent(contentValue);
-    }
-  };
-
-  const handleContentInput = () => {
-    if (contentEditorRef.current) {
-      const contentValue = contentEditorRef.current.innerHTML;
-      setContent(contentValue);
-      
-      const hasContent = contentValue !== '' && 
-                         contentValue !== '<br>' && 
-                         contentValue !== '<div><br></div>' &&
-                         !contentValue.startsWith('<div></div>');
-      
-      setShowContentPlaceholder(!hasContent);
-    }
-  };
-
-  // FIXED: Improved focus handling
-  const handleContentFocus = () => {
-    setIsContentFocused(true);
-    if (showContentPlaceholder && contentEditorRef.current) {
-      contentEditorRef.current.innerHTML = '';
-      setShowContentPlaceholder(false);
-    }
-  };
-
-  // FIXED: Improved blur handling
-  const handleContentBlur = () => {
-    // Use a longer timeout to prevent toolbar from disappearing when clicking buttons
-    setTimeout(() => {
-      const activeElement = document.activeElement;
-      // Only hide toolbar if focus is not on toolbar buttons
-      if (activeElement && !activeElement.closest('.toolbar-button')) {
-        setIsContentFocused(false);
-        
-        if (contentEditorRef.current) {
-          const contentValue = contentEditorRef.current.innerHTML;
-          const isEmpty = contentValue === '' || 
-                          contentValue === '<br>' || 
-                          contentValue === '<div><br></div>' ||
-                          contentValue.startsWith('<div></div>');
-          
-          setShowContentPlaceholder(isEmpty);
-        }
-      }
-    }, 200);
-  };
 
   const handlePromptSelect = (prompt: any) => {
     if (prompt.title) {
       setTitle(prompt.title);
     }
-    if (prompt.description && contentEditorRef.current) {
-      contentEditorRef.current.innerHTML = prompt.description;
+    if (prompt.description) {
       setContent(prompt.description);
-      setShowContentPlaceholder(false);
     }
     setIsInspirationOpen(false);
   };
@@ -182,7 +115,7 @@ export const SceneComposer: React.FC = () => {
     }
   }, [title, content, isEditing]);
 
-  // FIXED: Load existing scene for editing with proper content synchronization
+  // Load existing scene for editing
   useEffect(() => {
     const loadScene = async () => {
       if (!sceneId) return;
@@ -198,6 +131,7 @@ export const SceneComposer: React.FC = () => {
         if (error) throw error;
         if (scene) {
           setTitle(scene.title);
+          setContent(scene.content_text || '');
           setIsEditing(true);
           setOriginalStatus(scene.status as 'draft' | 'published');
           setShowPublishOption(false);
@@ -217,18 +151,6 @@ export const SceneComposer: React.FC = () => {
           if (moods) {
             setSelectedMoods(moods.map(m => m.mood));
           }
-
-          // FIXED: Set content and update editor in the same operation
-          const sceneContent = scene.content_text || '';
-          setContent(sceneContent);
-          
-          // Update editor content after a brief delay to ensure DOM is ready
-          setTimeout(() => {
-            if (contentEditorRef.current && sceneContent) {
-              contentEditorRef.current.innerHTML = sceneContent;
-              setShowContentPlaceholder(!sceneContent.trim());
-            }
-          }, 100);
         }
       } catch (err) {
         console.error('Error loading scene:', err);
@@ -354,12 +276,6 @@ export const SceneComposer: React.FC = () => {
         setImagePreviewUrl('');
         setShowPublishOption(false);
         
-        // Clear editor
-        if (contentEditorRef.current) {
-          contentEditorRef.current.innerHTML = '';
-          setShowContentPlaceholder(true);
-        }
-        
         // UPDATED: Use alerts instead of notifications
         if (publish) {
           alert('Scene published successfully!');
@@ -462,64 +378,10 @@ export const SceneComposer: React.FC = () => {
     fontFamily: "'Cormorant', serif"
   };
 
-  // ADDED: Editor styles
-  const editorStyle: React.CSSProperties = {
-    width: '100%',
-    minHeight: 220,
-    display: 'block',
-    boxSizing: 'border-box',
-    padding: '12px 16px',
-    borderRadius: 12,
-    border: '1px solid rgba(0,0,0,0.12)',
-    background: '#FAF8F2',
-    outline: 'none',
-    fontSize: 15,
-    margin: 0,
-    fontFamily: "'Cormorant', serif",
-    color: '#000000',
-    resize: 'none',
-    overflow: 'auto',
-    lineHeight: '1.4'
-  };
-
-  const placeholderStyle: React.CSSProperties = {
-    position: 'absolute',
-    top: '12px',
-    left: '16px',
-    right: '16px',
-    color: '#6B7280',
-    fontFamily: "'Cormorant', serif",
-    fontSize: 15,
-    pointerEvents: 'none',
-    userSelect: 'none',
-    zIndex: 1
-  };
-
-  // FIXED: Toolbar style - always show when editor has focus
-  const toolbarStyle: React.CSSProperties = {
-    display: isContentFocused ? 'flex' : 'none',
-    gap: '8px',
-    padding: '8px 12px',
-    background: '#FAF8F2',
-    border: '1px solid rgba(0,0,0,0.12)',
-    borderBottom: 'none',
-    borderTopLeftRadius: 12,
-    borderTopRightRadius: 12,
-    marginBottom: '-1px'
-  };
-
-  // FIXED: Format button style with class for focus handling
-  const formatButtonStyle: React.CSSProperties = {
-    padding: '6px 10px',
-    background: 'transparent',
-    border: '1px solid rgba(0,0,0,0.2)',
-    borderRadius: 6,
-    cursor: 'pointer',
-    fontSize: 14,
-    fontFamily: "'Cormorant', serif",
-    fontWeight: 600,
-    color: '#000000',
-    transition: 'all 0.2s ease'
+  const textareaStyle: React.CSSProperties = {
+    ...inputStyle,
+    height: 220,
+    resize: 'none'
   };
 
   // ADDED: Tab button style
@@ -685,71 +547,14 @@ export const SceneComposer: React.FC = () => {
             />
           </div>
 
-          {/* UPDATED: Scene Content with WYSIWYG Editor */}
-          <div style={{ position: 'relative' }}>
-            {/* Formatting Toolbar */}
-            <div style={toolbarStyle}>
-              <button
-                type="button"
-                className="toolbar-button"
-                onClick={(e) => {
-                  e.preventDefault();
-                  handleFormat('bold');
-                }}
-                style={formatButtonStyle}
-                onMouseOver={(e) => e.currentTarget.style.background = '#F0EDE4'}
-                onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
-              >
-                <strong>B</strong>
-              </button>
-              <button
-                type="button"
-                className="toolbar-button"
-                onClick={(e) => {
-                  e.preventDefault();
-                  handleFormat('italic');
-                }}
-                style={formatButtonStyle}
-                onMouseOver={(e) => e.currentTarget.style.background = '#F0EDE4'}
-                onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
-              >
-                <em>I</em>
-              </button>
-              <button
-                type="button"
-                className="toolbar-button"
-                onClick={(e) => {
-                  e.preventDefault();
-                  handleFormat('insertUnorderedList');
-                }}
-                style={formatButtonStyle}
-                onMouseOver={(e) => e.currentTarget.style.background = '#F0EDE4'}
-                onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
-              >
-                • List
-              </button>
-            </div>
-
-            {/* Editor Container */}
-            <div style={{ position: 'relative' }}>
-              {/* WYSIWYG Editor */}
-              <div
-                ref={contentEditorRef}
-                contentEditable
-                onInput={handleContentInput}
-                onFocus={handleContentFocus}
-                onBlur={handleContentBlur}
-                style={editorStyle}
-                suppressContentEditableWarning={true}
-              />
-              
-              {/* Placeholder */}
-              {showContentPlaceholder && (
-                <div style={placeholderStyle}>
-                  Write a monologue, moment, or memory...
-                </div>
-              )}
-            </div>
+          <div>
+            <textarea
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+              placeholder="Write a monologue, moment, or memory..."
+              required
+              style={textareaStyle}
+            />
           </div>
 
           {/* UPDATED: Image Upload Section with Preview */}
