@@ -108,7 +108,6 @@ export default function CharacterComposer() {
     }
     if (prompt.bio) {
       updateField('bio', prompt.bio);
-      // UPDATE: Also update the WYSIWYG editor when prompt is selected
       if (bioEditorRef.current) {
         bioEditorRef.current.innerHTML = prompt.bio;
         setShowBioPlaceholder(!prompt.bio.trim());
@@ -138,7 +137,7 @@ export default function CharacterComposer() {
     }
   };
 
-  // FIXED: Load existing character for editing with proper WYSIWYG population
+  // UPDATED: Load existing character for editing with diagnostic logs
   useEffect(() => {
     const loadCharacter = async () => {
       if (!characterId) return;
@@ -153,21 +152,21 @@ export default function CharacterComposer() {
 
         if (error) throw error;
         if (character) {
+          console.log('1. Raw bio from database:', character.bio);
+          
           // Update character data
           updateField('name', character.name);
           updateField('tagline', character.tagline || '');
           updateField('bio', character.bio || '');
+          
+          console.log('2. After updateField - characterData.bio:', characterData.bio);
+          
           setIsEditing(true);
           setOriginalStatus(character.status as 'draft' | 'published');
           setShowPublishOption(false);
           
-          // FIXED: Wait for component to render and then populate WYSIWYG editor
-          setTimeout(() => {
-            if (bioEditorRef.current && character.bio) {
-              bioEditorRef.current.innerHTML = character.bio;
-              setShowBioPlaceholder(!character.bio.trim());
-            }
-          }, 0);
+          // Check if ref is available
+          console.log('3. Editor ref before timeout:', bioEditorRef.current);
           
           // Load visual references
           const { data: visualRefs } = await supabase
@@ -180,6 +179,26 @@ export default function CharacterComposer() {
               addVisualReference(ref.image_url);
             });
           }
+
+          // ADD: Populate WYSIWYG editor with diagnostic logs
+          setTimeout(() => {
+            console.log('4. Editor ref in timeout:', bioEditorRef.current);
+            console.log('5. Bio content to populate:', character.bio);
+            
+            if (bioEditorRef.current && character.bio) {
+              bioEditorRef.current.innerHTML = character.bio;
+              setShowBioPlaceholder(!character.bio.trim());
+              console.log('6. Successfully populated editor');
+            } else {
+              console.log('7. Failed - ref not available or no bio content');
+              if (!bioEditorRef.current) {
+                console.log('7a. Reason: bioEditorRef.current is null');
+              }
+              if (!character.bio) {
+                console.log('7b. Reason: character.bio is empty');
+              }
+            }
+          }, 100);
         }
       } catch (err) {
         console.error('Error loading character:', err);
@@ -190,14 +209,6 @@ export default function CharacterComposer() {
 
     loadCharacter();
   }, [characterId]);
-
-  // FIXED: Also initialize WYSIWYG when component mounts for create mode
-  useEffect(() => {
-    if (!isEditing && characterData.bio && bioEditorRef.current) {
-      bioEditorRef.current.innerHTML = characterData.bio;
-      setShowBioPlaceholder(!characterData.bio.trim());
-    }
-  }, [isEditing, characterData.bio]);
 
   // Smart button logic - show publish option when content is substantial (CREATE MODE ONLY)
   useEffect(() => {
@@ -637,7 +648,7 @@ export default function CharacterComposer() {
             />
           </div>
 
-          {/* FIXED: Biography WYSIWYG Editor */}
+          {/* Biography WYSIWYG Editor */}
           <div style={{ position: 'relative' }}>
             <label style={{
               display: 'block',
