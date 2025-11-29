@@ -13,6 +13,11 @@ export default function CharacterComposer() {
   const navigate = useNavigate();
   const location = useLocation();
   
+  // DEBUG: Log URL parameters and location
+  console.log('🎭 CHARACTER COMPOSER RENDERED - characterId:', characterId);
+  console.log('🎭 Full URL search params:', Object.fromEntries([...searchParams]));
+  console.log('🎭 Location state:', location.state);
+  
   const returnPath = location.state?.from || '/home-feed';
   
   const {
@@ -26,6 +31,11 @@ export default function CharacterComposer() {
     submitCharacter,
     resetForm
   } = useCharacterComposer();
+
+  // DEBUG: Log current character data state
+  console.log('🎭 Current characterData:', characterData);
+  console.log('🎭 Current characterData.bio:', characterData.bio);
+  console.log('🎭 Current visualReferences:', visualReferences);
 
   const [tempImageUrl, setTempImageUrl] = useState('');
   const [showVisualRefInput, setShowVisualRefInput] = useState(false);
@@ -46,15 +56,39 @@ export default function CharacterComposer() {
   const [isBioFocused, setIsBioFocused] = useState(false);
   const [showPlaceholder, setShowPlaceholder] = useState(true);
 
+  // DEBUG: Log when component mounts/updates
+  useEffect(() => {
+    console.log('🔥 CHARACTER COMPOSER useEffect - general render');
+  });
+
+  // DEBUG: Log when bioEditorRef changes
+  useEffect(() => {
+    console.log('👀 BIO EDITOR REF CHANGED - exists:', !!bioEditorRef.current);
+    if (bioEditorRef.current) {
+      console.log('👀 Current editor innerHTML:', bioEditorRef.current.innerHTML);
+    }
+  }, [bioEditorRef.current]);
+
+  // DEBUG: Log when characterData.bio changes
+  useEffect(() => {
+    console.log('📝 characterData.bio CHANGED:', characterData.bio);
+    console.log('📝 characterData.bio length:', characterData.bio?.length);
+  }, [characterData.bio]);
+
   // Sync the editor content when characterData.bio changes
   useEffect(() => {
+    console.log('🔄 SYNC EFFECT - characterData.bio:', characterData.bio);
+    console.log('🔄 bioEditorRef.current:', !!bioEditorRef.current);
+    
     if (bioEditorRef.current && characterData.bio !== bioEditorRef.current.innerHTML) {
+      console.log('🔄 Setting editor content from characterData.bio');
       bioEditorRef.current.innerHTML = characterData.bio;
       setShowPlaceholder(!characterData.bio.trim());
     }
   }, [characterData.bio]);
 
   const handleFormat = (command: string, value: string = '') => {
+    console.log('🎭 handleFormat called with:', command, value);
     document.execCommand(command, false, value);
     bioEditorRef.current?.focus();
     
@@ -65,6 +99,7 @@ export default function CharacterComposer() {
   };
 
   const handleBioInput = () => {
+    console.log('🎭 handleBioInput triggered');
     if (bioEditorRef.current) {
       const content = bioEditorRef.current.innerHTML;
       updateField('bio', content);
@@ -79,6 +114,7 @@ export default function CharacterComposer() {
   };
 
   const handleBioFocus = () => {
+    console.log('🎭 handleBioFocus triggered');
     setIsBioFocused(true);
     if (showPlaceholder && bioEditorRef.current) {
       bioEditorRef.current.innerHTML = '';
@@ -87,6 +123,7 @@ export default function CharacterComposer() {
   };
 
   const handleBioBlur = () => {
+    console.log('🎭 handleBioBlur triggered');
     setTimeout(() => {
       const activeElement = document.activeElement;
       if (activeElement && !activeElement.closest('.toolbar-button')) {
@@ -104,6 +141,7 @@ export default function CharacterComposer() {
   };
 
   const handlePromptSelect = (prompt: any) => {
+    console.log('🎭 handlePromptSelect called with:', prompt);
     if (prompt.name) {
       updateField('name', prompt.name);
     }
@@ -125,6 +163,7 @@ export default function CharacterComposer() {
   );
 
   const handleBack = () => {
+    console.log('🎭 handleBack called');
     const hasContent = characterData.name !== '' || characterData.tagline !== '' || characterData.bio !== '' || visualReferences.length > 0;
     
     if (hasContent) {
@@ -140,68 +179,108 @@ export default function CharacterComposer() {
   };
 
   useEffect(() => {
+    console.log('🚀 MAIN useEffect TRIGGERED - characterId:', characterId);
+    
     const loadCharacter = async () => {
-      if (!characterId) return;
+      console.log('📥 loadCharacter FUNCTION CALLED');
+      
+      if (!characterId) {
+        console.log('❌ NO characterId - skipping load');
+        return;
+      }
       
       try {
+        console.log('🔄 SETTING loadingCharacter: true');
         setLoadingCharacter(true);
-        console.log('🔍 Starting to load character:', characterId);
         
+        console.log('📡 MAKING SUPABASE REQUEST for character:', characterId);
         const { data: character, error } = await supabase
           .from('characters')
           .select('*')
           .eq('id', characterId)
           .single();
 
-        if (error) throw error;
-        
-        if (character) {
-          console.log('🔍 Character loaded:', character);
-          console.log('🔍 Character bio content:', character.bio);
-          console.log('🔍 Bio editor ref available:', !!bioEditorRef.current);
-          
-          updateField('name', character.name);
-          updateField('tagline', character.tagline || '');
-          setIsEditing(true);
-          setOriginalStatus(character.status as 'draft' | 'published');
-          setShowPublishOption(false);
-          
-          // FIXED: Use exact same pattern as SceneComposer
-          const characterBio = character.bio || '';
-          updateField('bio', characterBio);
-          
-          console.log('🔍 After updateField, characterData.bio should be:', characterBio);
-          
-          // Update editor content after a brief delay to ensure DOM is ready
-          setTimeout(() => {
-            console.log('🔍 In setTimeout - bioEditorRef.current:', !!bioEditorRef.current);
-            console.log('🔍 In setTimeout - characterBio:', characterBio);
-            
-            if (bioEditorRef.current && characterBio) {
-              console.log('🔍 Setting editor content to:', characterBio);
-              bioEditorRef.current.innerHTML = characterBio;
-              setShowPlaceholder(!characterBio.trim());
-              console.log('🔍 Editor content set, should be visible now');
-            } else {
-              console.log('🔍 Could not set editor - ref:', !!bioEditorRef.current, 'bio:', !!characterBio);
-            }
-          }, 100);
-          
-          const { data: visualRefs } = await supabase
-            .from('character_visual_references')
-            .select('*')
-            .eq('character_id', characterId);
-          
-          if (visualRefs) {
-            visualRefs.forEach(ref => {
-              addVisualReference(ref.image_url);
-            });
-          }
+        console.log('📊 SUPABASE RESPONSE - data:', character);
+        console.log('📊 SUPABASE RESPONSE - error:', error);
+
+        if (error) {
+          console.error('❌ SUPABASE ERROR:', error);
+          throw error;
         }
+        
+        if (!character) {
+          console.log('❌ NO CHARACTER DATA RETURNED');
+          return;
+        }
+
+        console.log('✅ CHARACTER DATA LOADED:', character);
+        console.log('📝 CHARACTER BIO CONTENT:', character.bio);
+        console.log('🔧 BIO EDITOR REF EXISTS:', !!bioEditorRef.current);
+        
+        // Set basic fields
+        console.log('🔄 SETTING name:', character.name);
+        updateField('name', character.name);
+        
+        console.log('🔄 SETTING tagline:', character.tagline);
+        updateField('tagline', character.tagline || '');
+        
+        console.log('🔄 SETTING isEditing: true');
+        setIsEditing(true);
+        
+        console.log('🔄 SETTING originalStatus:', character.status);
+        setOriginalStatus(character.status as 'draft' | 'published');
+        
+        console.log('🔄 SETTING showPublishOption: false');
+        setShowPublishOption(false);
+        
+        // FIXED: Use exact same pattern as SceneComposer
+        const characterBio = character.bio || '';
+        console.log('🔄 SETTING bio state:', characterBio);
+        
+        // Update state first
+        updateField('bio', characterBio);
+        
+        console.log('🎯 Attempting to set editor content...');
+        
+        // Update editor content after a brief delay to ensure DOM is ready
+        setTimeout(() => {
+          console.log('⏰ setTimeout callback executing');
+          console.log('🔧 bioEditorRef.current:', !!bioEditorRef.current);
+          console.log('📝 characterBio to set:', characterBio);
+          
+          if (bioEditorRef.current && characterBio) {
+            console.log('🎯 SETTING EDITOR CONTENT');
+            bioEditorRef.current.innerHTML = characterBio;
+            console.log('✅ EDITOR CONTENT AFTER SET:', bioEditorRef.current.innerHTML);
+            setShowPlaceholder(!characterBio.trim());
+            console.log('✅ showPlaceholder set to:', !characterBio.trim());
+          } else {
+            console.log('❌ Could not set editor - ref:', !!bioEditorRef.current, 'bio:', !!characterBio);
+          }
+        }, 100);
+        
+        // Load visual references
+        console.log('🖼️ LOADING VISUAL REFERENCES...');
+        const { data: visualRefs } = await supabase
+          .from('character_visual_references')
+          .select('*')
+          .eq('character_id', characterId);
+        
+        console.log('🖼️ VISUAL REFERENCES LOADED:', visualRefs);
+        
+        if (visualRefs) {
+          visualRefs.forEach(ref => {
+            console.log('➕ ADDING VISUAL REFERENCE:', ref.image_url);
+            addVisualReference(ref.image_url);
+          });
+        }
+        
       } catch (err) {
-        console.error('Error loading character:', err);
+        console.error('💥 ERROR IN loadCharacter:', err);
       } finally {
+        console.log('🏁 SETTING loadingCharacter: false');
         setLoadingCharacter(false);
+        console.log('✅ loadCharacter COMPLETED');
       }
     };
 
@@ -209,17 +288,20 @@ export default function CharacterComposer() {
   }, [characterId]);
 
   useEffect(() => {
+    console.log('🎭 Smart button useEffect - checking content');
     if (!isEditing) {
       const hasSubstantialContent = 
         characterData.name.length > 2 && 
         characterData.tagline.length > 2 && 
         characterData.bio.length > 10;
       
+      console.log('🎭 showPublishOption set to:', hasSubstantialContent);
       setShowPublishOption(hasSubstantialContent);
     }
   }, [characterData.name, characterData.tagline, characterData.bio, isEditing]);
 
   const handleSubmit = async (e: React.FormEvent, publish: boolean = false) => {
+    console.log('🎭 handleSubmit called with publish:', publish);
     e.preventDefault();
     
     if (!characterData.name.trim()) {
@@ -263,6 +345,7 @@ export default function CharacterComposer() {
   };
 
   const handleEditUpdate = async () => {
+    console.log('🎭 handleEditUpdate called for characterId:', characterId);
     if (!characterId) return;
     
     try {
@@ -298,6 +381,7 @@ export default function CharacterComposer() {
   };
 
   const handleAddVisualReference = (e?: React.MouseEvent) => {
+    console.log('🎭 handleAddVisualReference called');
     if (e) e.preventDefault();
     if (tempImageUrl.trim()) {
       addVisualReference(tempImageUrl);
@@ -306,6 +390,7 @@ export default function CharacterComposer() {
   };
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    console.log('🎭 handleFileUpload called');
     const file = event.target.files?.[0];
     if (file) {
       if (!file.type.startsWith('image/')) {
@@ -323,6 +408,7 @@ export default function CharacterComposer() {
   };
 
   const handlePaste = (event: React.ClipboardEvent) => {
+    console.log('🎭 handlePaste called');
     const items = event.clipboardData?.items;
     if (items) {
       for (let i = 0; i < items.length; i++) {
@@ -340,6 +426,7 @@ export default function CharacterComposer() {
   };
 
   const handleVisualRefClick = () => {
+    console.log('🎭 handleVisualRefClick called');
     setShowVisualRefInput(true);
   };
 
@@ -504,6 +591,7 @@ export default function CharacterComposer() {
   });
 
   if (loadingCharacter) {
+    console.log('🎭 RENDERING LOADING STATE');
     return (
       <div style={{
         minHeight: '100vh',
@@ -526,6 +614,7 @@ export default function CharacterComposer() {
     );
   }
 
+  console.log('🎭 RENDERING MAIN COMPONENT');
   return (
     <div style={{
       minHeight: '100vh',
@@ -535,6 +624,25 @@ export default function CharacterComposer() {
       background: '#FFFFFF'
     }}>
       <div style={containerStyle}>
+        {/* DEBUG: Add debug overlay */}
+        <div style={{
+          position: 'fixed',
+          top: '10px',
+          right: '10px',
+          background: 'rgba(0,0,0,0.8)',
+          color: 'white',
+          padding: '10px',
+          borderRadius: '5px',
+          fontSize: '12px',
+          zIndex: 9999
+        }}>
+          <div>characterId: {characterId || 'null'}</div>
+          <div>isEditing: {isEditing ? 'true' : 'false'}</div>
+          <div>loadingCharacter: {loadingCharacter ? 'true' : 'false'}</div>
+          <div>bioLength: {characterData.bio?.length || 0}</div>
+          <div>editorRef: {bioEditorRef.current ? 'exists' : 'null'}</div>
+        </div>
+
         <button
           type="button"
           onClick={handleBack}
