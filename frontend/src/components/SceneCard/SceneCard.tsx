@@ -144,17 +144,14 @@ const SceneCard: React.FC<SceneCardProps> = React.memo(({ scene, currentUserId, 
   const menuButtonRef = useRef<HTMLButtonElement>(null);
   const menuContainerRef = useRef<HTMLDivElement>(null);
 
-  // UPDATED: Debug to check the correct avatar field
+  // ADDED: Temporary debug to check avatar data
   useEffect(() => {
     console.log('SceneCard debug:', {
       id: scene.id,
       user_name: scene.user_name,
-      // Check both possible avatar fields
-      user_avatar: scene.user_avatar, // This might not exist
-      profiles_avatar: scene.profiles?.avatar_url, // This should be used
-      hasUserAvatar: !!scene.user_avatar,
-      hasProfilesAvatar: !!scene.profiles?.avatar_url,
-      profiles: scene.profiles // Check entire profiles object
+      user_avatar: scene.user_avatar,
+      hasAvatar: !!scene.user_avatar,
+      avatarNotDefault: scene.user_avatar && scene.user_avatar !== '/default-avatar.png'
     });
   }, [scene]);
 
@@ -455,7 +452,7 @@ const SceneCard: React.FC<SceneCardProps> = React.memo(({ scene, currentUserId, 
           marginBottom: '20px'
         }}>
           <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
-            {/* FIXED: Avatar using profiles.avatar_url like other cards */}
+            {/* FIXED: Avatar with simpler check - UPDATED: Now clickable */}
             <div 
               onClick={handleProfileClick}
               role="img"
@@ -471,12 +468,12 @@ const SceneCard: React.FC<SceneCardProps> = React.memo(({ scene, currentUserId, 
                 overflow: 'hidden',
                 flexShrink: 0,
                 border: '1.5px solid #E5E5E5',
-                cursor: 'pointer'
+                cursor: 'pointer' // ADDED: Show it's clickable
               }}
             >
-              {scene.profiles?.avatar_url ? (
+              {scene.user_avatar ? (
                 <img 
-                  src={scene.profiles.avatar_url}
+                  src={scene.user_avatar}
                   alt=""
                   style={{
                     width: '100%',
@@ -491,7 +488,7 @@ const SceneCard: React.FC<SceneCardProps> = React.memo(({ scene, currentUserId, 
                   fontWeight: 'bold',
                   color: '#55524F'
                 }}>
-                  {(scene.user_name || 'U').charAt(0).toUpperCase()}
+                  {scene.user_name.charAt(0).toUpperCase()}
                 </span>
               )}
             </div>
@@ -501,7 +498,7 @@ const SceneCard: React.FC<SceneCardProps> = React.memo(({ scene, currentUserId, 
               style={{ 
                 display: 'flex', 
                 flexDirection: 'column',
-                cursor: 'pointer'
+                cursor: 'pointer' // ADDED: Show it's clickable
               }}
             >
               <span style={{
