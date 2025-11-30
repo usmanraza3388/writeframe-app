@@ -452,7 +452,7 @@ const SceneCard: React.FC<SceneCardProps> = React.memo(({ scene, currentUserId, 
           marginBottom: '20px'
         }}>
           <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
-            {/* FIXED: Avatar with simpler check - UPDATED: Now clickable */}
+            {/* UPDATED: Avatar using Monologue Card pattern with proper fallback */}
             <div 
               onClick={handleProfileClick}
               role="img"
@@ -488,7 +488,7 @@ const SceneCard: React.FC<SceneCardProps> = React.memo(({ scene, currentUserId, 
                   fontWeight: 'bold',
                   color: '#55524F'
                 }}>
-                  {scene.user_name.charAt(0).toUpperCase()}
+                  {(scene.user_name || 'U').charAt(0).toUpperCase()}
                 </span>
               )}
             </div>
