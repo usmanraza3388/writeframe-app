@@ -452,7 +452,7 @@ const SceneCard: React.FC<SceneCardProps> = React.memo(({ scene, currentUserId, 
           marginBottom: '20px'
         }}>
           <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
-            {/* FIXED: Avatar with simpler check - UPDATED: Now clickable */}
+            {/* FIXED: Use user_avatar with proper default avatar handling */}
             <div 
               onClick={handleProfileClick}
               role="img"
@@ -471,7 +471,7 @@ const SceneCard: React.FC<SceneCardProps> = React.memo(({ scene, currentUserId, 
                 cursor: 'pointer' // ADDED: Show it's clickable
               }}
             >
-              {scene.user_avatar ? (
+              {scene.user_avatar && scene.user_avatar !== '/default-avatar.png' ? (
                 <img 
                   src={scene.user_avatar}
                   alt=""
