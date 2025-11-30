@@ -144,14 +144,17 @@ const SceneCard: React.FC<SceneCardProps> = React.memo(({ scene, currentUserId, 
   const menuButtonRef = useRef<HTMLButtonElement>(null);
   const menuContainerRef = useRef<HTMLDivElement>(null);
 
-  // ADDED: Temporary debug to check avatar data
+  // UPDATED: Debug to check the correct avatar field
   useEffect(() => {
     console.log('SceneCard debug:', {
       id: scene.id,
       user_name: scene.user_name,
-      user_avatar: scene.user_avatar,
-      hasAvatar: !!scene.user_avatar,
-      avatarNotDefault: scene.user_avatar && scene.user_avatar !== '/default-avatar.png'
+      // Check both possible avatar fields
+      user_avatar: scene.user_avatar, // This might not exist
+      profiles_avatar: scene.profiles?.avatar_url, // This should be used
+      hasUserAvatar: !!scene.user_avatar,
+      hasProfilesAvatar: !!scene.profiles?.avatar_url,
+      profiles: scene.profiles // Check entire profiles object
     });
   }, [scene]);
 
@@ -452,7 +455,7 @@ const SceneCard: React.FC<SceneCardProps> = React.memo(({ scene, currentUserId, 
           marginBottom: '20px'
         }}>
           <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
-            {/* UPDATED: Avatar using Monologue Card pattern with proper fallback */}
+            {/* FIXED: Avatar using profiles.avatar_url like other cards */}
             <div 
               onClick={handleProfileClick}
               role="img"
@@ -468,12 +471,12 @@ const SceneCard: React.FC<SceneCardProps> = React.memo(({ scene, currentUserId, 
                 overflow: 'hidden',
                 flexShrink: 0,
                 border: '1.5px solid #E5E5E5',
-                cursor: 'pointer' // ADDED: Show it's clickable
+                cursor: 'pointer'
               }}
             >
-              {scene.user_avatar ? (
+              {scene.profiles?.avatar_url ? (
                 <img 
-                  src={scene.user_avatar}
+                  src={scene.profiles.avatar_url}
                   alt=""
                   style={{
                     width: '100%',
@@ -498,7 +501,7 @@ const SceneCard: React.FC<SceneCardProps> = React.memo(({ scene, currentUserId, 
               style={{ 
                 display: 'flex', 
                 flexDirection: 'column',
-                cursor: 'pointer' // ADDED: Show it's clickable
+                cursor: 'pointer'
               }}
             >
               <span style={{
