@@ -17,6 +17,17 @@ import CommentsSection from '../Comments/CommentsSection';
 import ShareDialog from '../Shares/ShareDialog';
 import { useFrame } from '../../hooks/useFrame'; // ADDED: Import useFrame hook
 
+// ADDED: Cinematic grid configuration to match FrameComposer
+const CINEMATIC_GRID_CONFIG = {
+  positions: [
+    { label: 'Main', width: 152, height: 133 },
+    { label: 'Support', width: 152, height: 99 },
+    { label: 'Mood', width: 152, height: 70 },
+    { label: 'Style', width: 152, height: 106 }
+  ],
+  gap: 12
+};
+
 // ADDED: Relative time utility function
 const getRelativeTime = (dateString: string): string => {
   const date = new Date(dateString);
@@ -319,7 +330,7 @@ const FrameCard: React.FC<FrameCardProps> = React.memo(({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [showMenu, closeMenu]);
 
-  // Get images for the 2x2 grid (up to 4 images)
+  // Get images for the cinematic collage (up to 4 images)
   const displayImages = useMemo(() => {
     const images = frame.image_urls?.slice(0, 4) || [];
     // If no image_urls, fall back to the main image_url
@@ -607,47 +618,168 @@ const FrameCard: React.FC<FrameCardProps> = React.memo(({
           </div>
         )}
 
-        {/* MINIMAL: 2x2 Image Grid - clean and simple */}
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: '1fr 1fr',
-          gridTemplateRows: '1fr 1fr',
-          gap: '6px',
-          width: '100%',
-          height: '160px',
+        {/* UPDATED: CINEMATIC COLLAGE GRID - Matches FrameComposer layout exactly */}
+        <div style={{ 
           marginBottom: '16px',
-          flexShrink: 0 // ← FIXED: Prevent from shrinking
+          flexShrink: 0
         }}>
-          {displayImages.map((imageUrl: string, index: number) => (
-            <div
-              key={index}
-              style={{
-                width: '100%',
-                height: '100%',
-                backgroundColor: 'white',
-                borderRadius: '4px',
-                overflow: 'hidden',
-                position: 'relative',
-                boxShadow: '0 1px 3px rgba(0, 0, 0, 0.15)',
-                border: '1px solid #E5E5E5'
-              }}
-            >
-              <img 
-                src={imageUrl}
-                alt={`Collage image ${index + 1}`}
-                loading="lazy"
-                decoding="async"
-                style={{
+          {/* Two-column layout with specific heights to match FrameComposer */}
+          <div style={{ 
+            display: 'grid', 
+            gridTemplateColumns: '1fr 1fr', 
+            gridTemplateRows: 'auto auto',
+            gap: `${CINEMATIC_GRID_CONFIG.gap}px ${CINEMATIC_GRID_CONFIG.gap}px`,
+            width: '100%'
+          }}>
+            {/* Left Column */}
+            <div style={{ 
+              display: 'flex', 
+              flexDirection: 'column', 
+              gap: `${CINEMATIC_GRID_CONFIG.gap}px`
+            }}>
+              {/* Main - Tall rectangle (Position 0) */}
+              {displayImages[0] && (
+                <div style={{
                   width: '100%',
-                  height: '100%',
-                  objectFit: 'cover'
-                }}
-                onError={(e) => {
-                  e.currentTarget.style.display = 'none';
-                }}
-              />
+                  height: `${CINEMATIC_GRID_CONFIG.positions[0].height}px`,
+                  backgroundColor: 'white',
+                  borderRadius: '8px',
+                  overflow: 'hidden',
+                  position: 'relative',
+                  boxShadow: '0 1px 3px rgba(0, 0, 0, 0.15)',
+                  border: '1px solid #E5E5E5'
+                }}>
+                  <img 
+                    src={displayImages[0]}
+                    alt="Main reference"
+                    loading="lazy"
+                    decoding="async"
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      objectFit: 'cover'
+                    }}
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none';
+                    }}
+                  />
+                </div>
+              )}
+
+              {/* Mood - Short rectangle (Position 2) */}
+              {displayImages[2] && (
+                <div style={{
+                  width: '100%',
+                  height: `${CINEMATIC_GRID_CONFIG.positions[2].height}px`,
+                  backgroundColor: 'white',
+                  borderRadius: '8px',
+                  overflow: 'hidden',
+                  position: 'relative',
+                  boxShadow: '0 1px 3px rgba(0, 0, 0, 0.15)',
+                  border: '1px solid #E5E5E5'
+                }}>
+                  <img 
+                    src={displayImages[2]}
+                    alt="Mood reference"
+                    loading="lazy"
+                    decoding="async"
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      objectFit: 'cover'
+                    }}
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none';
+                    }}
+                  />
+                </div>
+              )}
             </div>
-          ))}
+
+            {/* Right Column */}
+            <div style={{ 
+              display: 'flex', 
+              flexDirection: 'column', 
+              gap: `${CINEMATIC_GRID_CONFIG.gap}px`
+            }}>
+              {/* Support - Medium rectangle (Position 1) */}
+              {displayImages[1] && (
+                <div style={{
+                  width: '100%',
+                  height: `${CINEMATIC_GRID_CONFIG.positions[1].height}px`,
+                  backgroundColor: 'white',
+                  borderRadius: '8px',
+                  overflow: 'hidden',
+                  position: 'relative',
+                  boxShadow: '0 1px 3px rgba(0, 0, 0, 0.15)',
+                  border: '1px solid #E5E5E5'
+                }}>
+                  <img 
+                    src={displayImages[1]}
+                    alt="Support reference"
+                    loading="lazy"
+                    decoding="async"
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      objectFit: 'cover'
+                    }}
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none';
+                    }}
+                  />
+                </div>
+              )}
+
+              {/* Style - Medium-tall rectangle (Position 3) */}
+              {displayImages[3] && (
+                <div style={{
+                  width: '100%',
+                  height: `${CINEMATIC_GRID_CONFIG.positions[3].height}px`,
+                  backgroundColor: 'white',
+                  borderRadius: '8px',
+                  overflow: 'hidden',
+                  position: 'relative',
+                  boxShadow: '0 1px 3px rgba(0, 0, 0, 0.15)',
+                  border: '1px solid #E5E5E5'
+                }}>
+                  <img 
+                    src={displayImages[3]}
+                    alt="Style reference"
+                    loading="lazy"
+                    decoding="async"
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      objectFit: 'cover'
+                    }}
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none';
+                    }}
+                  />
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Empty state - show when no images */}
+          {displayImages.length === 0 && (
+            <div style={{
+              width: '100%',
+              height: '200px',
+              borderRadius: '12px',
+              background: '#FAF8F2',
+              border: '2px dashed #E5E5E5',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: '#9CA3AF',
+              fontFamily: "'Cormorant', serif",
+              fontSize: '14px'
+            }}>
+              No images in this collage
+            </div>
+          )}
         </div>
 
         {/* MINIMAL: Action bar - FIXED: Added marginTop: 'auto' to push to bottom */}
