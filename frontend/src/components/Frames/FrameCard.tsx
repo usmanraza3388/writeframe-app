@@ -615,34 +615,37 @@ const FrameCard: React.FC<FrameCardProps> = React.memo(({
           </div>
         )}
 
-        {/* UPDATED: MOOD BOARD LAYOUT - Artistic, hand-crafted feel */}
+        {/* UPDATED: MOOD BOARD LAYOUT - Fixed positioning to stay within card */}
         <div style={{ 
           marginBottom: '16px',
           flexShrink: 0,
           position: 'relative',
-          minHeight: '220px'
+          minHeight: '220px',
+          overflow: 'hidden' // ← FIXED: Add overflow hidden to contain everything
         }}>
-          {/* Mood board background */}
+          {/* Mood board background - FIXED: Added maxWidth to contain within card */}
           <div style={{
             position: 'relative',
             width: '100%',
+            maxWidth: '100%', // ← FIXED: Constrain to card width
             height: '220px',
             background: '#F5F1E6',
             borderRadius: '4px',
             border: '1px solid #E0D6C2',
             padding: '20px',
-            overflow: 'hidden'
+            overflow: 'hidden', // ← FIXED: Prevent overflow
+            boxSizing: 'border-box' // ← FIXED: Include padding in width calculation
           }}>
             
-            {/* Pinned images with rotation */}
+            {/* Pinned images with rotation - FIXED: Adjusted positioning percentages */}
             {displayImages.map((image, index) => {
               const rotation = MOOD_BOARD_CONFIG.baseRotation + (index * 1.5);
-              const left = index === 0 ? '10%' : 
-                          index === 1 ? '60%' : 
-                          index === 2 ? '30%' : '70%';
-              const top = index === 0 ? '15%' : 
-                         index === 1 ? '10%' : 
-                         index === 2 ? '55%' : '50%';
+              const left = index === 0 ? '5%' : 
+                          index === 1 ? '55%' : 
+                          index === 2 ? '25%' : '65%';
+              const top = index === 0 ? '10%' : 
+                         index === 1 ? '5%' : 
+                         index === 2 ? '50%' : '45%';
               const zIndex = 4 - index;
               
               return (
@@ -650,12 +653,12 @@ const FrameCard: React.FC<FrameCardProps> = React.memo(({
                   position: 'absolute',
                   left: left,
                   top: top,
-                  width: index === 0 ? '140px' : 
-                        index === 1 ? '100px' : 
-                        index === 2 ? '120px' : '110px',
-                  height: index === 0 ? '100px' : 
-                         index === 1 ? '140px' : 
-                         index === 2 ? '90px' : '130px',
+                  width: index === 0 ? '120px' : 
+                        index === 1 ? '90px' : 
+                        index === 2 ? '100px' : '95px',
+                  height: index === 0 ? '85px' : 
+                         index === 1 ? '120px' : 
+                         index === 2 ? '75px' : '110px',
                   transform: `rotate(${rotation}deg)`,
                   zIndex: zIndex,
                   boxShadow: `${MOOD_BOARD_CONFIG.shadowDepth}px ${MOOD_BOARD_CONFIG.shadowDepth}px 8px rgba(0,0,0,0.15)`
@@ -690,7 +693,8 @@ const FrameCard: React.FC<FrameCardProps> = React.memo(({
                     height: '100%',
                     background: '#FFF',
                     padding: '4px',
-                    border: '1px solid #E0D6C2'
+                    border: '1px solid #E0D6C2',
+                    boxSizing: 'border-box' // ← FIXED: Include border in width calculation
                   }}>
                     <img 
                       src={image}
@@ -738,13 +742,13 @@ const FrameCard: React.FC<FrameCardProps> = React.memo(({
               opacity: 0.5
             }} />
             
-            {/* Corner stitches */}
+            {/* Corner stitches - FIXED: Adjusted positioning */}
             <div style={{
               position: 'absolute',
               top: '8px',
               left: '8px',
-              width: '16px',
-              height: '16px',
+              width: '12px',
+              height: '12px',
               borderTop: '2px solid #D4AF37',
               borderLeft: '2px solid #D4AF37'
             }} />
@@ -752,8 +756,8 @@ const FrameCard: React.FC<FrameCardProps> = React.memo(({
               position: 'absolute',
               top: '8px',
               right: '8px',
-              width: '16px',
-              height: '16px',
+              width: '12px',
+              height: '12px',
               borderTop: '2px solid #D4AF37',
               borderRight: '2px solid #D4AF37'
             }} />
@@ -761,8 +765,8 @@ const FrameCard: React.FC<FrameCardProps> = React.memo(({
               position: 'absolute',
               bottom: '8px',
               left: '8px',
-              width: '16px',
-              height: '16px',
+              width: '12px',
+              height: '12px',
               borderBottom: '2px solid #D4AF37',
               borderLeft: '2px solid #D4AF37'
             }} />
@@ -770,8 +774,8 @@ const FrameCard: React.FC<FrameCardProps> = React.memo(({
               position: 'absolute',
               bottom: '8px',
               right: '8px',
-              width: '16px',
-              height: '16px',
+              width: '12px',
+              height: '12px',
               borderBottom: '2px solid #D4AF37',
               borderRight: '2px solid #D4AF37'
             }} />
