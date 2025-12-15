@@ -140,9 +140,8 @@ const SceneCard: React.FC<SceneCardProps> = React.memo(({ scene, currentUserId, 
   const [showReportDialog, setShowReportDialog] = useState(false);
   const [showCommentDialog, setShowCommentDialog] = useState(false);
   const [showShareDialog, setShowShareDialog] = useState(false);
-  // ADDED: Gallery state for image opening
+  // ADDED: Gallery state for image opening (simplified for single image)
   const [galleryOpen, setGalleryOpen] = useState(false);
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
   
   const menuButtonRef = useRef<HTMLButtonElement>(null);
   const menuContainerRef = useRef<HTMLDivElement>(null);
@@ -198,22 +197,12 @@ const SceneCard: React.FC<SceneCardProps> = React.memo(({ scene, currentUserId, 
     return `https://ycrvsbtqmjksdbyrefek.supabase.co/storage/v1/object/public/scene-images/${imagePath}`;
   };
 
-  // ADDED: Gallery handlers
+  // ADDED: Simple gallery handler for single image
   const openGallery = useCallback(() => {
     if (scene.image_path) {
       setGalleryOpen(true);
     }
   }, [scene.image_path]);
-
-  const goToNext = useCallback(() => {
-    // For scenes, there's only one image, but keep this for consistency
-    // If you add multiple images later, update this
-    setCurrentImageIndex(0);
-  }, []);
-
-  const goToPrev = useCallback(() => {
-    setCurrentImageIndex(0);
-  }, []);
 
   // ADDED: Keyboard navigation for gallery
   useEffect(() => {
@@ -222,16 +211,12 @@ const SceneCard: React.FC<SceneCardProps> = React.memo(({ scene, currentUserId, 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         setGalleryOpen(false);
-      } else if (e.key === 'ArrowRight') {
-        goToNext();
-      } else if (e.key === 'ArrowLeft') {
-        goToPrev();
       }
     };
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [galleryOpen, goToNext, goToPrev]);
+  }, [galleryOpen]);
 
   // ADDED: Profile click handler
   const handleProfileClick = useCallback(() => {
@@ -752,16 +737,6 @@ const SceneCard: React.FC<SceneCardProps> = React.memo(({ scene, currentUserId, 
                 <span style={{ fontSize: '18px', color: '#000' }}>🔍</span>
               </div>
             </div>
-            
-            <style>{`
-              div[style*="cursor: pointer"]:hover > div[style*="pointer-events: none"] {
-                background-color: rgba(0, 0, 0, 0.1);
-              }
-              div[style*="cursor: pointer"]:hover > div[style*="pointer-events: none"] > div {
-                opacity: 1;
-                transform: scale(1);
-              }
-            `}</style>
           </div>
         )}
 
@@ -971,7 +946,7 @@ const SceneCard: React.FC<SceneCardProps> = React.memo(({ scene, currentUserId, 
         </div>
       </div>
 
-      {/* UPDATED: Add Gallery Modal */}
+      {/* UPDATED: Add Gallery Modal for single image */}
       {galleryOpen && scene.image_path && (
         <div 
           style={{
