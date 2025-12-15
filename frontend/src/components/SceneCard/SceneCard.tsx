@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom'; // ADDED: Import useNavigate
+import { useNavigate } from 'react-router-dom';
 import type { FeedScene } from '../../utils/feedActions';
 import RemakeEditor from '../RemakeEditor/RemakeEditor';
 import { useDeleteItem } from '../../hooks/useDeleteItem';
@@ -73,7 +73,7 @@ const SceneDescription: React.FC<{ text: string }> = ({ text }) => {
         lineHeight: '1.4',
         maxHeight: isExpanded ? 'none' : `${maxLines * 1.4}em`,
         overflow: 'hidden',
-        whiteSpace: 'pre-line' // ← ADDED: This preserves line breaks and paragraphs
+        whiteSpace: 'pre-line'
       }}>
         {displayText}
       </div>
@@ -134,25 +134,28 @@ interface SceneCardProps {
 }
 
 const SceneCard: React.FC<SceneCardProps> = React.memo(({ scene, currentUserId, onAction }) => {
-  const navigate = useNavigate(); // ADDED: Navigation hook
+  const navigate = useNavigate();
   const [showMenu, setShowMenu] = useState(false);
   const [showRemakeEditor, setShowRemakeEditor] = useState(false);
   const [showReportDialog, setShowReportDialog] = useState(false);
   const [showCommentDialog, setShowCommentDialog] = useState(false);
   const [showShareDialog, setShowShareDialog] = useState(false);
+  // ADDED: Gallery state for image opening
+  const [galleryOpen, setGalleryOpen] = useState(false);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
   
   const menuButtonRef = useRef<HTMLButtonElement>(null);
   const menuContainerRef = useRef<HTMLDivElement>(null);
 
-  // ADDED: Temporary debug to check avatar data
+  // ADDED: Debug logging for images
   useEffect(() => {
-    console.log('SceneCard debug:', {
-      id: scene.id,
-      user_name: scene.user_name,
-      user_avatar: scene.user_avatar,
-      hasAvatar: !!scene.user_avatar,
-      avatarNotDefault: scene.user_avatar && scene.user_avatar !== '/default-avatar.png'
-    });
+    if (scene.image_path) {
+      console.log('SceneCard image debug:', {
+        id: scene.id,
+        image_path: scene.image_path,
+        fullUrl: getImageUrl(scene.image_path)
+      });
+    }
   }, [scene]);
 
   const { deleteItem } = useDeleteItem();
@@ -186,6 +189,49 @@ const SceneCard: React.FC<SceneCardProps> = React.memo(({ scene, currentUserId, 
   const menuOptions = isOwner 
     ? ['Edit', 'Delete', 'Save', 'Copy Link', 'Report']
     : ['Save', 'Copy Link', 'Report'];
+
+  // ADDED: Image URL helper function
+  const getImageUrl = (imagePath: string) => {
+    if (!imagePath) return '';
+    // Check if it's already a full URL
+    if (imagePath.startsWith('http')) return imagePath;
+    return `https://ycrvsbtqmjksdbyrefek.supabase.co/storage/v1/object/public/scene-images/${imagePath}`;
+  };
+
+  // ADDED: Gallery handlers
+  const openGallery = useCallback(() => {
+    if (scene.image_path) {
+      setGalleryOpen(true);
+    }
+  }, [scene.image_path]);
+
+  const goToNext = useCallback(() => {
+    // For scenes, there's only one image, but keep this for consistency
+    // If you add multiple images later, update this
+    setCurrentImageIndex(0);
+  }, []);
+
+  const goToPrev = useCallback(() => {
+    setCurrentImageIndex(0);
+  }, []);
+
+  // ADDED: Keyboard navigation for gallery
+  useEffect(() => {
+    if (!galleryOpen) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setGalleryOpen(false);
+      } else if (e.key === 'ArrowRight') {
+        goToNext();
+      } else if (e.key === 'ArrowLeft') {
+        goToPrev();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [galleryOpen, goToNext, goToPrev]);
 
   // ADDED: Profile click handler
   const handleProfileClick = useCallback(() => {
@@ -311,11 +357,6 @@ const SceneCard: React.FC<SceneCardProps> = React.memo(({ scene, currentUserId, 
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [showMenu, closeMenu]);
 
-  const getImageUrl = (imagePath: string) => {
-    if (!imagePath) return '';
-    return `https://ycrvsbtqmjksdbyrefek.supabase.co/storage/v1/object/public/scene-images/${imagePath}`;
-  };
-
   return (
     <>
       {showRemakeEditor && (
@@ -353,13 +394,13 @@ const SceneCard: React.FC<SceneCardProps> = React.memo(({ scene, currentUserId, 
             genre: scene.user_genre_tag
           }}
           contentType="scene"
-          targetElementId={`card-scene-${scene.id}`} // ← ADDED: Pass the card element ID
+          targetElementId={`card-scene-${scene.id}`}
         />
       )}
       
       {/* NEUTRAL: Scene Card Layout */}
       <div 
-        id={`card-scene-${scene.id}`} // ← ADDED: Unique ID for card capture
+        id={`card-scene-${scene.id}`}
         style={{
           width: 'calc(100% + 32px)',
           minHeight: scene.image_path ? '420px' : '320px',
@@ -452,7 +493,6 @@ const SceneCard: React.FC<SceneCardProps> = React.memo(({ scene, currentUserId, 
           marginBottom: '20px'
         }}>
           <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
-            {/* FIXED: Use user_avatar with proper default avatar handling */}
             <div 
               onClick={handleProfileClick}
               role="img"
@@ -468,7 +508,7 @@ const SceneCard: React.FC<SceneCardProps> = React.memo(({ scene, currentUserId, 
                 overflow: 'hidden',
                 flexShrink: 0,
                 border: '1.5px solid #E5E5E5',
-                cursor: 'pointer' // ADDED: Show it's clickable
+                cursor: 'pointer'
               }}
             >
               {scene.user_avatar && scene.user_avatar !== '/default-avatar.png' ? (
@@ -498,7 +538,7 @@ const SceneCard: React.FC<SceneCardProps> = React.memo(({ scene, currentUserId, 
               style={{ 
                 display: 'flex', 
                 flexDirection: 'column',
-                cursor: 'pointer' // ADDED: Show it's clickable
+                cursor: 'pointer'
               }}
             >
               <span style={{
@@ -645,18 +685,31 @@ const SceneCard: React.FC<SceneCardProps> = React.memo(({ scene, currentUserId, 
           )}
         </div>
 
-        {/* NEUTRAL: Image presentation */}
+        {/* UPDATED: Image presentation - Now clickable */}
         {scene.image_path && (
-          <div style={{
-            width: '100%',
-            height: '200px',
-            borderRadius: '8px',
-            marginBottom: '16px',
-            overflow: 'hidden',
-            position: 'relative',
-            boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
-            border: '1px solid #E5E5E5'
-          }}>
+          <div 
+            style={{
+              width: '100%',
+              height: '200px',
+              borderRadius: '8px',
+              marginBottom: '16px',
+              overflow: 'hidden',
+              position: 'relative',
+              boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
+              border: '1px solid #E5E5E5',
+              cursor: 'pointer',
+              transition: 'transform 0.2s ease, box-shadow 0.2s ease'
+            }}
+            onClick={openGallery}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'scale(1.01)';
+              e.currentTarget.style.boxShadow = '0 3px 10px rgba(0, 0, 0, 0.15)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'scale(1)';
+              e.currentTarget.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.1)';
+            }}
+          >
             <img 
               src={getImageUrl(scene.image_path)}
               alt={scene.title}
@@ -668,6 +721,47 @@ const SceneCard: React.FC<SceneCardProps> = React.memo(({ scene, currentUserId, 
                 objectFit: 'cover'
               }}
             />
+            
+            {/* Hover overlay with zoom icon */}
+            <div style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              backgroundColor: 'rgba(0, 0, 0, 0)',
+              transition: 'background-color 0.2s ease',
+              pointerEvents: 'none'
+            }}>
+              <div style={{
+                opacity: 0,
+                transform: 'scale(0.8)',
+                transition: 'opacity 0.2s ease, transform 0.2s ease',
+                backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                width: '40px',
+                height: '40px',
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
+              }}>
+                <span style={{ fontSize: '18px', color: '#000' }}>🔍</span>
+              </div>
+            </div>
+            
+            <style>{`
+              div[style*="cursor: pointer"]:hover > div[style*="pointer-events: none"] {
+                background-color: rgba(0, 0, 0, 0.1);
+              }
+              div[style*="cursor: pointer"]:hover > div[style*="pointer-events: none"] > div {
+                opacity: 1;
+                transform: scale(1);
+              }
+            `}</style>
           </div>
         )}
 
@@ -876,6 +970,161 @@ const SceneCard: React.FC<SceneCardProps> = React.memo(({ scene, currentUserId, 
           </div>
         </div>
       </div>
+
+      {/* UPDATED: Add Gallery Modal */}
+      {galleryOpen && scene.image_path && (
+        <div 
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.95)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 2000,
+            cursor: 'pointer'
+          }}
+          onClick={() => setGalleryOpen(false)}
+        >
+          {/* Main image */}
+          <div style={{ position: 'relative' }}>
+            <img 
+              src={getImageUrl(scene.image_path)}
+              alt={`Scene: ${scene.title}`}
+              style={{
+                maxWidth: '90vw',
+                maxHeight: '90vh',
+                objectFit: 'contain',
+                borderRadius: '8px',
+                boxShadow: '0 10px 30px rgba(0,0,0,0.5)'
+              }}
+              onClick={(e) => e.stopPropagation()}
+            />
+            
+            {/* Image info */}
+            <div style={{
+              position: 'absolute',
+              bottom: '-50px',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              background: 'rgba(0,0,0,0.7)',
+              color: 'white',
+              padding: '8px 16px',
+              borderRadius: '20px',
+              fontSize: '14px',
+              fontFamily: "'Cormorant', serif",
+              textAlign: 'center',
+              maxWidth: '80vw'
+            }}>
+              <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>
+                {scene.title}
+              </div>
+              <div style={{ fontSize: '12px', opacity: 0.9 }}>
+                by {scene.user_name}
+              </div>
+            </div>
+          </div>
+
+          {/* Close button */}
+          <button
+            onClick={() => setGalleryOpen(false)}
+            style={{
+              position: 'absolute',
+              top: '20px',
+              right: '20px',
+              background: 'rgba(255,255,255,0.1)',
+              border: 'none',
+              color: 'white',
+              fontSize: '24px',
+              width: '40px',
+              height: '40px',
+              borderRadius: '50%',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              transition: 'all 0.2s ease'
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.2)'}
+            onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
+          >
+            ×
+          </button>
+          
+          {/* Download button */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              const link = document.createElement('a');
+              link.href = getImageUrl(scene.image_path!);
+              link.download = `scene-${scene.title.toLowerCase().replace(/\s+/g, '-')}.jpg`;
+              link.click();
+            }}
+            style={{
+              position: 'absolute',
+              top: '20px',
+              right: '70px',
+              background: 'rgba(255,255,255,0.1)',
+              border: 'none',
+              color: 'white',
+              fontSize: '20px',
+              width: '40px',
+              height: '40px',
+              borderRadius: '50%',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              transition: 'all 0.2s ease'
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.2)'}
+            onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
+          >
+            ⬇
+          </button>
+          
+          {/* Share button */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              if (navigator.share) {
+                navigator.share({
+                  title: scene.title,
+                  text: scene.description || 'Check out this scene from writeFrame!',
+                  url: window.location.href,
+                });
+              } else {
+                navigator.clipboard.writeText(window.location.href);
+                alert('Scene link copied to clipboard!');
+              }
+            }}
+            style={{
+              position: 'absolute',
+              top: '20px',
+              right: '120px',
+              background: 'rgba(255,255,255,0.1)',
+              border: 'none',
+              color: 'white',
+              fontSize: '20px',
+              width: '40px',
+              height: '40px',
+              borderRadius: '50%',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              transition: 'all 0.2s ease'
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.2)'}
+            onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
+          >
+            ↗
+          </button>
+        </div>
+      )}
 
       {showReportDialog && (
         <ReportDialog
