@@ -162,6 +162,8 @@ const CharacterCard: React.FC<CharacterCardProps> = React.memo(({
   const [showShareDialog, setShowShareDialog] = useState(false);
   const [showReportDialog, setShowReportDialog] = useState(false);
   const [isReposting, setIsReposting] = useState(false); // ADDED: Loading state for repost
+  // ADDED: Gallery state for image opening
+  const [galleryOpen, setGalleryOpen] = useState(false);
   
   const isOwner = character.user_id === currentUserId;
   
@@ -210,6 +212,28 @@ const CharacterCard: React.FC<CharacterCardProps> = React.memo(({
   const handleProfileClick = useCallback(() => {
     navigate(`/profile/${character.user_id}`);
   }, [navigate, character.user_id]);
+
+  // ADDED: Simple gallery handler for single image
+  const openGallery = useCallback(() => {
+    const mainImage = character.visual_references?.[0]?.image_url;
+    if (mainImage) {
+      setGalleryOpen(true);
+    }
+  }, [character.visual_references]);
+
+  // ADDED: Keyboard navigation for gallery
+  useEffect(() => {
+    if (!galleryOpen) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setGalleryOpen(false);
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [galleryOpen]);
 
   // Handle save action
   const handleSave = useCallback(async () => {
@@ -602,16 +626,29 @@ const CharacterCard: React.FC<CharacterCardProps> = React.memo(({
           </div>
         </div>
 
-        {/* Character image - RECTANGULAR for character */}
+        {/* UPDATED: Character image - RECTANGULAR for character - Now clickable */}
         {mainImage && (
-          <div style={{
-            width: '140px',
-            height: '140px',
-            margin: '0 auto 20px auto',
-            overflow: 'hidden',
-            borderRadius: '8px',
-            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)'
-          }}>
+          <div 
+            style={{
+              width: '140px',
+              height: '140px',
+              margin: '0 auto 20px auto',
+              overflow: 'hidden',
+              borderRadius: '8px',
+              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
+              cursor: 'pointer',
+              transition: 'transform 0.2s ease, box-shadow 0.2s ease'
+            }}
+            onClick={openGallery}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'scale(1.05)';
+              e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.2)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'scale(1)';
+              e.currentTarget.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.15)';
+            }}
+          >
             <img 
               src={mainImage}
               alt={`Visual reference for ${character.name}`}
@@ -853,6 +890,161 @@ const CharacterCard: React.FC<CharacterCardProps> = React.memo(({
           </div>
         </div>
       </article>
+
+      {/* UPDATED: Add Gallery Modal for character image */}
+      {galleryOpen && mainImage && (
+        <div 
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.95)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 2000,
+            cursor: 'pointer'
+          }}
+          onClick={() => setGalleryOpen(false)}
+        >
+          {/* Main image */}
+          <div style={{ position: 'relative' }}>
+            <img 
+              src={mainImage}
+              alt={`Character: ${character.name}`}
+              style={{
+                maxWidth: '90vw',
+                maxHeight: '90vh',
+                objectFit: 'contain',
+                borderRadius: '8px',
+                boxShadow: '0 10px 30px rgba(0,0,0,0.5)'
+              }}
+              onClick={(e) => e.stopPropagation()}
+            />
+            
+            {/* Image info */}
+            <div style={{
+              position: 'absolute',
+              bottom: '-50px',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              background: 'rgba(0,0,0,0.7)',
+              color: 'white',
+              padding: '8px 16px',
+              borderRadius: '20px',
+              fontSize: '14px',
+              fontFamily: "'Cormorant', serif",
+              textAlign: 'center',
+              maxWidth: '80vw'
+            }}>
+              <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>
+                {character.name}
+              </div>
+              <div style={{ fontSize: '12px', opacity: 0.9 }}>
+                by {character.user_name}
+              </div>
+            </div>
+          </div>
+
+          {/* Close button */}
+          <button
+            onClick={() => setGalleryOpen(false)}
+            style={{
+              position: 'absolute',
+              top: '20px',
+              right: '20px',
+              background: 'rgba(255,255,255,0.1)',
+              border: 'none',
+              color: 'white',
+              fontSize: '24px',
+              width: '40px',
+              height: '40px',
+              borderRadius: '50%',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              transition: 'all 0.2s ease'
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.2)'}
+            onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
+          >
+            ×
+          </button>
+          
+          {/* Download button */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              const link = document.createElement('a');
+              link.href = mainImage;
+              link.download = `character-${character.name.toLowerCase().replace(/\s+/g, '-')}.jpg`;
+              link.click();
+            }}
+            style={{
+              position: 'absolute',
+              top: '20px',
+              right: '70px',
+              background: 'rgba(255,255,255,0.1)',
+              border: 'none',
+              color: 'white',
+              fontSize: '20px',
+              width: '40px',
+              height: '40px',
+              borderRadius: '50%',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              transition: 'all 0.2s ease'
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.2)'}
+            onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
+          >
+            ⬇
+          </button>
+          
+          {/* Share button */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              if (navigator.share) {
+                navigator.share({
+                  title: character.name,
+                  text: character.tagline || 'Check out this character from writeFrame!',
+                  url: window.location.href,
+                });
+              } else {
+                navigator.clipboard.writeText(window.location.href);
+                alert('Character link copied to clipboard!');
+              }
+            }}
+            style={{
+              position: 'absolute',
+              top: '20px',
+              right: '120px',
+              background: 'rgba(255,255,255,0.1)',
+              border: 'none',
+              color: 'white',
+              fontSize: '20px',
+              width: '40px',
+              height: '40px',
+              borderRadius: '50%',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              transition: 'all 0.2s ease'
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.2)'}
+            onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
+          >
+            ↗
+          </button>
+        </div>
+      )}
 
       {/* Report Dialog */}
       {showReportDialog && (
