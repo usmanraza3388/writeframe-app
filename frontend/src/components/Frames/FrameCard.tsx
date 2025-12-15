@@ -17,15 +17,12 @@ import CommentsSection from '../Comments/CommentsSection';
 import ShareDialog from '../Shares/ShareDialog';
 import { useFrame } from '../../hooks/useFrame'; // ADDED: Import useFrame hook
 
-// ADDED: Cinematic grid configuration to match FrameComposer
-const CINEMATIC_GRID_CONFIG = {
-  positions: [
-    { label: 'Main', width: 152, height: 133 },
-    { label: 'Support', width: 152, height: 99 },
-    { label: 'Mood', width: 152, height: 70 },
-    { label: 'Style', width: 152, height: 106 }
-  ],
-  gap: 12
+// ADDED: Mood Board configuration for artistic, hand-crafted feel
+const MOOD_BOARD_CONFIG = {
+  baseRotation: -2,
+  shadowDepth: 3,
+  pinColor: '#C41E3A',
+  tapeColor: 'rgba(255,255,200,0.3)'
 };
 
 // ADDED: Relative time utility function
@@ -618,166 +615,198 @@ const FrameCard: React.FC<FrameCardProps> = React.memo(({
           </div>
         )}
 
-        {/* UPDATED: CINEMATIC COLLAGE GRID - Matches FrameComposer layout exactly */}
+        {/* UPDATED: MOOD BOARD LAYOUT - Artistic, hand-crafted feel */}
         <div style={{ 
           marginBottom: '16px',
-          flexShrink: 0
+          flexShrink: 0,
+          position: 'relative',
+          minHeight: '220px'
         }}>
-          {/* Two-column layout with specific heights to match FrameComposer */}
-          <div style={{ 
-            display: 'grid', 
-            gridTemplateColumns: '1fr 1fr', 
-            gridTemplateRows: 'auto auto',
-            gap: `${CINEMATIC_GRID_CONFIG.gap}px ${CINEMATIC_GRID_CONFIG.gap}px`,
-            width: '100%'
+          {/* Mood board background */}
+          <div style={{
+            position: 'relative',
+            width: '100%',
+            height: '220px',
+            background: '#F5F1E6',
+            borderRadius: '4px',
+            border: '1px solid #E0D6C2',
+            padding: '20px',
+            overflow: 'hidden'
           }}>
-            {/* Left Column */}
-            <div style={{ 
-              display: 'flex', 
-              flexDirection: 'column', 
-              gap: `${CINEMATIC_GRID_CONFIG.gap}px`
-            }}>
-              {/* Main - Tall rectangle (Position 0) */}
-              {displayImages[0] && (
-                <div style={{
-                  width: '100%',
-                  height: `${CINEMATIC_GRID_CONFIG.positions[0].height}px`,
-                  backgroundColor: 'white',
-                  borderRadius: '8px',
-                  overflow: 'hidden',
-                  position: 'relative',
-                  boxShadow: '0 1px 3px rgba(0, 0, 0, 0.15)',
-                  border: '1px solid #E5E5E5'
+            
+            {/* Pinned images with rotation */}
+            {displayImages.map((image, index) => {
+              const rotation = MOOD_BOARD_CONFIG.baseRotation + (index * 1.5);
+              const left = index === 0 ? '10%' : 
+                          index === 1 ? '60%' : 
+                          index === 2 ? '30%' : '70%';
+              const top = index === 0 ? '15%' : 
+                         index === 1 ? '10%' : 
+                         index === 2 ? '55%' : '50%';
+              const zIndex = 4 - index;
+              
+              return (
+                <div key={index} style={{
+                  position: 'absolute',
+                  left: left,
+                  top: top,
+                  width: index === 0 ? '140px' : 
+                        index === 1 ? '100px' : 
+                        index === 2 ? '120px' : '110px',
+                  height: index === 0 ? '100px' : 
+                         index === 1 ? '140px' : 
+                         index === 2 ? '90px' : '130px',
+                  transform: `rotate(${rotation}deg)`,
+                  zIndex: zIndex,
+                  boxShadow: `${MOOD_BOARD_CONFIG.shadowDepth}px ${MOOD_BOARD_CONFIG.shadowDepth}px 8px rgba(0,0,0,0.15)`
                 }}>
-                  <img 
-                    src={displayImages[0]}
-                    alt="Main reference"
-                    loading="lazy"
-                    decoding="async"
-                    style={{
-                      width: '100%',
-                      height: '100%',
-                      objectFit: 'cover'
-                    }}
-                    onError={(e) => {
-                      e.currentTarget.style.display = 'none';
-                    }}
-                  />
+                  {/* Push pin */}
+                  <div style={{
+                    position: 'absolute',
+                    top: '-8px',
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    width: '12px',
+                    height: '12px',
+                    background: MOOD_BOARD_CONFIG.pinColor,
+                    borderRadius: '50%',
+                    zIndex: 5,
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                  }}>
+                    <div style={{
+                      position: 'absolute',
+                      top: '12px',
+                      left: '50%',
+                      transform: 'translateX(-50%)',
+                      width: '1px',
+                      height: '8px',
+                      background: MOOD_BOARD_CONFIG.pinColor
+                    }} />
+                  </div>
+                  
+                  {/* Image with polaroid-like border */}
+                  <div style={{
+                    width: '100%',
+                    height: '100%',
+                    background: '#FFF',
+                    padding: '4px',
+                    border: '1px solid #E0D6C2'
+                  }}>
+                    <img 
+                      src={image}
+                      alt={`Mood reference ${index + 1}`}
+                      style={{
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'cover'
+                      }}
+                      onError={(e) => {
+                        e.currentTarget.style.display = 'none';
+                      }}
+                    />
+                  </div>
+                  
+                  {/* Washi tape effect (optional) */}
+                  {index % 2 === 0 && (
+                    <div style={{
+                      position: 'absolute',
+                      top: '-4px',
+                      left: '10%',
+                      right: '10%',
+                      height: '8px',
+                      background: MOOD_BOARD_CONFIG.tapeColor,
+                      transform: `rotate(${rotation * 0.5}deg)`,
+                      zIndex: -1
+                    }} />
+                  )}
                 </div>
-              )}
-
-              {/* Mood - Short rectangle (Position 2) */}
-              {displayImages[2] && (
-                <div style={{
-                  width: '100%',
-                  height: `${CINEMATIC_GRID_CONFIG.positions[2].height}px`,
-                  backgroundColor: 'white',
-                  borderRadius: '8px',
-                  overflow: 'hidden',
-                  position: 'relative',
-                  boxShadow: '0 1px 3px rgba(0, 0, 0, 0.15)',
-                  border: '1px solid #E5E5E5'
-                }}>
-                  <img 
-                    src={displayImages[2]}
-                    alt="Mood reference"
-                    loading="lazy"
-                    decoding="async"
-                    style={{
-                      width: '100%',
-                      height: '100%',
-                      objectFit: 'cover'
-                    }}
-                    onError={(e) => {
-                      e.currentTarget.style.display = 'none';
-                    }}
-                  />
-                </div>
-              )}
-            </div>
-
-            {/* Right Column */}
-            <div style={{ 
-              display: 'flex', 
-              flexDirection: 'column', 
-              gap: `${CINEMATIC_GRID_CONFIG.gap}px`
-            }}>
-              {/* Support - Medium rectangle (Position 1) */}
-              {displayImages[1] && (
-                <div style={{
-                  width: '100%',
-                  height: `${CINEMATIC_GRID_CONFIG.positions[1].height}px`,
-                  backgroundColor: 'white',
-                  borderRadius: '8px',
-                  overflow: 'hidden',
-                  position: 'relative',
-                  boxShadow: '0 1px 3px rgba(0, 0, 0, 0.15)',
-                  border: '1px solid #E5E5E5'
-                }}>
-                  <img 
-                    src={displayImages[1]}
-                    alt="Support reference"
-                    loading="lazy"
-                    decoding="async"
-                    style={{
-                      width: '100%',
-                      height: '100%',
-                      objectFit: 'cover'
-                    }}
-                    onError={(e) => {
-                      e.currentTarget.style.display = 'none';
-                    }}
-                  />
-                </div>
-              )}
-
-              {/* Style - Medium-tall rectangle (Position 3) */}
-              {displayImages[3] && (
-                <div style={{
-                  width: '100%',
-                  height: `${CINEMATIC_GRID_CONFIG.positions[3].height}px`,
-                  backgroundColor: 'white',
-                  borderRadius: '8px',
-                  overflow: 'hidden',
-                  position: 'relative',
-                  boxShadow: '0 1px 3px rgba(0, 0, 0, 0.15)',
-                  border: '1px solid #E5E5E5'
-                }}>
-                  <img 
-                    src={displayImages[3]}
-                    alt="Style reference"
-                    loading="lazy"
-                    decoding="async"
-                    style={{
-                      width: '100%',
-                      height: '100%',
-                      objectFit: 'cover'
-                    }}
-                    onError={(e) => {
-                      e.currentTarget.style.display = 'none';
-                    }}
-                  />
-                </div>
-              )}
-            </div>
+              );
+            })}
+            
+            {/* Grid lines (subtle) */}
+            <div style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundImage: `
+                linear-gradient(to right, rgba(0,0,0,0.05) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(0,0,0,0.05) 1px, transparent 1px)
+              `,
+              backgroundSize: '20px 20px',
+              opacity: 0.5
+            }} />
+            
+            {/* Corner stitches */}
+            <div style={{
+              position: 'absolute',
+              top: '8px',
+              left: '8px',
+              width: '16px',
+              height: '16px',
+              borderTop: '2px solid #D4AF37',
+              borderLeft: '2px solid #D4AF37'
+            }} />
+            <div style={{
+              position: 'absolute',
+              top: '8px',
+              right: '8px',
+              width: '16px',
+              height: '16px',
+              borderTop: '2px solid #D4AF37',
+              borderRight: '2px solid #D4AF37'
+            }} />
+            <div style={{
+              position: 'absolute',
+              bottom: '8px',
+              left: '8px',
+              width: '16px',
+              height: '16px',
+              borderBottom: '2px solid #D4AF37',
+              borderLeft: '2px solid #D4AF37'
+            }} />
+            <div style={{
+              position: 'absolute',
+              bottom: '8px',
+              right: '8px',
+              width: '16px',
+              height: '16px',
+              borderBottom: '2px solid #D4AF37',
+              borderRight: '2px solid #D4AF37'
+            }} />
           </div>
-
+          
+          {/* Mood board label */}
+          <div style={{
+            textAlign: 'center',
+            marginTop: '12px',
+            fontSize: '12px',
+            color: '#8B7355',
+            fontFamily: "'Cormorant', serif",
+            fontStyle: 'italic'
+          }}>
+            {displayImages.length > 0 
+              ? `${displayImages.length} visual inspiration${displayImages.length !== 1 ? 's' : ''}`
+              : 'Empty mood board'}
+          </div>
+          
           {/* Empty state - show when no images */}
           {displayImages.length === 0 && (
             <div style={{
-              width: '100%',
-              height: '200px',
-              borderRadius: '12px',
-              background: '#FAF8F2',
-              border: '2px dashed #E5E5E5',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: '#9CA3AF',
+              position: 'absolute',
+              top: '50%',
+              left: '50%',
+              transform: 'translate(-50%, -50%)',
+              textAlign: 'center',
+              color: '#8B7355',
               fontFamily: "'Cormorant', serif",
-              fontSize: '14px'
+              fontSize: '14px',
+              fontStyle: 'italic',
+              width: '100%',
+              zIndex: 1
             }}>
-              No images in this collage
+              No images pinned yet
             </div>
           )}
         </div>
