@@ -144,6 +144,36 @@ const LandingPage: React.FC = () => {
         >
           Already have an account? Sign In
         </Link>
+
+        {/* 👇 ADDED: About Page Link 👇 */}
+        <div style={{ 
+          marginTop: '16px',
+          textAlign: 'center'
+        }}>
+          <Link 
+            to="/about"
+            style={{
+              color: 'var(--text-gray)',
+              fontFamily: "'Cormorant', serif",
+              fontSize: '13px',
+              textDecoration: 'none',
+              transition: 'color 0.2s ease',
+              opacity: 0.8,
+              display: 'inline-block',
+              padding: '8px'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.color = 'var(--text-secondary)';
+              e.currentTarget.style.opacity = '1';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.color = 'var(--text-gray)';
+              e.currentTarget.style.opacity = '0.8';
+            }}
+          >
+            What is writeFrame? Learn more
+          </Link>
+        </div>
       </div>
     </div>
   );

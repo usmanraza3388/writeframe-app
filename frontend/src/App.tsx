@@ -18,6 +18,7 @@ import Profile from "./pages/Profile";
 import Dashboard from "./pages/Dashboard";
 import Drafts from "./pages/Drafts";
 import Settings from "./pages/Settings";
+import AboutPage from "./pages/AboutPage"; // 👈 ADDED IMPORT
 import { SceneComposer } from "./components/Scenes/SceneComposer";
 import { MonologueComposer } from "./components/Monologues/MonologueComposer";
 import CharacterComposer from "./components/Characters/CharacterComposer";
@@ -77,6 +78,9 @@ function AppContent() {
 
         {/* 👇 UPDATED: Landing Page as Root Route 👇 */}
         <Route path="/" element={<LandingPage />} />
+
+        {/* 👇 ADDED: About Page Route (Public) 👇 */}
+        <Route path="/about" element={<AboutPage />} />
 
         {/* 👇 ADDED: New root route for logged-in users 👇 */}
         <Route
