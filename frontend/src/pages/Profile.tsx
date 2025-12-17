@@ -792,7 +792,7 @@ export default function Profile() {
             ) : (
               <img 
                 src={displayAvatarUrl} 
-                alt={profile.username} 
+                alt="" 
                 style={avatarStyle}
               />
             )}
