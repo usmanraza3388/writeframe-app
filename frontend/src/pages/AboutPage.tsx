@@ -356,7 +356,7 @@ const AboutPage: React.FC = () => {
                 color: '#FFFFFF',
                 fontWeight: 'bold'
               }}>
-                YN
+                UR
               </div>
               <div>
                 <p style={{
@@ -365,7 +365,7 @@ const AboutPage: React.FC = () => {
                   color: '#1C1C1C',
                   margin: '0 0 2px 0'
                 }}>
-                  [Your Name Here]
+                  Usman Raza
                 </p>
                 <p style={{
                   fontSize: '12px',
@@ -461,13 +461,6 @@ const AboutPage: React.FC = () => {
           paddingTop: '16px',
           borderTop: '1px solid #E5E5E5'
         }}>
-          <p style={{
-            fontSize: '12px',
-            color: '#55524F',
-            margin: '0 0 4px 0'
-          }}>
-            Made with ❤️ for the film community
-          </p>
           <p style={{
             fontSize: '11px',
             color: '#AAA',
