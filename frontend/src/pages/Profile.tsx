@@ -784,10 +784,12 @@ export default function Profile() {
         {/* Header Section */}
         <div style={headerStyle}>
           <div style={avatarContainerStyle} className="avatar-container">
-            {displayAvatarUrl === '/placeholder-avatar.png' && isOwnProfile ? (
+            {displayAvatarUrl === '/placeholder-avatar.png' ? ( // FIXED: Removed && isOwnProfile
               <div style={emptyAvatarStyle}>
                 <div style={emptyAvatarIconStyle}>👤</div>
-                <div style={emptyAvatarTextStyle}>Add Photo</div>
+                <div style={emptyAvatarTextStyle}>
+                  {isOwnProfile ? 'Add Photo' : 'No Photo'}  {/* FIXED: Conditional text */}
+                </div>
               </div>
             ) : (
               <img 
