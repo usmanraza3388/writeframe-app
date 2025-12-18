@@ -117,6 +117,25 @@ const HomeFeed: React.FC = () => {
   const currentUserId = user?.id;
   const navigate = useNavigate();
 
+  // ADDED: Guest check function
+  const checkAuthForAction = useCallback((action: string): boolean => {
+    if (!currentUserId) {
+      // Actions that should prompt signup for guests
+      const guestActions = [
+        'like', 'comment', 'repost', 'save', 'report', 'remake', 'edit', 'delete'
+      ];
+      
+      const normalizedAction = action.toLowerCase();
+      
+      // Check if this action requires authentication
+      if (guestActions.includes(normalizedAction)) {
+        navigate('/signup');
+        return false; // Not allowed for guests
+      }
+    }
+    return true; // Allowed
+  }, [currentUserId, navigate]);
+
   // ADDED: Pagination state
   const [visibleCount, setVisibleCount] = useState(10);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
@@ -221,6 +240,11 @@ const HomeFeed: React.FC = () => {
   }, [loadCharacters, loadFrames]);
 
   const handleSceneAction = React.useCallback(async (action: string, sceneId: string, contextText?: string) => {
+    // ADDED: Guest protection
+    if (!checkAuthForAction(action)) {
+      return;
+    }
+
     if (action === 'Edit') {
       sessionStorage.setItem('feedScrollPosition', window.scrollY.toString());
       navigate(`/compose-scene?id=${sceneId}`);
@@ -247,9 +271,14 @@ const HomeFeed: React.FC = () => {
         }, 2000);
       }
     }
-  }, [currentUserId, refreshScenes, navigate]);
+  }, [currentUserId, refreshScenes, navigate, checkAuthForAction]);
 
   const handleMonologueAction = React.useCallback(async (action: string, monologueId: string) => {
+    // ADDED: Guest protection
+    if (!checkAuthForAction(action)) {
+      return;
+    }
+
     if (action === 'Edit') {
       sessionStorage.setItem('feedScrollPosition', window.scrollY.toString());
       navigate(`/compose-monologue?id=${monologueId}`);
@@ -265,9 +294,14 @@ const HomeFeed: React.FC = () => {
         console.error('Error reposting monologue:', error);
       }
     }
-  }, [currentUserId, repostMonologue, navigate, refreshMonologues]);
+  }, [currentUserId, repostMonologue, navigate, refreshMonologues, checkAuthForAction]);
 
   const handleCharacterAction = React.useCallback(async (action: string, characterId: string) => {
+    // ADDED: Guest protection
+    if (!checkAuthForAction(action)) {
+      return;
+    }
+
     if (action === 'Edit') {
       sessionStorage.setItem('feedScrollPosition', window.scrollY.toString());
       navigate(`/compose-character?id=${characterId}`);
@@ -283,9 +317,14 @@ const HomeFeed: React.FC = () => {
         console.error('Error reposting character:', error);
       }
     }
-  }, [currentUserId, repostCharacter, navigate, loadCharacters]);
+  }, [currentUserId, repostCharacter, navigate, loadCharacters, checkAuthForAction]);
 
   const handleFrameAction = React.useCallback(async (action: string, frameId: string) => {
+    // ADDED: Guest protection
+    if (!checkAuthForAction(action)) {
+      return;
+    }
+
     if (action === 'Edit') {
       sessionStorage.setItem('feedScrollPosition', window.scrollY.toString());
       navigate(`/compose-frame?id=${frameId}`);
@@ -301,10 +340,15 @@ const HomeFeed: React.FC = () => {
         console.error('Error reposting frame:', error);
       }
     }
-  }, [currentUserId, repostFrame, navigate, loadFrames]);
+  }, [currentUserId, repostFrame, navigate, loadFrames, checkAuthForAction]);
 
   // FIXED: Removed unused repostId parameters
   const handleRepostedMonologueAction = React.useCallback(async (action: string, _repostId: string, context?: any) => {
+    // ADDED: Guest protection
+    if (!checkAuthForAction(action)) {
+      return;
+    }
+
     if (action === 'view_original' && context?.originalMonologueId) {
       const elementId = `monologue-${context.originalMonologueId}`;
       const originalElement = document.getElementById(elementId);
@@ -321,10 +365,15 @@ const HomeFeed: React.FC = () => {
         }, 2000);
       }
     }
-  }, []);
+  }, [checkAuthForAction]);
 
   // FIXED: Removed unused repostId parameters
   const handleRepostedCharacterAction = React.useCallback(async (action: string, _repostId: string, context?: any) => {
+    // ADDED: Guest protection
+    if (!checkAuthForAction(action)) {
+      return;
+    }
+
     if (action === 'view_original' && context?.originalCharacterId) {
       const elementId = `character-${context.originalCharacterId}`;
       const originalElement = document.getElementById(elementId);
@@ -341,10 +390,15 @@ const HomeFeed: React.FC = () => {
         }, 2000);
       }
     }
-  }, []);
+  }, [checkAuthForAction]);
 
   // FIXED: Removed unused repostId parameters
   const handleRepostedFrameAction = React.useCallback(async (action: string, _repostId: string, context?: any) => {
+    // ADDED: Guest protection
+    if (!checkAuthForAction(action)) {
+      return;
+    }
+
     if (action === 'view_original' && context?.originalFrameId) {
       const elementId = `frame-${context.originalFrameId}`;
       const originalElement = document.getElementById(elementId);
@@ -361,7 +415,7 @@ const HomeFeed: React.FC = () => {
         }, 2000);
       }
     }
-  }, []);
+  }, [checkAuthForAction]);
 
   const mixedFeed: FeedItem[] = React.useMemo(() => {
     const sceneItems = scenes.map(scene => ({
