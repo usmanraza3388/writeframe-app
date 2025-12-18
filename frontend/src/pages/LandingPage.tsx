@@ -92,7 +92,7 @@ const LandingPage: React.FC = () => {
         {/* CTA Button with consistent spacing */}
         <div style={{ 
           width: '100%',
-          marginBottom: '16px'
+          marginBottom: '8px'
         }}>
           <Link 
             to="/signup"
@@ -124,31 +124,10 @@ const LandingPage: React.FC = () => {
           </Link>
         </div>
 
-        {/* Secondary Link */}
-        <Link 
-          to="/signin"
-          style={{
-            color: 'var(--text-gray)',
-            fontFamily: "'Cormorant', serif",
-            fontSize: '14px',
-            textDecoration: 'underline',
-            transition: 'color 0.2s ease',
-            marginTop: '8px'
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.color = 'var(--text-secondary)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.color = 'var(--text-gray)';
-          }}
-        >
-          Already have an account? Sign In
-        </Link>
-
         {/* 👇 ADDED: Browse Community Work First Button 👇 */}
         <div style={{ 
           width: '100%',
-          marginTop: '8px'
+          marginBottom: '16px'
         }}>
           <Link 
             to="/home-feed"
@@ -183,6 +162,27 @@ const LandingPage: React.FC = () => {
             Browse Community Work First
           </Link>
         </div>
+
+        {/* Secondary Link */}
+        <Link 
+          to="/signin"
+          style={{
+            color: 'var(--text-gray)',
+            fontFamily: "'Cormorant', serif",
+            fontSize: '14px',
+            textDecoration: 'underline',
+            transition: 'color 0.2s ease',
+            marginTop: '8px'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.color = 'var(--text-secondary)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.color = 'var(--text-gray)';
+          }}
+        >
+          Already have an account? Sign In
+        </Link>
 
         {/* 👇 ADDED: About Page Link 👇 */}
         <div style={{ 

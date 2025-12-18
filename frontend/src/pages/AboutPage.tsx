@@ -429,7 +429,7 @@ const AboutPage: React.FC = () => {
               Start Creating Free
             </Link>
             <Link 
-              to="/"
+              to="/home-feed"
               style={{
                 display: 'block',
                 padding: '14px',
