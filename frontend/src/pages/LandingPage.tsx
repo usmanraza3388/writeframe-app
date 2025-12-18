@@ -145,6 +145,45 @@ const LandingPage: React.FC = () => {
           Already have an account? Sign In
         </Link>
 
+        {/* 👇 ADDED: Browse Community Work First Button 👇 */}
+        <div style={{ 
+          width: '100%',
+          marginTop: '8px'
+        }}>
+          <Link 
+            to="/home-feed"
+            style={{
+              width: '100%',
+              padding: '14px 20px',
+              backgroundColor: 'transparent',
+              color: '#55524F',
+              border: '1px solid var(--border-transparent)',
+              borderRadius: '12px',
+              fontSize: '14px',
+              fontFamily: "'Cormorant', serif",
+              fontWeight: 500,
+              cursor: 'pointer',
+              textDecoration: 'none',
+              textAlign: 'center',
+              transition: 'all 0.2s ease',
+              boxSizing: 'border-box',
+              display: 'block'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = 'var(--background-secondary)';
+              e.currentTarget.style.borderColor = 'var(--text-secondary)';
+              e.currentTarget.style.color = 'var(--text-primary)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = 'transparent';
+              e.currentTarget.style.borderColor = 'var(--border-transparent)';
+              e.currentTarget.style.color = '#55524F';
+            }}
+          >
+            Browse Community Work First
+          </Link>
+        </div>
+
         {/* 👇 ADDED: About Page Link 👇 */}
         <div style={{ 
           marginTop: '16px',
