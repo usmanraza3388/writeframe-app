@@ -75,8 +75,8 @@ export default function ExpressionSelection() {
 
       if (updateError) throw updateError;
 
-      // UPDATED: Redirect to StudioReadyGuide for first-time onboarding
-      navigate("/studio-ready", { replace: true });
+      // UPDATED: Redirect to HomeFeed instead of StudioReadyGuide
+      navigate("/home-feed", { replace: true }); // CHANGED THIS LINE
     } catch (err: any) {
       console.error(err);
       setError(err.message || "Something went wrong");

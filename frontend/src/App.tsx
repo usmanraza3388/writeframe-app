@@ -9,16 +9,16 @@ import SignUp from "./pages/SignUp";
 import SignIn from "./pages/SignIn";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
-import AuthCallback from "./pages/AuthCallback"; // 👈 ADDED IMPORT
+import AuthCallback from "./pages/AuthCallback";
 import Welcome from "./pages/Welcome";
 import GenreSelection from "./pages/GenreSelection";
 import ExpressionSelection from "./pages/ExpressionSelection";
-import StudioReadyGuide from "./pages/StudioReadyGuide"; // 👈 ADDED IMPORT
+// REMOVED: StudioReadyGuide import
 import Profile from "./pages/Profile";
 import Dashboard from "./pages/Dashboard";
 import Drafts from "./pages/Drafts";
 import Settings from "./pages/Settings";
-import AboutPage from "./pages/AboutPage"; // 👈 ADDED IMPORT
+import AboutPage from "./pages/AboutPage";
 import { SceneComposer } from "./components/Scenes/SceneComposer";
 import { MonologueComposer } from "./components/Monologues/MonologueComposer";
 import CharacterComposer from "./components/Characters/CharacterComposer";
@@ -82,7 +82,7 @@ function AppContent() {
         {/* 👇 ADDED: About Page Route (Public) 👇 */}
         <Route path="/about" element={<AboutPage />} />
 
-        {/* 👇 ADDED: New root route for logged-in users 👇 */}
+        {/* 👇 UPDATED: Root route for logged-in users - REMOVED studio-ready redirect 👇 */}
         <Route
           path="/app"
           element={
@@ -93,6 +93,7 @@ function AppContent() {
             ) : !profile?.expression ? (
               <Navigate to="/expression-selection" replace />
             ) : (
+              // REMOVED studio-ready redirect - now goes directly to home-feed
               <Navigate to="/home-feed" replace />
             )
           }
@@ -136,7 +137,7 @@ function AppContent() {
         <Route path="/signin" element={<SignIn />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
-        <Route path="/auth/callback" element={<AuthCallback />} /> {/* 👈 ADDED ROUTE */}
+        <Route path="/auth/callback" element={<AuthCallback />} />
 
         {/* Onboarding Flow */}
         <Route
@@ -152,11 +153,8 @@ function AppContent() {
           element={session ? <ExpressionSelection /> : <Navigate to="/signup" replace />}
         />
         
-        {/* ADDED: Studio Ready Guide Route */}
-        <Route
-          path="/studio-ready"
-          element={session ? <StudioReadyGuide /> : <Navigate to="/signin" replace />}
-        />
+        {/* REMOVED: Studio Ready Guide Route - No longer needed */}
+        {/* <Route path="/studio-ready" element={session ? <StudioReadyGuide /> : <Navigate to="/signin" replace />} /> */}
 
         {/* Profile Route */}
         <Route

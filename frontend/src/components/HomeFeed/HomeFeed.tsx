@@ -1,5 +1,5 @@
 // E:\Cineverse\frontend\src\components\HomeFeed\HomeFeed.tsx
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useFeed } from '../../hooks/useFeed';
 import { useMonologue } from '../../hooks/useMonologue';
@@ -17,6 +17,10 @@ import BottomNav from '../Navigation/BottomNav';
 import type { CharacterWithDetails } from '../../utils/character-types';
 import type { FrameWithDetails } from '../../utils/frames';
 import { feedActions } from '../../utils/feedActions';
+
+// ADDED: Import GettingStartedModal and useOnboarding hook
+import GettingStartedModal from '../GettingStartedModal/GettingStartedModal';
+import { useOnboarding } from '../../hooks/useOnboarding';
 
 // ADDED: Skeleton Loading Components
 const CardSkeleton: React.FC = () => (
@@ -117,6 +121,9 @@ const HomeFeed: React.FC = () => {
   const currentUserId = user?.id;
   const navigate = useNavigate();
 
+  // ADDED: Use onboarding hook
+  const { showOnboarding, handleComplete, handleClose } = useOnboarding();
+
   // ADDED: Pagination state
   const [visibleCount, setVisibleCount] = useState(10);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
@@ -140,13 +147,13 @@ const HomeFeed: React.FC = () => {
   }, [isLoadingMore]);
 
   // ADDED: Scroll event listener
-  React.useEffect(() => {
+  useEffect(() => {
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, [handleScroll]);
 
   // FIXED: Skeleton styles - proper useEffect cleanup
-  React.useEffect(() => {
+  useEffect(() => {
     const style = document.createElement('style');
     style.textContent = skeletonStyles;
     document.head.appendChild(style);
@@ -157,7 +164,7 @@ const HomeFeed: React.FC = () => {
   }, []);
 
   // CLEANED: Auto-scroll without debug logs
-  React.useEffect(() => {
+  useEffect(() => {
     const handleHashScroll = () => {
       const hash = window.location.hash;
       
@@ -215,12 +222,12 @@ const HomeFeed: React.FC = () => {
     };
   }, []);
 
-  React.useEffect(() => {
+  useEffect(() => {
     loadCharacters();
     loadFrames();
   }, [loadCharacters, loadFrames]);
 
-  const handleSceneAction = React.useCallback(async (action: string, sceneId: string, contextText?: string) => {
+  const handleSceneAction = useCallback(async (action: string, sceneId: string, contextText?: string) => {
     if (action === 'Edit') {
       sessionStorage.setItem('feedScrollPosition', window.scrollY.toString());
       navigate(`/compose-scene?id=${sceneId}`);
@@ -249,7 +256,7 @@ const HomeFeed: React.FC = () => {
     }
   }, [currentUserId, refreshScenes, navigate]);
 
-  const handleMonologueAction = React.useCallback(async (action: string, monologueId: string) => {
+  const handleMonologueAction = useCallback(async (action: string, monologueId: string) => {
     if (action === 'Edit') {
       sessionStorage.setItem('feedScrollPosition', window.scrollY.toString());
       navigate(`/compose-monologue?id=${monologueId}`);
@@ -267,7 +274,7 @@ const HomeFeed: React.FC = () => {
     }
   }, [currentUserId, repostMonologue, navigate, refreshMonologues]);
 
-  const handleCharacterAction = React.useCallback(async (action: string, characterId: string) => {
+  const handleCharacterAction = useCallback(async (action: string, characterId: string) => {
     if (action === 'Edit') {
       sessionStorage.setItem('feedScrollPosition', window.scrollY.toString());
       navigate(`/compose-character?id=${characterId}`);
@@ -285,7 +292,7 @@ const HomeFeed: React.FC = () => {
     }
   }, [currentUserId, repostCharacter, navigate, loadCharacters]);
 
-  const handleFrameAction = React.useCallback(async (action: string, frameId: string) => {
+  const handleFrameAction = useCallback(async (action: string, frameId: string) => {
     if (action === 'Edit') {
       sessionStorage.setItem('feedScrollPosition', window.scrollY.toString());
       navigate(`/compose-frame?id=${frameId}`);
@@ -304,7 +311,7 @@ const HomeFeed: React.FC = () => {
   }, [currentUserId, repostFrame, navigate, loadFrames]);
 
   // FIXED: Removed unused repostId parameters
-  const handleRepostedMonologueAction = React.useCallback(async (action: string, _repostId: string, context?: any) => {
+  const handleRepostedMonologueAction = useCallback(async (action: string, _repostId: string, context?: any) => {
     if (action === 'view_original' && context?.originalMonologueId) {
       const elementId = `monologue-${context.originalMonologueId}`;
       const originalElement = document.getElementById(elementId);
@@ -324,7 +331,7 @@ const HomeFeed: React.FC = () => {
   }, []);
 
   // FIXED: Removed unused repostId parameters
-  const handleRepostedCharacterAction = React.useCallback(async (action: string, _repostId: string, context?: any) => {
+  const handleRepostedCharacterAction = useCallback(async (action: string, _repostId: string, context?: any) => {
     if (action === 'view_original' && context?.originalCharacterId) {
       const elementId = `character-${context.originalCharacterId}`;
       const originalElement = document.getElementById(elementId);
@@ -344,7 +351,7 @@ const HomeFeed: React.FC = () => {
   }, []);
 
   // FIXED: Removed unused repostId parameters
-  const handleRepostedFrameAction = React.useCallback(async (action: string, _repostId: string, context?: any) => {
+  const handleRepostedFrameAction = useCallback(async (action: string, _repostId: string, context?: any) => {
     if (action === 'view_original' && context?.originalFrameId) {
       const elementId = `frame-${context.originalFrameId}`;
       const originalElement = document.getElementById(elementId);
@@ -363,7 +370,7 @@ const HomeFeed: React.FC = () => {
     }
   }, []);
 
-  const mixedFeed: FeedItem[] = React.useMemo(() => {
+  const mixedFeed: FeedItem[] = useMemo(() => {
     const sceneItems = scenes.map(scene => ({
       type: 'scene' as const,
       data: scene,
@@ -510,132 +517,141 @@ const HomeFeed: React.FC = () => {
   }
 
   return (
-    <div style={{
-      width: '100%',
-      maxWidth: '375px',
-      margin: '0 auto',
-      padding: '16px 0',
-      backgroundColor: '#FFFFFF',
-      paddingBottom: '100px',
-      minHeight: '100vh'
-    }}>
+    <>
       <div style={{
-        padding: '0 16px 16px 16px',
-        borderBottom: '1px solid #E5E5E5',
-        marginBottom: '16px'
+        width: '100%',
+        maxWidth: '375px',
+        margin: '0 auto',
+        padding: '16px 0',
+        backgroundColor: '#FFFFFF',
+        paddingBottom: '100px',
+        minHeight: '100vh'
       }}>
-        <h1 style={{
-          fontFamily: 'Playfair Display, serif',
-          fontSize: '24px',
-          fontWeight: 'bold',
-          color: '#1C1C1C',
-          margin: 0
+        <div style={{
+          padding: '0 16px 16px 16px',
+          borderBottom: '1px solid #E5E5E5',
+          marginBottom: '16px'
         }}>
-          writeFrame
-        </h1>
-      </div>
-
-      <div style={{
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '20px',
-        padding: '0 16px'
-      }}>
-        {displayFeed.map((item) => {
-          if (item.type === 'scene') {
-            return (
-              <div key={`scene-${item.data.id}`} id={`scene-${item.data.id}`}>
-                <SceneCard 
-                  scene={item.data}
-                  currentUserId={currentUserId}
-                  onAction={handleSceneAction}
-                />
-              </div>
-            );
-          } else if (item.type === 'monologue') {
-            return (
-              <div key={`monologue-${item.data.id}`} id={`monologue-${item.data.id}`}>
-                <MonologueCard 
-                  monologue={item.data}
-                  currentUserId={currentUserId}
-                  onAction={handleMonologueAction}
-                />
-              </div>
-            );
-          } else if (item.type === 'reposted_monologue') {
-            return (
-              <RepostedMonologueCard 
-                key={`repost-${item.data.id}`}
-                repost={item.data}
-                originalMonologue={item.data.original_monologue}
-                currentUserId={currentUserId}
-                onAction={handleRepostedMonologueAction}
-              />
-            );
-          } else if (item.type === 'character') {
-            return (
-              <div key={`character-${item.data.id}`} id={`character-${item.data.id}`}>
-                <CharacterCard 
-                  character={item.data}
-                  currentUserId={currentUserId}
-                  onAction={handleCharacterAction}
-                />
-              </div>
-            );
-          } else if (item.type === 'reposted_character') {
-            return (
-              <RepostedCharacterCard 
-                key={`repost-${item.data.id}`}
-                repost={item.data}
-                originalCharacter={item.data.original_character}
-                currentUserId={currentUserId}
-                onAction={handleRepostedCharacterAction}
-              />
-            );
-          } else if (item.type === 'frame') {
-            return (
-              <div key={`frame-${item.data.id}`} id={`frame-${item.data.id}`}>
-                <FrameCard 
-                  frame={item.data}
-                  currentUserId={currentUserId}
-                  onAction={handleFrameAction}
-                />
-              </div>
-            );
-          } else if (item.type === 'reposted_frame') {
-            return (
-              <RepostedFrameCard 
-                key={`repost-${item.data.id}`}
-                repost={item.data}
-                originalFrame={item.data.original_frame}
-                currentUserId={currentUserId}
-                onAction={handleRepostedFrameAction}
-              />
-            );
-          } else {
-            return null;
-          }
-        })}
-
-        {/* ADDED: Loading more indicator */}
-        {isLoadingMore && <CardSkeleton />}
-
-        {/* ADDED: End of feed message with dynamic text */}
-        {visibleCount >= mixedFeed.length && mixedFeed.length > 0 && (
-          <div style={{
-            padding: '20px 16px',
-            textAlign: 'center',
+          <h1 style={{
             fontFamily: 'Playfair Display, serif',
-            color: '#55524F',
-            fontSize: '14px'
+            fontSize: '24px',
+            fontWeight: 'bold',
+            color: '#1C1C1C',
+            margin: 0
           }}>
-            — {mixedFeed.length > 50 ? "You've reached the end for now" : "That's all for now"} —
-          </div>
-        )}
+            writeFrame
+          </h1>
+        </div>
+
+        <div style={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '20px',
+          padding: '0 16px'
+        }}>
+          {displayFeed.map((item) => {
+            if (item.type === 'scene') {
+              return (
+                <div key={`scene-${item.data.id}`} id={`scene-${item.data.id}`}>
+                  <SceneCard 
+                    scene={item.data}
+                    currentUserId={currentUserId}
+                    onAction={handleSceneAction}
+                  />
+                </div>
+              );
+            } else if (item.type === 'monologue') {
+              return (
+                <div key={`monologue-${item.data.id}`} id={`monologue-${item.data.id}`}>
+                  <MonologueCard 
+                    monologue={item.data}
+                    currentUserId={currentUserId}
+                    onAction={handleMonologueAction}
+                  />
+                </div>
+              );
+            } else if (item.type === 'reposted_monologue') {
+              return (
+                <RepostedMonologueCard 
+                  key={`repost-${item.data.id}`}
+                  repost={item.data}
+                  originalMonologue={item.data.original_monologue}
+                  currentUserId={currentUserId}
+                  onAction={handleRepostedMonologueAction}
+                />
+              );
+            } else if (item.type === 'character') {
+              return (
+                <div key={`character-${item.data.id}`} id={`character-${item.data.id}`}>
+                  <CharacterCard 
+                    character={item.data}
+                    currentUserId={currentUserId}
+                    onAction={handleCharacterAction}
+                  />
+                </div>
+              );
+            } else if (item.type === 'reposted_character') {
+              return (
+                <RepostedCharacterCard 
+                  key={`repost-${item.data.id}`}
+                  repost={item.data}
+                  originalCharacter={item.data.original_character}
+                  currentUserId={currentUserId}
+                  onAction={handleRepostedCharacterAction}
+                />
+              );
+            } else if (item.type === 'frame') {
+              return (
+                <div key={`frame-${item.data.id}`} id={`frame-${item.data.id}`}>
+                  <FrameCard 
+                    frame={item.data}
+                    currentUserId={currentUserId}
+                    onAction={handleFrameAction}
+                  />
+                </div>
+              );
+            } else if (item.type === 'reposted_frame') {
+              return (
+                <RepostedFrameCard 
+                  key={`repost-${item.data.id}`}
+                  repost={item.data}
+                  originalFrame={item.data.original_frame}
+                  currentUserId={currentUserId}
+                  onAction={handleRepostedFrameAction}
+                />
+              );
+            } else {
+              return null;
+            }
+          })}
+
+          {/* ADDED: Loading more indicator */}
+          {isLoadingMore && <CardSkeleton />}
+
+          {/* ADDED: End of feed message with dynamic text */}
+          {visibleCount >= mixedFeed.length && mixedFeed.length > 0 && (
+            <div style={{
+              padding: '20px 16px',
+              textAlign: 'center',
+              fontFamily: 'Playfair Display, serif',
+              color: '#55524F',
+              fontSize: '14px'
+            }}>
+              — {mixedFeed.length > 50 ? "You've reached the end for now" : "That's all for now"} —
+            </div>
+          )}
+        </div>
+
+        <BottomNav />
       </div>
 
-      <BottomNav />
-    </div>
+      {/* ADDED: Getting Started Modal */}
+      <GettingStartedModal
+        isOpen={showOnboarding}
+        onClose={handleClose}
+        onComplete={handleComplete}
+      />
+    </>
   );
 };
 
