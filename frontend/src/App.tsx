@@ -98,11 +98,8 @@ function AppContent() {
           }
         />
 
-        {/* Main Home Feed Route */}
-        <Route
-          path="/home-feed"
-          element={session ? <HomeFeed /> : <Navigate to="/signin" replace />}
-        />
+        {/* 👇 UPDATED: Main Home Feed Route - NOW PUBLIC 👇 */}
+        <Route path="/home-feed" element={<HomeFeed />} />
 
         {/* NEW: Dashboard Route */}
         <Route
