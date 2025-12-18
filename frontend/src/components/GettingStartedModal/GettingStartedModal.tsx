@@ -16,39 +16,35 @@ const GettingStartedModal: React.FC<GettingStartedModalProps> = ({
 
   const steps = [
     {
-      title: "Welcome to writeFrame 🎬",
-      description: "The portfolio builder for cinematic creators. Share your ideas—no finished script required.",
-      image: "🎞️",
-      buttonText: "Next"
+      title: "Welcome to writeFrame",
+      description: "A dedicated platform for cinematic creators to develop and showcase their portfolio. Begin with concepts—polished scripts are not required.",
+      buttonText: "Continue"
     },
     {
-      title: "Create in 4 Ways",
-      description: "Write scenes, monologues, character sketches, or curate visual frames. Start with just one idea.",
-      image: "✍️",
+      title: "Create in Four Ways",
+      description: "Write scenes, craft monologues, create characters, or curate visual frames. Start with just one idea.",
       details: [
-        "🎬 Scenes: Capture moments",
-        "🎭 Monologues: Express inner thoughts", 
-        "👤 Characters: Build personas",
-        "🖼️ Frames: Curate visual inspiration"
+        "Scenes: Professional-grade screenplay composer with industry-standard formatting",
+        "Monologues: Character voice development with emotional tone analysis and prose refinement", 
+        "Characters: Persona building with visual reference galleries and backstory development",
+        "Frames: Visual narrative curation with collage composition and mood board creation"
       ],
       buttonText: "Next"
     },
     {
       title: "Build Your Portfolio",
       description: "Each creation adds to your public profile. Showcase your style and growth over time.",
-      image: "📁",
       buttonText: "Next"
     },
     {
       title: "Connect & Collaborate",
       description: "Follow creators you admire. Send private feedback. Find inspiration in the community.",
-      image: "🤝",
       details: [
-        "👥 Follow: Echo other creators",
-        "💬 Connect: Send Whisper messages",
-        "✨ Discover: Find new perspectives"
+        "Follow: Track creators whose work aligns with your artistic development",
+        "Connect: Exchange professional feedback through dedicated messaging",
+        "Discover: Analyze diverse creative approaches and narrative techniques"
       ],
-      buttonText: "Let's Start Creating"
+      buttonText: "Begin Creating"
     }
   ];
 
@@ -136,21 +132,14 @@ const GettingStartedModal: React.FC<GettingStartedModalProps> = ({
           textAlign: 'center',
           marginBottom: '32px'
         }}>
-          {/* Image/Emoji */}
-          <div style={{
-            fontSize: '64px',
-            marginBottom: '24px'
-          }}>
-            {step.image}
-          </div>
-
           {/* Title */}
           <h2 style={{
             fontFamily: "'Playfair Display', serif",
             fontSize: '24px',
             fontWeight: 700,
             color: '#1A1A1A',
-            margin: '0 0 12px 0'
+            margin: '0 0 12px 0',
+            lineHeight: 1.3
           }}>
             {step.title}
           </h2>
@@ -161,7 +150,7 @@ const GettingStartedModal: React.FC<GettingStartedModalProps> = ({
             fontSize: '18px',
             color: '#55524F',
             margin: '0 0 20px 0',
-            lineHeight: '1.5'
+            lineHeight: 1.5
           }}>
             {step.description}
           </p>
@@ -172,27 +161,42 @@ const GettingStartedModal: React.FC<GettingStartedModalProps> = ({
               background: '#FAF8F2',
               borderRadius: '12px',
               padding: '16px',
-              marginTop: '20px',
-              textAlign: 'left'
+              marginTop: '20px'
             }}>
-              {step.details.map((detail, index) => (
-                <div 
-                  key={index}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '12px',
-                    padding: '8px 0',
-                    fontSize: '15px',
-                    color: '#4B5563'
-                  }}
-                >
-                  <div style={{ fontSize: '20px' }}>
-                    {detail.substring(0, 2)}
+              {step.details.map((detail, index) => {
+                const colonIndex = detail.indexOf(':');
+                const label = colonIndex !== -1 ? detail.substring(0, colonIndex) : detail;
+                const description = colonIndex !== -1 ? detail.substring(colonIndex + 1) : '';
+                
+                return (
+                  <div 
+                    key={index}
+                    style={{
+                      padding: '12px 0',
+                      fontSize: '15px',
+                      color: '#4B5563',
+                      borderBottom: index < step.details!.length - 1 ? '1px solid rgba(0, 0, 0, 0.08)' : 'none'
+                    }}
+                  >
+                    <div style={{
+                      fontWeight: 600,
+                      color: '#1A1A1A',
+                      marginBottom: '4px',
+                      fontFamily: "'Cormorant', serif"
+                    }}>
+                      {label}
+                    </div>
+                    <div style={{
+                      fontSize: '14px',
+                      color: '#6B7280',
+                      lineHeight: 1.4,
+                      fontFamily: "'Cormorant', serif"
+                    }}>
+                      {description}
+                    </div>
                   </div>
-                  <span>{detail.substring(3)}</span>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
