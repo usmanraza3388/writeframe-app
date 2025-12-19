@@ -1,5 +1,5 @@
 // E:\Cineverse\frontend\src\components\HomeFeed\HomeFeed.tsx
-import React, { useState, useCallback, useMemo, useEffect } from 'react';
+import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useFeed } from '../../hooks/useFeed';
 import { useMonologue } from '../../hooks/useMonologue';
@@ -21,6 +21,10 @@ import { feedActions } from '../../utils/feedActions';
 // ADDED: Import GettingStartedModal and useOnboarding hook
 import GettingStartedModal from '../GettingStartedModal/GettingStartedModal';
 import { useOnboarding } from '../../hooks/useOnboarding';
+
+// ADDED: Import hint system
+import { useHint } from '../../hooks/useHint';
+import Hint from '../Hint/Hint';
 
 // ADDED: Skeleton Loading Components
 const CardSkeleton: React.FC = () => (
@@ -127,6 +131,15 @@ const HomeFeed: React.FC = () => {
   // ADDED: Pagination state
   const [visibleCount, setVisibleCount] = useState(10);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
+
+  // ADDED: Feed container ref for hint positioning
+  const feedContainerRef = useRef<HTMLDivElement>(null);
+  
+  // ADDED: Use hint hook for feed interaction
+  const { 
+    isVisible: showFeedHint, 
+    dismiss: dismissFeedHint 
+  } = useHint('feed_interaction');
 
   // ADDED: Infinite scroll handler
   const handleScroll = useCallback(() => {
@@ -543,12 +556,27 @@ const HomeFeed: React.FC = () => {
           </h1>
         </div>
 
-        <div style={{
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '20px',
-          padding: '0 16px'
-        }}>
+        {/* ADDED: Feed Interaction Hint */}
+        {showFeedHint && (
+          <Hint
+            isVisible={showFeedHint}
+            onDismiss={dismissFeedHint}
+            message="Tap on posts to see details. Use Remake to create your own version"
+            position="bottom"
+            targetRef={feedContainerRef as React.RefObject<HTMLElement>}
+            offset={10}
+          />
+        )}
+
+        <div 
+          ref={feedContainerRef}
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '20px',
+            padding: '0 16px'
+          }}
+        >
           {displayFeed.map((item) => {
             if (item.type === 'scene') {
               return (
