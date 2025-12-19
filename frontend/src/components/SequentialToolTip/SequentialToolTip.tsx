@@ -1,4 +1,4 @@
-// src/components/SequentialTooltip/SequentialTooltip.tsx - FIXED VERSION
+// src/components/SequentialTooltip/SequentialTooltip.tsx - CORRECTED VERSION
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useSequentialTour } from '../../hooks/useSequentialTour';
 import { useOnboarding } from '../../hooks/useOnboarding';
@@ -42,6 +42,7 @@ const SequentialTooltip: React.FC<SequentialTooltipProps> = ({
   const cleanupHighlightRef = useRef<(() => void) | null>(null);
   const repositionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
+  // Check if GettingStartedModal is open
   useEffect(() => {
     const checkModal = () => {
       const modalElements = document.querySelectorAll('[style*="z-index: 9999"]');
@@ -54,6 +55,7 @@ const SequentialTooltip: React.FC<SequentialTooltipProps> = ({
     return () => clearInterval(interval);
   }, []);
 
+  // Calculate tooltip position with mobile optimization
   const calculateOptimalPosition = useCallback((rect: DOMRect, tooltipWidth: number, tooltipHeight: number) => {
     const viewportWidth = Math.min(window.innerWidth, 375);
     const viewportHeight = window.innerHeight;
@@ -65,11 +67,14 @@ const SequentialTooltip: React.FC<SequentialTooltipProps> = ({
     const elementBottom = elementTop + rect.height;
     const elementRight = Math.min(elementLeft + rect.width, viewportWidth);
     
+    // Define safe margins - smaller for mobile
     const margin = 8;
     const arrowSize = 8;
     
+    // Cap tooltip width to viewport
     const adjustedTooltipWidth = Math.min(tooltipWidth, viewportWidth - margin * 2);
     
+    // Try different positions in order of preference
     const positionOptions = [
       {
         direction: 'top' as const,
@@ -97,18 +102,22 @@ const SequentialTooltip: React.FC<SequentialTooltipProps> = ({
       }
     ];
 
+    // Find first valid position
     const validPosition = positionOptions.find(pos => pos.condition);
     
     if (validPosition) {
+      // Adjust to ensure tooltip stays within viewport
       let adjustedLeft = validPosition.left;
       let adjustedTop = validPosition.top;
       
+      // Horizontal boundary check with mobile constraints
       if (adjustedLeft < margin) {
         adjustedLeft = margin;
       } else if (adjustedLeft + adjustedTooltipWidth > viewportWidth + scrollLeft - margin) {
         adjustedLeft = viewportWidth + scrollLeft - adjustedTooltipWidth - margin;
       }
       
+      // Vertical boundary check
       if (adjustedTop < margin) {
         adjustedTop = margin;
       } else if (adjustedTop + tooltipHeight > viewportHeight + scrollTop - margin) {
@@ -122,6 +131,7 @@ const SequentialTooltip: React.FC<SequentialTooltipProps> = ({
       };
     }
     
+    // Fallback: center on screen with mobile constraints
     return {
       top: viewportHeight / 2 + scrollTop - tooltipHeight / 2,
       left: Math.max(viewportWidth / 2 + scrollLeft - adjustedTooltipWidth / 2, margin),
@@ -129,8 +139,10 @@ const SequentialTooltip: React.FC<SequentialTooltipProps> = ({
     };
   }, []);
 
+  // Update tooltip position when target changes
   useEffect(() => {
-    if (showOnboarding || showOptInModal || isGettingStartedModalOpen) {
+    // If tour isn't active or no current step, hide everything
+    if (!isTourActive || !currentStep || !shouldShowCurrentStep()) {
       setIsVisible(false);
       setIsPositioned(false);
       if (cleanupHighlightRef.current) {
@@ -140,31 +152,31 @@ const SequentialTooltip: React.FC<SequentialTooltipProps> = ({
       return;
     }
 
-    if (!isTourActive || !currentStep || !shouldShowCurrentStep()) {
-      setIsVisible(false);
-      setIsPositioned(false);
-      return;
-    }
-
+    // Clear any existing timeout
     if (repositionTimeoutRef.current) {
       clearTimeout(repositionTimeoutRef.current);
     }
 
+    // Wait for DOM to be ready
     repositionTimeoutRef.current = setTimeout(() => {
       const element = getTargetElement();
       setTargetElement(element);
       
       if (element) {
+        // Clean up previous highlight
         if (cleanupHighlightRef.current) {
           cleanupHighlightRef.current();
         }
         
+        // Apply highlight with simpler styling
         const cleanup = highlightElement(element);
         cleanupHighlightRef.current = cleanup || null;
         
+        // Get element position
         const position = getElementPosition(element);
         setElementPosition(position);
         
+        // Calculate tooltip position
         if (tooltipRef.current) {
           const tooltipRect = tooltipRef.current.getBoundingClientRect();
           const elementRect = element.getBoundingClientRect();
@@ -183,6 +195,7 @@ const SequentialTooltip: React.FC<SequentialTooltipProps> = ({
           setIsPositioned(true);
         }
         
+        // Scroll element into view gently
         setTimeout(() => {
           element.scrollIntoView({
             behavior: 'smooth',
@@ -211,12 +224,10 @@ const SequentialTooltip: React.FC<SequentialTooltipProps> = ({
     getTargetElement, 
     highlightElement, 
     getElementPosition, 
-    calculateOptimalPosition,
-    showOnboarding,
-    showOptInModal,
-    isGettingStartedModalOpen
+    calculateOptimalPosition
   ]);
 
+  // Handle window resize and scroll with debouncing
   useEffect(() => {
     if (!isTourActive || !targetElement || !isPositioned) return;
 
@@ -239,7 +250,6 @@ const SequentialTooltip: React.FC<SequentialTooltipProps> = ({
       }
     };
 
-    // FIXED: Removed unused resizeTimer variable
     const handleResize = () => {
       if (repositionTimeoutRef.current) {
         clearTimeout(repositionTimeoutRef.current);
@@ -264,15 +274,32 @@ const SequentialTooltip: React.FC<SequentialTooltipProps> = ({
     };
   }, [isTourActive, targetElement, isPositioned, calculateOptimalPosition]);
 
-  if (!isTourActive || !currentStep || !isVisible || isTransitioning || 
-      showOnboarding || showOptInModal || isGettingStartedModalOpen) {
+  // DON'T render if tour isn't active or no current step
+  if (!isTourActive || !currentStep || isTransitioning) {
     return null;
   }
 
+  // Don't render if we shouldn't show this step on current page
   if (!shouldShowCurrentStep()) {
     return null;
   }
 
+  // Don't render if onboarding modals are open
+  if (showOnboarding || showOptInModal) {
+    return null;
+  }
+
+  // Don't render if GettingStartedModal is open
+  if (isGettingStartedModalOpen) {
+    return null;
+  }
+
+  // Don't render if not visible
+  if (!isVisible) {
+    return null;
+  }
+
+  // Progress dots for all steps
   const renderProgressDots = () => {
     return Array.from({ length: totalSteps }).map((_, index) => (
       <div
@@ -289,6 +316,7 @@ const SequentialTooltip: React.FC<SequentialTooltipProps> = ({
     ));
   };
 
+  // Arrow based on direction
   const renderArrow = () => {
     const baseStyle: React.CSSProperties = {
       position: 'absolute',
@@ -349,6 +377,7 @@ const SequentialTooltip: React.FC<SequentialTooltipProps> = ({
 
   return (
     <>
+      {/* Overlay with cutout for target element */}
       <div
         style={{
           position: 'fixed',
@@ -363,6 +392,7 @@ const SequentialTooltip: React.FC<SequentialTooltipProps> = ({
           transition: 'opacity 0.4s ease'
         }}
       >
+        {/* Cutout for target element */}
         {targetElement && isPositioned && (
           <div
             style={{
@@ -379,6 +409,7 @@ const SequentialTooltip: React.FC<SequentialTooltipProps> = ({
         )}
       </div>
 
+      {/* Tooltip */}
       <div
         ref={tooltipRef}
         style={{
@@ -401,8 +432,10 @@ const SequentialTooltip: React.FC<SequentialTooltipProps> = ({
           boxSizing: 'border-box'
         }}
       >
+        {/* Arrow */}
         {renderArrow()}
 
+        {/* Header with step counter */}
         <div style={{
           display: 'flex',
           justifyContent: 'space-between',
@@ -436,6 +469,7 @@ const SequentialTooltip: React.FC<SequentialTooltipProps> = ({
           </div>
         </div>
 
+        {/* Progress bar */}
         <div style={{
           height: '3px',
           backgroundColor: 'rgba(255, 255, 255, 0.1)',
@@ -454,6 +488,7 @@ const SequentialTooltip: React.FC<SequentialTooltipProps> = ({
           />
         </div>
 
+        {/* Progress dots */}
         <div style={{
           display: 'flex',
           justifyContent: 'center',
@@ -462,6 +497,7 @@ const SequentialTooltip: React.FC<SequentialTooltipProps> = ({
           {renderProgressDots()}
         </div>
 
+        {/* Action buttons */}
         <div style={{
           display: 'flex',
           justifyContent: 'space-between',
