@@ -1,4 +1,4 @@
-// src/hooks/useOnboarding.ts - FIXED VERSION
+// src/hooks/useOnboarding.ts - FIXED TOUR TRIGGER
 import { useState, useEffect } from 'react';
 import { supabase } from '../assets/lib/supabaseClient';
 
@@ -7,23 +7,6 @@ export const useOnboarding = () => {
   const [showOptInModal, setShowOptInModal] = useState(false);
   const [userTourChoice, setUserTourChoice] = useState<'tour' | 'explore' | null>(null);
   const [isChecking, setIsChecking] = useState(true);
-  const [isTourActive, setIsTourActive] = useState(false); // ADDED: Track if tour is active
-
-  // Function to check if tour is active (by checking localStorage and DOM)
-  const checkIfTourActive = () => {
-    const tourChoice = localStorage.getItem('writeframe_tour_choice');
-    const tourCompleted = localStorage.getItem('writeframe_tour_completed');
-    const tourTrigger = localStorage.getItem('writeframe_tour_trigger');
-    
-    // Check if tour should be active
-    const shouldBeActive = (tourChoice === 'tour' || tourTrigger === 'true') && tourCompleted !== 'true';
-    
-    // Also check if SequentialTooltip is currently rendering
-    const tourTooltip = document.querySelector('[style*="z-index: 9990"]') || 
-                       document.querySelector('[style*="z-index: 9991"]');
-    
-    return shouldBeActive || !!tourTooltip;
-  };
 
   useEffect(() => {
     const checkOnboardingStatus = async () => {
@@ -46,19 +29,6 @@ export const useOnboarding = () => {
         // Check if user has made a tour choice already
         const hasMadeTourChoice = localStorage.getItem('writeframe_tour_choice');
         
-        // Check if tour is currently active
-        const tourActive = checkIfTourActive();
-        setIsTourActive(tourActive);
-        
-        // If tour is active, DON'T show onboarding modals
-        if (tourActive) {
-          console.log('Tour is active, suppressing onboarding modals');
-          setShowOnboarding(false);
-          setShowOptInModal(false);
-          setIsChecking(false);
-          return;
-        }
-        
         // If user just completed expression selection AND hasn't seen getting started
         if (profile?.expression) {
           // Check if user has completed getting started
@@ -67,20 +37,14 @@ export const useOnboarding = () => {
           if (!hasCompletedGettingStarted) {
             // Wait a moment so the page loads first
             setTimeout(() => {
-              // Double-check tour isn't active now
-              if (!checkIfTourActive()) {
-                setShowOnboarding(true);
-              }
+              setShowOnboarding(true);
             }, 1000);
           }
           // If user has completed getting started but hasn't made tour choice
           else if (!hasMadeTourChoice) {
             // Show opt-in modal after a delay
             setTimeout(() => {
-              // Double-check tour isn't active now
-              if (!checkIfTourActive()) {
-                setShowOptInModal(true);
-              }
+              setShowOptInModal(true);
             }, 500);
           }
         }
@@ -98,21 +62,6 @@ export const useOnboarding = () => {
     };
 
     checkOnboardingStatus();
-    
-    // Set up interval to check for tour activity
-    const tourCheckInterval = setInterval(() => {
-      const tourActive = checkIfTourActive();
-      setIsTourActive(tourActive);
-      
-      // If tour becomes active while modals are open, close them
-      if (tourActive && (showOnboarding || showOptInModal)) {
-        console.log('Tour activated, closing onboarding modals');
-        setShowOnboarding(false);
-        setShowOptInModal(false);
-      }
-    }, 500); // Check every 500ms
-    
-    return () => clearInterval(tourCheckInterval);
   }, []);
 
   const handleComplete = async () => {
@@ -142,11 +91,9 @@ export const useOnboarding = () => {
       
       setShowOnboarding(false);
       
-      // Show opt-in modal after onboarding completes (if tour not active)
+      // Show opt-in modal after onboarding completes
       setTimeout(() => {
-        if (!checkIfTourActive()) {
-          setShowOptInModal(true);
-        }
+        setShowOptInModal(true);
       }, 300);
       
     } catch (error) {
@@ -191,60 +138,69 @@ export const useOnboarding = () => {
   };
 
   const handleTourChoice = (choice: 'tour' | 'explore') => {
-    localStorage.setItem('writeframe_tour_choice', choice);
-    setUserTourChoice(choice);
-    setShowOptInModal(false);
+    // Clear ALL previous tour state
+    localStorage.removeItem('writeframe_tour_completed');
+    localStorage.removeItem('writeframe_tour_current_step');
     
     if (choice === 'tour') {
-      // Set immediate trigger for tour start
-      localStorage.setItem('writeframe_tour_trigger', 'true');
-      localStorage.removeItem('writeframe_tour_completed'); // Ensure not marked as completed
-      console.log('Tour chosen - triggering immediate start');
+      // Set tour as chosen and NOT completed
+      localStorage.setItem('writeframe_tour_choice', 'tour');
+      localStorage.setItem('writeframe_tour_start_immediately', 'true'); // NEW: Immediate start flag
+      console.log('Tour chosen - setting immediate start flag');
+      
+      // Force page reload to trigger tour start
+      setTimeout(() => {
+        window.location.reload();
+      }, 300);
     } else {
       // If user chooses explore, mark tour as completed (skipped)
+      localStorage.setItem('writeframe_tour_choice', 'explore');
       localStorage.setItem('writeframe_tour_completed', 'true');
-      localStorage.removeItem('writeframe_tour_trigger'); // Clear any trigger
+      console.log('Explore chosen - marking tour as completed');
     }
+    
+    setUserTourChoice(choice);
+    setShowOptInModal(false);
   };
 
   const resetTourChoice = () => {
     localStorage.removeItem('writeframe_tour_choice');
     localStorage.removeItem('writeframe_tour_completed');
-    localStorage.removeItem('writeframe_tour_trigger');
     localStorage.removeItem('writeframe_tour_current_step');
+    localStorage.removeItem('writeframe_tour_start_immediately');
     setUserTourChoice(null);
-    
-    // Only show opt-in modal if tour isn't currently active
-    if (!checkIfTourActive()) {
-      setShowOptInModal(true);
-    }
+    setShowOptInModal(true);
   };
 
   const getTourStatus = () => {
     const choice = localStorage.getItem('writeframe_tour_choice');
     const completed = localStorage.getItem('writeframe_tour_completed');
-    const trigger = localStorage.getItem('writeframe_tour_trigger');
+    const immediateStart = localStorage.getItem('writeframe_tour_start_immediately');
     
     return {
       hasChosenTour: choice === 'tour',
       hasChosenExplore: choice === 'explore',
       hasCompletedTour: completed === 'true',
-      isTourTriggered: trigger === 'true',
-      canReplayTour: choice === 'explore' || completed === 'true',
-      isTourActive: checkIfTourActive()
+      shouldStartImmediately: immediateStart === 'true',
+      canReplayTour: choice === 'explore' || completed === 'true'
     };
   };
 
   // Function to manually start tour (for testing/debugging)
   const manuallyStartTour = () => {
     localStorage.setItem('writeframe_tour_choice', 'tour');
-    localStorage.setItem('writeframe_tour_trigger', 'true');
+    localStorage.setItem('writeframe_tour_start_immediately', 'true');
     localStorage.removeItem('writeframe_tour_completed');
     localStorage.removeItem('writeframe_tour_current_step');
     
     // Close any open modals
     setShowOnboarding(false);
     setShowOptInModal(false);
+    
+    // Force reload
+    setTimeout(() => {
+      window.location.reload();
+    }, 300);
     
     console.log('Manually starting tour');
   };
@@ -254,7 +210,6 @@ export const useOnboarding = () => {
     showOnboarding,
     showOptInModal,
     isChecking,
-    isTourActive, // ADDED: Export tour active state
     
     // User choice
     userTourChoice,
@@ -264,10 +219,9 @@ export const useOnboarding = () => {
     handleClose,
     handleTourChoice,
     resetTourChoice,
-    manuallyStartTour, // ADDED: For testing
+    manuallyStartTour,
     
     // Status
-    getTourStatus,
-    checkIfTourActive // ADDED: Export check function
+    getTourStatus
   };
 };

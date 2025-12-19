@@ -1,7 +1,7 @@
-// src/hooks/useSequentialTour.ts - FIXED VERSION
+// src/hooks/useSequentialTour.ts - CLEAN VERSION
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { supabase } from '../assets/lib/supabaseClient'; // ADDED: Import supabase
+import { supabase } from '../assets/lib/supabaseClient';
 
 type TooltipPhase = 'bottom-nav' | 'home-feed' | 'profile-page' | 'other-profile' | 'completed';
 type TooltipPosition = 'top' | 'bottom' | 'left' | 'right' | 'center';
@@ -9,13 +9,13 @@ type TooltipPosition = 'top' | 'bottom' | 'left' | 'right' | 'center';
 interface TooltipStep {
   id: string;
   phase: TooltipPhase;
-  index: number; // Overall index (1-10)
+  index: number;
   selector: string;
   message: string;
   position: TooltipPosition;
-  navigateTo?: string; // If tooltip requires navigation
-  requireOwnProfile?: boolean; // Only show on user's own profile
-  requireOtherProfile?: boolean; // Only show on other user's profile
+  navigateTo?: string;
+  requireOwnProfile?: boolean;
+  requireOtherProfile?: boolean;
 }
 
 export const useSequentialTour = () => {
@@ -24,7 +24,7 @@ export const useSequentialTour = () => {
   const [isTourActive, setIsTourActive] = useState(false);
   const [hasCompletedTour, setHasCompletedTour] = useState(false);
   const [isTransitioning, setIsTransitioning] = useState(false);
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null); // ADDED: Store current user ID
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   
   const location = useLocation();
   const navigate = useNavigate();
@@ -48,7 +48,7 @@ export const useSequentialTour = () => {
       selector: '.bottom-nav-profile',
       message: 'Your PORTFOLIO lives here - showcase all your work',
       position: 'top',
-      requireOwnProfile: true // CHANGED: Added flag to identify profile step
+      requireOwnProfile: true
     },
     {
       id: 'whispers-button',
@@ -135,12 +135,10 @@ export const useSequentialTour = () => {
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
           setCurrentUserId(user.id);
-          
-          // Also store in localStorage for navigation purposes
           localStorage.setItem('writeframe_current_user_id', user.id);
         }
       } catch (error) {
-        console.error('Failed to get current user:', error);
+        // Silent fail - user ID not critical for tour start
       }
     };
     
@@ -152,40 +150,37 @@ export const useSequentialTour = () => {
     const checkAndStartTour = async () => {
       const hasChosenTour = localStorage.getItem('writeframe_tour_choice') === 'tour';
       const tourCompleted = localStorage.getItem('writeframe_tour_completed') === 'true';
+      const immediateStart = localStorage.getItem('writeframe_tour_start_immediately') === 'true';
       const currentStepIndex = parseInt(localStorage.getItem('writeframe_tour_current_step') || '1');
-      const tourTrigger = localStorage.getItem('writeframe_tour_trigger'); // ADDED: Check for immediate trigger
       
-      // Get user ID if not already set
-      if (!currentUserId) {
-        try {
-          const { data: { user } } = await supabase.auth.getUser();
-          if (user) {
-            setCurrentUserId(user.id);
-            localStorage.setItem('writeframe_current_user_id', user.id);
-          }
-        } catch (error) {
-          console.error('Failed to get user ID for tour:', error);
-        }
-      }
+      // Start tour if: (user chose tour AND tour not completed) OR immediate start flag is set
+      const shouldStartTour = (hasChosenTour && !tourCompleted) || immediateStart;
       
-      // Start tour if conditions met
-      if ((hasChosenTour || tourTrigger === 'true') && !tourCompleted && !skipRequestedRef.current) {
-        // Clear trigger flag if it exists
-        if (tourTrigger === 'true') {
-          localStorage.removeItem('writeframe_tour_trigger');
+      if (shouldStartTour && !skipRequestedRef.current) {
+        // Clear immediate start flag if it exists
+        if (immediateStart) {
+          localStorage.removeItem('writeframe_tour_start_immediately');
         }
         
+        // Ensure we have a step index (default to 1)
+        const stepIndex = currentStepIndex >= 1 && currentStepIndex <= allTooltipSteps.length 
+          ? currentStepIndex 
+          : 1;
+        
+        // Save the starting step index
+        localStorage.setItem('writeframe_tour_current_step', stepIndex.toString());
+        
+        // Set tour as active
         setIsTourActive(true);
         setHasCompletedTour(false);
         
-        // Find the current step based on saved index
-        const step = allTooltipSteps.find(s => s.index === currentStepIndex) || allTooltipSteps[0];
+        // Find and set the current step
+        const step = allTooltipSteps.find(s => s.index === stepIndex) || allTooltipSteps[0];
         setCurrentStep(step);
         setCurrentPhase(step.phase);
         
-        // Navigate if step requires specific route
+        // Navigate if needed
         if (step.requireOwnProfile && currentUserId) {
-          // Navigate to user's own profile
           const profilePath = `/profile/${currentUserId}`;
           if (location.pathname !== profilePath) {
             navigate(profilePath);
@@ -196,11 +191,20 @@ export const useSequentialTour = () => {
       } else if (tourCompleted) {
         setHasCompletedTour(true);
         setIsTourActive(false);
+        setCurrentStep(null);
+        setCurrentPhase(null);
+      } else {
+        setIsTourActive(false);
       }
     };
     
-    checkAndStartTour();
-  }, [location.pathname, navigate, currentUserId]); // ADDED: currentUserId dependency
+    // Small delay to ensure page is fully loaded
+    const timer = setTimeout(() => {
+      checkAndStartTour();
+    }, 500);
+    
+    return () => clearTimeout(timer);
+  }, [location.pathname, navigate, currentUserId]);
 
   // Get navigation path for a step (handles profile routes)
   const getNavigationPath = useCallback((step: TooltipStep): string | null => {
@@ -229,12 +233,10 @@ export const useSequentialTour = () => {
     
     // For profile steps, check if we're on correct profile type
     if (currentStep.requireOwnProfile) {
-      // Should be on user's own profile
       return currentUserId && location.pathname === `/profile/${currentUserId}`;
     }
     
     if (currentStep.requireOtherProfile) {
-      // Should be on someone else's profile
       return currentUserId && location.pathname.startsWith('/profile/') && location.pathname !== `/profile/${currentUserId}`;
     }
     
@@ -300,7 +302,7 @@ export const useSequentialTour = () => {
   // Complete the tour
   const completeTour = useCallback(() => {
     localStorage.setItem('writeframe_tour_completed', 'true');
-    localStorage.setItem('writeframe_tour_current_step', '1'); // Reset for future
+    localStorage.setItem('writeframe_tour_current_step', '1');
     setIsTourActive(false);
     setHasCompletedTour(true);
     setCurrentStep(null);
@@ -311,7 +313,7 @@ export const useSequentialTour = () => {
   const skipTour = useCallback(() => {
     skipRequestedRef.current = true;
     localStorage.setItem('writeframe_tour_completed', 'true');
-    localStorage.setItem('writeframe_tour_choice', 'explore'); // Update choice
+    localStorage.setItem('writeframe_tour_choice', 'explore');
     setIsTourActive(false);
     setHasCompletedTour(true);
     setCurrentStep(null);
@@ -324,6 +326,7 @@ export const useSequentialTour = () => {
     localStorage.removeItem('writeframe_tour_completed');
     localStorage.setItem('writeframe_tour_current_step', '1');
     localStorage.setItem('writeframe_tour_choice', 'tour');
+    localStorage.setItem('writeframe_tour_start_immediately', 'true');
     setIsTourActive(true);
     setHasCompletedTour(false);
     
@@ -349,11 +352,9 @@ export const useSequentialTour = () => {
     if (!currentStep?.selector) return null;
     
     try {
-      // Try to find the element
       const element = document.querySelector(currentStep.selector) as HTMLElement;
       return element;
     } catch (error) {
-      console.warn('Could not find tour target element:', currentStep.selector);
       return null;
     }
   }, [currentStep]);
@@ -374,28 +375,22 @@ export const useSequentialTour = () => {
     };
   }, []);
 
-  // Highlight target element
+  // Highlight target element - SIMPLIFIED
   const highlightElement = useCallback((element: HTMLElement) => {
     if (!element) return;
     
     // Store original styles
     const originalBoxShadow = element.style.boxShadow;
     const originalOutline = element.style.outline;
-    const originalZIndex = element.style.zIndex;
-    const originalPosition = element.style.position;
     
-    // Apply highlight
-    element.style.boxShadow = '0 0 0 3px rgba(139, 92, 246, 0.5)';
-    element.style.outline = '2px solid rgba(139, 92, 246, 0.8)';
-    element.style.zIndex = '9995';
-    element.style.position = 'relative';
+    // Apply simple highlight
+    element.style.boxShadow = '0 0 0 2px rgba(139, 92, 246, 0.5)';
+    element.style.outline = '1px solid rgba(139, 92, 246, 0.8)';
     
     // Return cleanup function
     return () => {
       element.style.boxShadow = originalBoxShadow;
       element.style.outline = originalOutline;
-      element.style.zIndex = originalZIndex;
-      element.style.position = originalPosition;
     };
   }, []);
 
@@ -406,7 +401,7 @@ export const useSequentialTour = () => {
     isTourActive,
     hasCompletedTour,
     isTransitioning,
-    currentUserId, // ADDED: Export current user ID
+    currentUserId,
     
     // Progress
     totalSteps: allTooltipSteps.length,
@@ -425,7 +420,7 @@ export const useSequentialTour = () => {
     getTargetElement,
     getElementPosition,
     highlightElement,
-    getNavigationPath, // ADDED: Export navigation helper
+    getNavigationPath,
     
     // Constants
     allTooltipSteps
