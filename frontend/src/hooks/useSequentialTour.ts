@@ -1,6 +1,7 @@
-// src/hooks/useSequentialTour.ts
+// src/hooks/useSequentialTour.ts - FIXED VERSION
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { supabase } from '../assets/lib/supabaseClient'; // ADDED: Import supabase
 
 type TooltipPhase = 'bottom-nav' | 'home-feed' | 'profile-page' | 'other-profile' | 'completed';
 type TooltipPosition = 'top' | 'bottom' | 'left' | 'right' | 'center';
@@ -23,6 +24,7 @@ export const useSequentialTour = () => {
   const [isTourActive, setIsTourActive] = useState(false);
   const [hasCompletedTour, setHasCompletedTour] = useState(false);
   const [isTransitioning, setIsTransitioning] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null); // ADDED: Store current user ID
   
   const location = useLocation();
   const navigate = useNavigate();
@@ -46,7 +48,7 @@ export const useSequentialTour = () => {
       selector: '.bottom-nav-profile',
       message: 'Your PORTFOLIO lives here - showcase all your work',
       position: 'top',
-      navigateTo: '/profile' // Will navigate to user's profile
+      requireOwnProfile: true // CHANGED: Added flag to identify profile step
     },
     {
       id: 'whispers-button',
@@ -126,51 +128,118 @@ export const useSequentialTour = () => {
     }
   ];
 
+  // Get current user ID on mount
+  useEffect(() => {
+    const getCurrentUserId = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          setCurrentUserId(user.id);
+          
+          // Also store in localStorage for navigation purposes
+          localStorage.setItem('writeframe_current_user_id', user.id);
+        }
+      } catch (error) {
+        console.error('Failed to get current user:', error);
+      }
+    };
+    
+    getCurrentUserId();
+  }, []);
+
   // Check if tour should be active
   useEffect(() => {
-    const hasChosenTour = localStorage.getItem('writeframe_tour_choice') === 'tour';
-    const tourCompleted = localStorage.getItem('writeframe_tour_completed') === 'true';
-    const currentStepIndex = parseInt(localStorage.getItem('writeframe_tour_current_step') || '1');
-    
-    if (hasChosenTour && !tourCompleted && !skipRequestedRef.current) {
-      setIsTourActive(true);
-      setHasCompletedTour(false);
+    const checkAndStartTour = async () => {
+      const hasChosenTour = localStorage.getItem('writeframe_tour_choice') === 'tour';
+      const tourCompleted = localStorage.getItem('writeframe_tour_completed') === 'true';
+      const currentStepIndex = parseInt(localStorage.getItem('writeframe_tour_current_step') || '1');
+      const tourTrigger = localStorage.getItem('writeframe_tour_trigger'); // ADDED: Check for immediate trigger
       
-      // Find the current step based on saved index
-      const step = allTooltipSteps.find(s => s.index === currentStepIndex) || allTooltipSteps[0];
-      setCurrentStep(step);
-      setCurrentPhase(step.phase);
-      
-      // Navigate if step requires specific route
-      if (step.navigateTo && location.pathname !== step.navigateTo) {
-        navigate(step.navigateTo);
+      // Get user ID if not already set
+      if (!currentUserId) {
+        try {
+          const { data: { user } } = await supabase.auth.getUser();
+          if (user) {
+            setCurrentUserId(user.id);
+            localStorage.setItem('writeframe_current_user_id', user.id);
+          }
+        } catch (error) {
+          console.error('Failed to get user ID for tour:', error);
+        }
       }
-    } else if (tourCompleted) {
-      setHasCompletedTour(true);
-      setIsTourActive(false);
+      
+      // Start tour if conditions met
+      if ((hasChosenTour || tourTrigger === 'true') && !tourCompleted && !skipRequestedRef.current) {
+        // Clear trigger flag if it exists
+        if (tourTrigger === 'true') {
+          localStorage.removeItem('writeframe_tour_trigger');
+        }
+        
+        setIsTourActive(true);
+        setHasCompletedTour(false);
+        
+        // Find the current step based on saved index
+        const step = allTooltipSteps.find(s => s.index === currentStepIndex) || allTooltipSteps[0];
+        setCurrentStep(step);
+        setCurrentPhase(step.phase);
+        
+        // Navigate if step requires specific route
+        if (step.requireOwnProfile && currentUserId) {
+          // Navigate to user's own profile
+          const profilePath = `/profile/${currentUserId}`;
+          if (location.pathname !== profilePath) {
+            navigate(profilePath);
+          }
+        } else if (step.navigateTo && location.pathname !== step.navigateTo) {
+          navigate(step.navigateTo);
+        }
+      } else if (tourCompleted) {
+        setHasCompletedTour(true);
+        setIsTourActive(false);
+      }
+    };
+    
+    checkAndStartTour();
+  }, [location.pathname, navigate, currentUserId]); // ADDED: currentUserId dependency
+
+  // Get navigation path for a step (handles profile routes)
+  const getNavigationPath = useCallback((step: TooltipStep): string | null => {
+    if (step.requireOwnProfile && currentUserId) {
+      return `/profile/${currentUserId}`;
     }
-  }, [location.pathname, navigate]);
+    
+    if (step.navigateTo) {
+      return step.navigateTo;
+    }
+    
+    return null;
+  }, [currentUserId]);
 
   // Check if current location matches step requirements
   const shouldShowCurrentStep = useCallback(() => {
     if (!currentStep || !isTourActive) return false;
     
+    // Get expected path for this step
+    const expectedPath = getNavigationPath(currentStep);
+    
     // Check if we're on the right page for this step
-    if (currentStep.navigateTo && location.pathname !== currentStep.navigateTo) {
+    if (expectedPath && location.pathname !== expectedPath) {
       return false;
     }
     
     // For profile steps, check if we're on correct profile type
-    if (currentStep.requireOwnProfile && !location.pathname.startsWith('/profile/')) {
-      return false;
+    if (currentStep.requireOwnProfile) {
+      // Should be on user's own profile
+      return currentUserId && location.pathname === `/profile/${currentUserId}`;
     }
     
-    if (currentStep.requireOtherProfile && !location.pathname.startsWith('/profile/')) {
-      return false;
+    if (currentStep.requireOtherProfile) {
+      // Should be on someone else's profile
+      return currentUserId && location.pathname.startsWith('/profile/') && location.pathname !== `/profile/${currentUserId}`;
     }
     
     return true;
-  }, [currentStep, isTourActive, location.pathname]);
+  }, [currentStep, isTourActive, location.pathname, currentUserId, getNavigationPath]);
 
   // Advance to next step
   const nextStep = useCallback(() => {
@@ -190,8 +259,9 @@ export const useSequentialTour = () => {
         setCurrentPhase(nextStep.phase);
         
         // Navigate if needed
-        if (nextStep.navigateTo && location.pathname !== nextStep.navigateTo) {
-          navigate(nextStep.navigateTo);
+        const nextPath = getNavigationPath(nextStep);
+        if (nextPath && location.pathname !== nextPath) {
+          navigate(nextPath);
         }
       }
     } else {
@@ -201,7 +271,7 @@ export const useSequentialTour = () => {
     
     // Small delay to prevent rapid clicking
     setTimeout(() => setIsTransitioning(false), 300);
-  }, [currentStep, isTourActive, location.pathname, navigate]);
+  }, [currentStep, isTourActive, location.pathname, navigate, getNavigationPath]);
 
   // Go back to previous step
   const prevStep = useCallback(() => {
@@ -217,13 +287,15 @@ export const useSequentialTour = () => {
       setCurrentStep(prevStep);
       setCurrentPhase(prevStep.phase);
       
-      if (prevStep.navigateTo && location.pathname !== prevStep.navigateTo) {
-        navigate(prevStep.navigateTo);
+      // Navigate if needed
+      const prevPath = getNavigationPath(prevStep);
+      if (prevPath && location.pathname !== prevPath) {
+        navigate(prevPath);
       }
     }
     
     setTimeout(() => setIsTransitioning(false), 300);
-  }, [currentStep, isTourActive, location.pathname, navigate]);
+  }, [currentStep, isTourActive, location.pathname, navigate, getNavigationPath]);
 
   // Complete the tour
   const completeTour = useCallback(() => {
@@ -259,10 +331,12 @@ export const useSequentialTour = () => {
     setCurrentStep(firstStep);
     setCurrentPhase(firstStep.phase);
     
-    if (firstStep.navigateTo && location.pathname !== firstStep.navigateTo) {
-      navigate(firstStep.navigateTo);
+    // Navigate to first step's location
+    const firstPath = getNavigationPath(firstStep);
+    if (firstPath && location.pathname !== firstPath) {
+      navigate(firstPath);
     }
-  }, [location.pathname, navigate]);
+  }, [location.pathname, navigate, getNavigationPath]);
 
   // Get progress percentage
   const getProgress = useCallback(() => {
@@ -332,6 +406,7 @@ export const useSequentialTour = () => {
     isTourActive,
     hasCompletedTour,
     isTransitioning,
+    currentUserId, // ADDED: Export current user ID
     
     // Progress
     totalSteps: allTooltipSteps.length,
@@ -350,6 +425,7 @@ export const useSequentialTour = () => {
     getTargetElement,
     getElementPosition,
     highlightElement,
+    getNavigationPath, // ADDED: Export navigation helper
     
     // Constants
     allTooltipSteps
