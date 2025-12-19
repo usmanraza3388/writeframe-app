@@ -39,7 +39,8 @@ const Hint: React.FC<HintProps> = ({
 
       switch (position) {
         case 'top':
-          top = rect.top + scrollTop - offset;
+          // For BottomNav buttons, position much higher
+          top = rect.top + scrollTop - offset - 60; // Increased offset for BottomNav
           left = rect.left + scrollLeft + rect.width / 2;
           arrowPosition = {
             bottom: '-8px',
@@ -88,7 +89,8 @@ const Hint: React.FC<HintProps> = ({
         position: 'absolute',
         top: `${top}px`,
         left: `${left}px`,
-        transform: 'translateX(-50%)'
+        transform: 'translateX(-50%)',
+        zIndex: 10001 // Higher than BottomNav (1000)
       });
 
       setArrowStyle({
@@ -130,21 +132,7 @@ const Hint: React.FC<HintProps> = ({
         }
       `}</style>
       
-      {/* Overlay to dismiss when clicking outside */}
-      <div
-        style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          zIndex: 9998,
-          background: 'transparent'
-        }}
-        onClick={onDismiss}
-      />
-      
-      {/* Hint Tooltip */}
+      {/* Hint Tooltip - WITHOUT the problematic overlay */}
       <div
         style={{
           ...style,
@@ -154,12 +142,12 @@ const Hint: React.FC<HintProps> = ({
           borderRadius: '8px',
           fontSize: '14px',
           fontFamily: "'Cormorant', serif",
-          zIndex: 9999,
           whiteSpace: 'nowrap',
           boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
           animation: 'fadeInUp 0.3s ease-out',
           maxWidth: '250px',
-          textAlign: 'center'
+          textAlign: 'center',
+          pointerEvents: 'auto'
         }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -171,7 +159,10 @@ const Hint: React.FC<HintProps> = ({
         
         {/* Close button */}
         <button
-          onClick={onDismiss}
+          onClick={(e) => {
+            e.stopPropagation();
+            onDismiss();
+          }}
           style={{
             background: 'none',
             border: 'none',

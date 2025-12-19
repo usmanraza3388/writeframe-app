@@ -238,7 +238,7 @@ const BottomNav: React.FC = () => {
           message="Start here! Create Scenes, Monologues, Characters, or Frames"
           position="top"
           targetRef={createButtonRef as React.RefObject<HTMLElement>} // FIXED: Type assertion
-          offset={15}
+          offset={80}
         />
       )}
 
