@@ -359,7 +359,7 @@ const BottomNav: React.FC = () => {
             </span>
           </button>
 
-          {/* CHANGED: Messages Button to Whispers - ADDED CLASS FOR TOUR */}
+          {/* CHANGED: Messages Button to Whispers */}
           <button
             onClick={handleMessagesClick}
             style={{
@@ -377,7 +377,6 @@ const BottomNav: React.FC = () => {
               flex: 1,
               maxWidth: '70px'
             }}
-            className="bottom-nav-whispers" // ADDED: CSS class for sequential tour
             onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--background-secondary)'}
             onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
           >
@@ -392,7 +391,7 @@ const BottomNav: React.FC = () => {
             </span>
           </button>
 
-          {/* Create Button - ADDED CLASS FOR TOUR */}
+          {/* Create Button */}
           <button
             onClick={() => handleCreateClick()}
             style={{
@@ -410,7 +409,6 @@ const BottomNav: React.FC = () => {
               flex: 1,
               maxWidth: '70px'
             }}
-            className="bottom-nav-create" // ADDED: CSS class for sequential tour
             onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--background-secondary)'}
             onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
           >
@@ -425,7 +423,7 @@ const BottomNav: React.FC = () => {
             </span>
           </button>
 
-          {/* Profile Button - FIXED: Only highlight when viewing own profile - ADDED CLASS FOR TOUR */}
+          {/* Profile Button - FIXED: Only highlight when viewing own profile */}
           <button
             onClick={handleProfileClick}
             style={{
@@ -443,7 +441,6 @@ const BottomNav: React.FC = () => {
               flex: 1,
               maxWidth: '70px'
             }}
-            className="bottom-nav-profile" // ADDED: CSS class for sequential tour
             onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--background-secondary)'}
             onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
           >

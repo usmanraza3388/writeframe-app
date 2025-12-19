@@ -1,4 +1,4 @@
-// src/components/GettingStartedModal/GettingStartedModal.tsx - FIXED VERSION
+// src/components/GettingStartedModal/GettingStartedModal.tsx
 import React, { useState } from 'react';
 
 interface GettingStartedModalProps {
@@ -78,20 +78,16 @@ const GettingStartedModal: React.FC<GettingStartedModalProps> = ({
       alignItems: 'center',
       justifyContent: 'center',
       zIndex: 9999,
-      padding: '16px', // CHANGED: Reduced from 20px to 16px for better mobile fit
-      boxSizing: 'border-box' // ADDED: Ensure padding is included in width
+      padding: '20px'
     }}>
       <div style={{
         width: '100%',
-        maxWidth: 'min(400px, calc(100vw - 32px))', // CHANGED: Use min() and viewport calculation
+        maxWidth: '400px',
         background: '#FFFFFF',
         borderRadius: '20px',
         padding: '32px 24px',
         boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)',
-        position: 'relative',
-        boxSizing: 'border-box', // ADDED: Include padding in width
-        overflow: 'hidden', // ADDED: Prevent content overflow
-        margin: '0 auto' // ADDED: Center within available space
+        position: 'relative'
       }}>
         {/* Close Button */}
         <button
@@ -134,19 +130,16 @@ const GettingStartedModal: React.FC<GettingStartedModalProps> = ({
         {/* Step Content */}
         <div style={{
           textAlign: 'center',
-          marginBottom: '32px',
-          overflowY: 'auto', // ADDED: Allow scrolling if content is too tall
-          maxHeight: 'calc(100vh - 250px)' // ADDED: Limit height for mobile
+          marginBottom: '32px'
         }}>
           {/* Title */}
           <h2 style={{
             fontFamily: "'Playfair Display', serif",
-            fontSize: 'clamp(20px, 5vw, 24px)', // CHANGED: Responsive font size
+            fontSize: '24px',
             fontWeight: 700,
             color: '#1A1A1A',
             margin: '0 0 12px 0',
-            lineHeight: 1.3,
-            wordWrap: 'break-word' // ADDED: Prevent long words from overflowing
+            lineHeight: 1.3
           }}>
             {step.title}
           </h2>
@@ -154,11 +147,10 @@ const GettingStartedModal: React.FC<GettingStartedModalProps> = ({
           {/* Description */}
           <p style={{
             fontFamily: "'Cormorant', serif",
-            fontSize: 'clamp(16px, 4vw, 18px)', // CHANGED: Responsive font size
+            fontSize: '18px',
             color: '#55524F',
             margin: '0 0 20px 0',
-            lineHeight: 1.5,
-            wordWrap: 'break-word' // ADDED: Prevent overflow
+            lineHeight: 1.5
           }}>
             {step.description}
           </p>
@@ -169,9 +161,7 @@ const GettingStartedModal: React.FC<GettingStartedModalProps> = ({
               background: '#FAF8F2',
               borderRadius: '12px',
               padding: '16px',
-              marginTop: '20px',
-              maxHeight: '200px', // ADDED: Limit height
-              overflowY: 'auto' // ADDED: Allow scrolling
+              marginTop: '20px'
             }}>
               {step.details.map((detail, index) => {
                 const colonIndex = detail.indexOf(':');
@@ -183,27 +173,24 @@ const GettingStartedModal: React.FC<GettingStartedModalProps> = ({
                     key={index}
                     style={{
                       padding: '12px 0',
-                      fontSize: 'clamp(14px, 3.5vw, 15px)', // CHANGED: Responsive font size
+                      fontSize: '15px',
                       color: '#4B5563',
-                      borderBottom: index < step.details!.length - 1 ? '1px solid rgba(0, 0, 0, 0.08)' : 'none',
-                      wordWrap: 'break-word' // ADDED: Prevent overflow
+                      borderBottom: index < step.details!.length - 1 ? '1px solid rgba(0, 0, 0, 0.08)' : 'none'
                     }}
                   >
                     <div style={{
                       fontWeight: 600,
                       color: '#1A1A1A',
                       marginBottom: '4px',
-                      fontFamily: "'Cormorant', serif",
-                      fontSize: 'inherit' // ADDED: Inherit responsive size
+                      fontFamily: "'Cormorant', serif"
                     }}>
                       {label}
                     </div>
                     <div style={{
-                      fontSize: 'clamp(13px, 3vw, 14px)', // CHANGED: Responsive font size
+                      fontSize: '14px',
                       color: '#6B7280',
                       lineHeight: 1.4,
-                      fontFamily: "'Cormorant', serif",
-                      wordWrap: 'break-word' // ADDED: Prevent overflow
+                      fontFamily: "'Cormorant', serif"
                     }}>
                       {description}
                     </div>
@@ -217,24 +204,22 @@ const GettingStartedModal: React.FC<GettingStartedModalProps> = ({
         {/* Action Buttons */}
         <div style={{
           display: 'flex',
-          gap: '12px',
-          flexWrap: 'wrap' // ADDED: Allow buttons to wrap on very small screens
+          gap: '12px'
         }}>
           {/* Skip Button */}
           <button
             onClick={handleSkip}
             style={{
-              flex: '1 1 120px', // CHANGED: Flexible basis with min width
-              padding: '14px 16px', // CHANGED: Reduced padding slightly
+              flex: 1,
+              padding: '14px 20px',
               background: 'transparent',
               border: '1px solid #D1D5DB',
               borderRadius: '12px',
               color: '#6B7280',
-              fontSize: 'clamp(14px, 3.5vw, 15px)', // CHANGED: Responsive font size
+              fontSize: '15px',
               fontFamily: "'Cormorant', serif",
               fontWeight: 500,
-              cursor: 'pointer',
-              minWidth: '120px' // ADDED: Minimum width
+              cursor: 'pointer'
             }}
           >
             Skip Tour
@@ -244,17 +229,16 @@ const GettingStartedModal: React.FC<GettingStartedModalProps> = ({
           <button
             onClick={handleNext}
             style={{
-              flex: '2 1 180px', // CHANGED: Flexible basis with min width
-              padding: '14px 16px', // CHANGED: Reduced padding slightly
+              flex: 2,
+              padding: '14px 20px',
               background: '#1A1A1A',
               border: 'none',
               borderRadius: '12px',
               color: '#FFFFFF',
-              fontSize: 'clamp(14px, 3.5vw, 15px)', // CHANGED: Responsive font size
+              fontSize: '15px',
               fontFamily: "'Cormorant', serif",
               fontWeight: 600,
-              cursor: 'pointer',
-              minWidth: '180px' // ADDED: Minimum width
+              cursor: 'pointer'
             }}
           >
             {step.buttonText}
@@ -266,8 +250,7 @@ const GettingStartedModal: React.FC<GettingStartedModalProps> = ({
           display: 'flex',
           justifyContent: 'center',
           gap: '8px',
-          marginTop: '24px',
-          flexWrap: 'wrap' // ADDED: Allow to wrap if needed
+          marginTop: '24px'
         }}>
           {steps.map((_, index) => (
             <div

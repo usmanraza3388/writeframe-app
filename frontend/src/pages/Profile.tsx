@@ -720,7 +720,7 @@ export default function Profile() {
 
     if (content.length === 0) {
       return (
-        <div style={emptyStateContainerStyle} className="empty-state-container"> {/* ADDED: CSS class for tour */}
+        <div style={emptyStateContainerStyle}>
           <div style={emptyStateIconStyle}>
             {getEmptyStateIcon()}
           </div>
@@ -780,7 +780,7 @@ export default function Profile() {
 
   return (
     <div style={pageContainerStyle}>
-      <div style={containerStyle} className="profile-grid"> {/* ADDED: CSS class for Step 6 */}
+      <div style={containerStyle}>
         {/* Header Section */}
         <div style={headerStyle}>
           <div style={avatarContainerStyle} className="avatar-container">
@@ -931,7 +931,6 @@ export default function Profile() {
             <div style={socialButtonsContainerStyle}>
               <button 
                 style={socialButtonStyle}
-                className="social-button" // ADDED: CSS class for Step 7 (first child will be targeted)
                 onClick={() => setShowFollowersModal(true)}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.backgroundColor = '#F8F6F0';
@@ -952,7 +951,6 @@ export default function Profile() {
               
               <button 
                 style={socialButtonStyle}
-                className="social-button" // ADDED: CSS class for Step 7 (second button)
                 onClick={() => setShowFollowingModal(true)}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.backgroundColor = '#F8F6F0';
@@ -1029,7 +1027,6 @@ export default function Profile() {
                 ...(echoStatus?.isEchoing ? echoButtonActiveStyle : {}),
                 ...(followMutation.isLoading ? echoButtonLoadingStyle : {})
               }}
-              className="echo-button" // ADDED: CSS class for Step 9
             >
               {followMutation.isLoading ? (
                 <div style={loadingSpinnerStyle}></div>
@@ -1042,7 +1039,6 @@ export default function Profile() {
             <button 
               onClick={handleWhisper}
               style={whisperButtonStyle}
-              className="whisper-button" // ADDED: CSS class for Step 10
             >
               Whisper
             </button>
@@ -1056,7 +1052,7 @@ export default function Profile() {
 
         {/* Tabs - Filtered by Creative Focus */}
         {availableTabs.length > 0 ? (
-          <div style={tabsContainerStyle} className="tabs-container"> {/* ADDED: CSS class for Step 8 */}
+          <div style={tabsContainerStyle}>
             {availableTabs.map((tab) => (
               <button
                 key={tab}
@@ -1071,7 +1067,7 @@ export default function Profile() {
             ))}
           </div>
         ) : (
-          <div style={emptyStateContainerStyle} className="empty-state-container"> {/* ADDED: CSS class for tour */}
+          <div style={emptyStateContainerStyle}>
             <div style={emptyStateStyle}>
               No content types enabled
             </div>

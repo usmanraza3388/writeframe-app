@@ -28,9 +28,6 @@ import { WhisperComposer } from "./components/Whisper/WhisperComposer";
 import { InboxPage } from "./components/Whisper/InboxPage";
 import { WhisperThread } from "./components/Whisper/WhisperThread";
 
-// ADDED: Import SequentialTooltip component
-import SequentialTooltip from "./components/SequentialToolTip/SequentialToolTip";
-
 function AppContent() {
   useUserSettings();
   
@@ -72,9 +69,6 @@ function AppContent() {
 
   return (
     <Router>
-      {/* ADDED: SequentialTooltip component - renders globally across all pages */}
-      <SequentialTooltip />
-      
       <Routes>
         {/* Temporary testing route - REMOVE BEFORE DEPLOYMENT */}
         <Route path="/test-scene-composer" element={<SceneComposer />} />

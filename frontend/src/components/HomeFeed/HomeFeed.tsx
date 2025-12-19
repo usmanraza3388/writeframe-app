@@ -18,9 +18,8 @@ import type { CharacterWithDetails } from '../../utils/character-types';
 import type { FrameWithDetails } from '../../utils/frames';
 import { feedActions } from '../../utils/feedActions';
 
-// UPDATED: Import GettingStartedModal, OptInTourModal and useOnboarding hook
+// ADDED: Import GettingStartedModal and useOnboarding hook
 import GettingStartedModal from '../GettingStartedModal/GettingStartedModal';
-import OptInTourModal from '../OptInTourModal/OptInTourModal'; // ADDED
 import { useOnboarding } from '../../hooks/useOnboarding';
 
 // ADDED: Skeleton Loading Components
@@ -122,14 +121,8 @@ const HomeFeed: React.FC = () => {
   const currentUserId = user?.id;
   const navigate = useNavigate();
 
-  // UPDATED: Use onboarding hook with new properties
-  const { 
-    showOnboarding, 
-    showOptInModal, // NEW: Get opt-in modal state
-    handleComplete, 
-    handleClose,
-    handleTourChoice // NEW: Get tour choice handler
-  } = useOnboarding();
+  // ADDED: Use onboarding hook
+  const { showOnboarding, handleComplete, handleClose } = useOnboarding();
 
   // ADDED: Pagination state
   const [visibleCount, setVisibleCount] = useState(10);
@@ -534,15 +527,11 @@ const HomeFeed: React.FC = () => {
         paddingBottom: '100px',
         minHeight: '100vh'
       }}>
-        {/* ADDED: CSS class for sequential tour */}
-        <div 
-          style={{
-            padding: '0 16px 16px 16px',
-            borderBottom: '1px solid #E5E5E5',
-            marginBottom: '16px'
-          }}
-          className="home-feed-header" // ADDED: CSS class for sequential tour
-        >
+        <div style={{
+          padding: '0 16px 16px 16px',
+          borderBottom: '1px solid #E5E5E5',
+          marginBottom: '16px'
+        }}>
           <h1 style={{
             fontFamily: 'Playfair Display, serif',
             fontSize: '24px',
@@ -560,18 +549,10 @@ const HomeFeed: React.FC = () => {
           gap: '20px',
           padding: '0 16px'
         }}>
-          {displayFeed.map((item, index) => {
-            // ADDED: CSS classes for first scene and monologue cards for tour targeting
-            const isFirstScene = index === 0 && item.type === 'scene';
-            const isFirstMonologue = index === 0 && item.type === 'monologue';
-            
+          {displayFeed.map((item) => {
             if (item.type === 'scene') {
               return (
-                <div 
-                  key={`scene-${item.data.id}`} 
-                  id={`scene-${item.data.id}`}
-                  className={isFirstScene ? "scene-card" : ""} // ADDED: CSS class for sequential tour
-                >
+                <div key={`scene-${item.data.id}`} id={`scene-${item.data.id}`}>
                   <SceneCard 
                     scene={item.data}
                     currentUserId={currentUserId}
@@ -581,11 +562,7 @@ const HomeFeed: React.FC = () => {
               );
             } else if (item.type === 'monologue') {
               return (
-                <div 
-                  key={`monologue-${item.data.id}`} 
-                  id={`monologue-${item.data.id}`}
-                  className={isFirstMonologue ? "monologue-card" : ""} // ADDED: CSS class for sequential tour
-                >
+                <div key={`monologue-${item.data.id}`} id={`monologue-${item.data.id}`}>
                   <MonologueCard 
                     monologue={item.data}
                     currentUserId={currentUserId}
@@ -673,12 +650,6 @@ const HomeFeed: React.FC = () => {
         isOpen={showOnboarding}
         onClose={handleClose}
         onComplete={handleComplete}
-      />
-
-      {/* ADDED: Opt-In Tour Modal */}
-      <OptInTourModal
-        isOpen={showOptInModal}
-        onChoice={handleTourChoice}
       />
     </>
   );
