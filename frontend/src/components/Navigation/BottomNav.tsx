@@ -1,6 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import { useHint } from '../../hooks/useHint';
+import Hint from '../Hint/Hint';
 
 const BottomNav: React.FC = () => {
   const navigate = useNavigate();
@@ -8,6 +10,13 @@ const BottomNav: React.FC = () => {
   const { user } = useAuth();
   const [showCreationMenu, setShowCreationMenu] = React.useState(false);
   const [showCreateTooltip, setShowCreateTooltip] = useState(false);
+  const createButtonRef = useRef<HTMLButtonElement>(null);
+  
+  const { 
+    isVisible: showCreateHint, 
+    dismiss: dismissCreateHint
+    // Removed: isLoading: isHintLoading (unused)
+  } = useHint('create_button');
 
   useEffect(() => {
     // Check if user has completed onboarding but hasn't seen the tooltip
@@ -118,6 +127,11 @@ const BottomNav: React.FC = () => {
       setShowCreateTooltip(false);
       localStorage.setItem('writeframe_tooltip_seen', 'true');
     }
+    
+    // Dismiss hint when user clicks create button
+    if (showCreateHint) {
+      dismissCreateHint();
+    }
   };
 
   const handleProfileClick = () => {
@@ -184,7 +198,7 @@ const BottomNav: React.FC = () => {
       )}
 
       {/* Create Button Tooltip - Only for first-time users */}
-      {showCreateTooltip && (
+      {showCreateTooltip && !showCreateHint && (
         <div style={{
           position: 'fixed',
           bottom: '80px',
@@ -214,6 +228,18 @@ const BottomNav: React.FC = () => {
           }}></div>
           Tap here to create content!
         </div>
+      )}
+
+      {/* NEW: Create Button Hint */}
+      {showCreateHint && (
+        <Hint
+          isVisible={showCreateHint}
+          onDismiss={dismissCreateHint}
+          message="Start here! Create Scenes, Monologues, Characters, or Frames"
+          position="top"
+          targetRef={createButtonRef as React.RefObject<HTMLElement>} // FIXED: Type assertion
+          offset={15}
+        />
       )}
 
       {/* Creation Menu - LIST LAYOUT */}
@@ -391,8 +417,9 @@ const BottomNav: React.FC = () => {
             </span>
           </button>
 
-          {/* Create Button */}
+          {/* Create Button - ADDED: ref for hint positioning */}
           <button
+            ref={createButtonRef}
             onClick={() => handleCreateClick()}
             style={{
               background: 'none',
