@@ -1,6 +1,8 @@
 // src/contexts/TourContext.tsx
-import React, { createContext, useContext, ReactNode } from 'react';
-import useTour, { TourStep, TourProgress } from '../hooks/useTour';
+import React, { createContext, useContext } from 'react';
+import type { ReactNode } from 'react'; // ADDED: Type-only import
+import useTour from '../hooks/useTour';
+import type { TourStep, TourProgress } from '../hooks/useTour'; // ADDED: Type-only import
 
 interface TourContextType {
   // State from useTour
@@ -66,7 +68,7 @@ export const TourProvider: React.FC<TourProviderProps> = ({ children }) => {
     startTour: tour.startTour,
     pauseTour: tour.pauseTour,
     resetTour: tour.resetTour,
-    triggerStep: tour.triggerStep,
+    triggerStep: (stepId: string) => tour.triggerStep(stepId) || false, // FIXED: Ensure boolean return
     checkAndTriggerSteps: tour.checkAndTriggerSteps,
     
     // Getters

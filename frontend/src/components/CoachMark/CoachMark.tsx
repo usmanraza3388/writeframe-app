@@ -126,8 +126,7 @@ const CoachMark: React.FC<CoachMarkProps> = ({
       zIndex: 10001,
       opacity: isVisible ? 1 : 0,
       transform: isVisible ? 'translateY(0) scale(1)' : 'translateY(10px) scale(0.95)',
-      transition: 'opacity 0.3s ease, transform 0.3s ease',
-      pointerEvents: 'none' // ADDED: Allow clicks to pass through
+      transition: 'opacity 0.3s ease, transform 0.3s ease'
     };
 
     // Position calculations
@@ -297,7 +296,24 @@ const CoachMark: React.FC<CoachMarkProps> = ({
         }} />
       )}
 
-      {/* Tooltip - RENDERED FIRST */}
+      {/* Highlight overlay for target element */}
+      {targetRect && !noBackdrop && (
+        <div style={{
+          position: 'fixed',
+          top: `${targetRect.top}px`,
+          left: `${targetRect.left}px`,
+          width: `${targetRect.width}px`,
+          height: `${targetRect.height}px`,
+          border: '2px solid rgba(212, 175, 55, 0.8)',
+          borderRadius: '8px',
+          boxShadow: '0 0 0 9999px rgba(0, 0, 0, 0.5), 0 0 20px rgba(212, 175, 55, 0.6)',
+          zIndex: 10000,
+          pointerEvents: 'none',
+          animation: 'pulse 2s infinite'
+        }} />
+      )}
+
+      {/* Tooltip */}
       <div
         ref={coachMarkRef}
         style={getTooltipStyle()}
@@ -305,7 +321,7 @@ const CoachMark: React.FC<CoachMarkProps> = ({
         {/* Arrow */}
         <div style={getArrowStyle()} />
 
-        {/* Tooltip Content - with pointer-events: auto to allow button clicks */}
+        {/* Tooltip Content */}
         <div style={{
           background: '#1A1A1A',
           borderRadius: '12px',
@@ -313,8 +329,7 @@ const CoachMark: React.FC<CoachMarkProps> = ({
           minWidth: '280px',
           maxWidth: '320px',
           boxShadow: '0 10px 40px rgba(0, 0, 0, 0.3)',
-          border: '1px solid rgba(255, 255, 255, 0.1)',
-          pointerEvents: 'auto' // ADDED: Allow clicks inside tooltip
+          border: '1px solid rgba(255, 255, 255, 0.1)'
         }}>
           {/* Step indicator */}
           {(step !== undefined && totalSteps !== undefined) && (
@@ -350,8 +365,7 @@ const CoachMark: React.FC<CoachMarkProps> = ({
                   cursor: 'pointer',
                   fontSize: '16px',
                   padding: 0,
-                  transition: 'all 0.2s ease',
-                  pointerEvents: 'auto' // ADDED: Ensure button is clickable
+                  transition: 'all 0.2s ease'
                 }}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.2)';
@@ -395,8 +409,7 @@ const CoachMark: React.FC<CoachMarkProps> = ({
             display: 'flex',
             gap: '10px',
             justifyContent: showNavigation ? 'space-between' : 'flex-end',
-            alignItems: 'center',
-            pointerEvents: 'auto' // ADDED: Ensure buttons are clickable
+            alignItems: 'center'
           }}>
             {/* Navigation buttons */}
             {showNavigation && (
@@ -414,8 +427,7 @@ const CoachMark: React.FC<CoachMarkProps> = ({
                       fontFamily: "'Cormorant', serif",
                       fontWeight: 500,
                       cursor: 'pointer',
-                      transition: 'all 0.2s ease',
-                      pointerEvents: 'auto'
+                      transition: 'all 0.2s ease'
                     }}
                     onMouseEnter={(e) => {
                       e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
@@ -443,8 +455,7 @@ const CoachMark: React.FC<CoachMarkProps> = ({
                       fontFamily: "'Cormorant', serif",
                       fontWeight: 600,
                       cursor: 'pointer',
-                      transition: 'all 0.2s ease',
-                      pointerEvents: 'auto'
+                      transition: 'all 0.2s ease'
                     }}
                     onMouseEnter={(e) => {
                       e.currentTarget.style.backgroundColor = '#FFFFFF';
@@ -476,8 +487,7 @@ const CoachMark: React.FC<CoachMarkProps> = ({
                     fontFamily: "'Cormorant', serif",
                     fontWeight: 600,
                     cursor: 'pointer',
-                    transition: 'all 0.2s ease',
-                    pointerEvents: 'auto'
+                    transition: 'all 0.2s ease'
                   }}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.transform = 'translateY(-1px)';
@@ -503,8 +513,7 @@ const CoachMark: React.FC<CoachMarkProps> = ({
                     fontFamily: "'Cormorant', serif",
                     fontWeight: 500,
                     cursor: 'pointer',
-                    transition: 'all 0.2s ease',
-                    pointerEvents: 'auto'
+                    transition: 'all 0.2s ease'
                   }}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.2)';
@@ -522,23 +531,6 @@ const CoachMark: React.FC<CoachMarkProps> = ({
           </div>
         </div>
       </div>
-
-      {/* Highlight overlay for target element - RENDERED LAST with HIGHER z-index */}
-      {targetRect && !noBackdrop && (
-        <div style={{
-          position: 'fixed',
-          top: `${targetRect.top}px`,
-          left: `${targetRect.left}px`,
-          width: `${targetRect.width}px`,
-          height: `${targetRect.height}px`,
-          border: '2px solid rgba(212, 175, 55, 0.8)',
-          borderRadius: '8px',
-          boxShadow: '0 0 0 9999px rgba(0, 0, 0, 0.5), 0 0 20px rgba(212, 175, 55, 0.6)',
-          zIndex: 10002, // CHANGED: Increased from 10000 to 10002
-          pointerEvents: 'none',
-          animation: 'pulse 2s infinite'
-        }} />
-      )}
 
       <style>
         {`
