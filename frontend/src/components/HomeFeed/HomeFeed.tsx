@@ -134,7 +134,6 @@ const HomeFeed: React.FC = () => {
 
   // ADDED: Tour opt-in modal state
   const [showTourOptIn, setShowTourOptIn] = useState(false);
-  const [shouldCheckTourOptIn, setShouldCheckTourOptIn] = useState(false);
 
   // ADDED: Pagination state
   const [visibleCount, setVisibleCount] = useState(10);
@@ -151,9 +150,12 @@ const HomeFeed: React.FC = () => {
     }
   }, [tour]);
 
-  // ADDED: Check for tour opt-in after GettingStartedModal closes
-  useEffect(() => {
-    if (shouldCheckTourOptIn && !showOnboarding) {
+  // ADDED: Check for tour opt-in when onboarding completes
+  const handleOnboardingComplete = useCallback(() => {
+    handleComplete();
+    
+    // Show tour opt-in modal after a short delay
+    setTimeout(() => {
       const hasSeenOptIn = tour.hasSeenOptIn();
       const hasSkippedTour = tour.progress.skipped;
       
@@ -161,15 +163,8 @@ const HomeFeed: React.FC = () => {
         setShowTourOptIn(true);
         tour.markOptInSeen();
       }
-      setShouldCheckTourOptIn(false);
-    }
-  }, [shouldCheckTourOptIn, showOnboarding, tour]);
-
-  // ADDED: Function to handle tour opt-in from GettingStartedModal
-  const handleRequestTourOptIn = useCallback(() => {
-    // Instead of showing immediately, set a flag to show after modal closes
-    setShouldCheckTourOptIn(true);
-  }, []);
+    }, 300);
+  }, [handleComplete, tour]);
 
   // ADDED: Handle tour opt-in acceptance
   const handleAcceptTour = useCallback(() => {
@@ -723,13 +718,8 @@ const HomeFeed: React.FC = () => {
       {/* ADDED: Getting Started Modal */}
       <GettingStartedModal
         isOpen={showOnboarding}
-        onClose={() => {
-          handleClose();
-          // Also trigger tour opt-in check when modal closes
-          setShouldCheckTourOptIn(true);
-        }}
-        onComplete={handleComplete}
-        onRequestTourOptIn={handleRequestTourOptIn} // ADDED: Pass tour opt-in handler
+        onClose={handleClose}
+        onComplete={handleOnboardingComplete} // Use the new handler
       />
 
       {/* ADDED: Tour Opt-In Modal */}
