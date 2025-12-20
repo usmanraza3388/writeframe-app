@@ -5,12 +5,14 @@ interface GettingStartedModalProps {
   isOpen: boolean;
   onClose: () => void;
   onComplete: () => void;
+  onRequestTourOptIn?: () => void; // ADDED: New prop for tour opt-in trigger
 }
 
 const GettingStartedModal: React.FC<GettingStartedModalProps> = ({ 
   isOpen, 
   onClose, 
-  onComplete 
+  onComplete,
+  onRequestTourOptIn // ADDED: Destructure new prop
 }) => {
   const [currentStep, setCurrentStep] = useState(0);
 
@@ -52,7 +54,12 @@ const GettingStartedModal: React.FC<GettingStartedModalProps> = ({
     if (currentStep < steps.length - 1) {
       setCurrentStep(currentStep + 1);
     } else {
+      // This is the final step - handle completion
       onComplete();
+      // ADDED: Trigger tour opt-in request if callback provided
+      if (onRequestTourOptIn) {
+        onRequestTourOptIn();
+      }
       onClose();
     }
   };
@@ -293,4 +300,3 @@ const GettingStartedModal: React.FC<GettingStartedModalProps> = ({
 };
 
 export default GettingStartedModal;
-

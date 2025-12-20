@@ -31,6 +31,11 @@ import GridItem from '../components/GridItem';
 import FollowersModal from '../components/Follow/FollowersModal';
 // @ts-ignore
 import FollowingModal from '../components/Follow/FollowingModal';
+// ADDED: Import tour context and CoachMark
+// @ts-ignore
+import { useTourContext } from '../contexts/TourContext';
+// @ts-ignore
+import CoachMark from '../components/CoachMark/CoachMark';
 
 // ADDED: Skeleton Loading Components
 const ProfileSkeleton: React.FC = () => (
@@ -252,6 +257,8 @@ export default function Profile() {
   const { notifyEcho } = useNotifications();
   // ADDED: Use auth context for signOut
   const { signOut } = useAuth();
+  // ADDED: Use tour context
+  const tour = useTourContext();
 
   // FIXED: Move isOwnProfile declaration before any useEffects that use it
   const isOwnProfile = currentUser?.id === id;
@@ -290,6 +297,14 @@ export default function Profile() {
     setVisibleItems(ITEMS_PER_PAGE);
   }, [activeTab]);
 
+  // ADDED: Effect to check and trigger tour steps when on own profile
+  useEffect(() => {
+    if (isOwnProfile && currentUser && profile) {
+      // Check for tour steps that should trigger on profile page
+      tour.checkAndTriggerSteps(`/profile/${id}`);
+    }
+  }, [isOwnProfile, currentUser, profile, id, tour]);
+
   // ADDED: Get the actual avatar URL to display
   const displayAvatarUrl = getAvatarUrl(profile, currentUser);
 
@@ -318,6 +333,15 @@ export default function Profile() {
     } catch (error) {
       alert('Failed to remove profile picture. Please try again.');
     }
+  };
+
+  // UPDATED: Handle Edit Profile with tour integration
+  const handleEditProfileClick = () => {
+    // If we're on the profile edit tour step, complete it
+    if (tour.currentStep?.id === 'profile_edit' && isOwnProfile) {
+      tour.completeStep('profile_edit');
+    }
+    setShowEditModal(true);
   };
 
   // Filter tabs based on creative_focus settings
@@ -916,7 +940,8 @@ export default function Profile() {
 
           {isOwnProfile && (
             <button 
-              onClick={() => setShowEditModal(true)}
+              onClick={handleEditProfileClick}
+              className="edit-profile-button" // ADDED: Class for tour targeting
               style={editButtonStyle}
             >
               Edit Profile
@@ -926,7 +951,10 @@ export default function Profile() {
 
         {/* Stats Section - Conditionally Rendered - UPDATED: Completely separate designs */}
         {shouldShowStats ? (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <div 
+            style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}
+            className="stats-container" // ADDED: Class for tour targeting
+          >
             {/* Row 1: Minimal Social Buttons - Followers & Following */}
             <div style={socialButtonsContainerStyle}>
               <button 
@@ -1111,6 +1139,42 @@ export default function Profile() {
 
       {/* ADDED: Bottom Navigation */}
       <BottomNav />
+
+      {/* ADDED: Tour Coach Marks for Profile */}
+      
+      {/* Profile Stats Coach Mark */}
+      {isOwnProfile && tour.currentStep?.id === 'profile_stats' && (
+        <CoachMark
+          target=".stats-container"
+          title={tour.currentStep.title}
+          description={tour.currentStep.description}
+          position={tour.currentStep.position}
+          step={5}
+          totalSteps={tour.totalSteps}
+          isVisible={true}
+          onDismiss={tour.goToNextStep}
+          onNext={tour.goToNextStep}
+          onPrev={tour.goToPrevStep}
+          showNavigation={tour.currentStep.showNavigation}
+        />
+      )}
+
+      {/* Profile Edit Coach Mark */}
+      {isOwnProfile && tour.currentStep?.id === 'profile_edit' && (
+        <CoachMark
+          target=".edit-profile-button"
+          title={tour.currentStep.title}
+          description={tour.currentStep.description}
+          position={tour.currentStep.position}
+          step={6}
+          totalSteps={tour.totalSteps}
+          isVisible={true}
+          onDismiss={tour.goToNextStep}
+          onNext={tour.goToNextStep}
+          onPrev={tour.goToPrevStep}
+          showNavigation={tour.currentStep.showNavigation}
+        />
+      )}
     </div>
   );
 }

@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import { useTourContext } from '../../contexts/TourContext'; // ADDED: Import tour context
+import CoachMark from '../CoachMark/CoachMark'; // ADDED: Import CoachMark
 
 const BottomNav: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
+  const tour = useTourContext(); // ADDED: Use tour context
   const [showCreationMenu, setShowCreationMenu] = React.useState(false);
   const [showCreateTooltip, setShowCreateTooltip] = useState(false);
 
@@ -23,6 +26,19 @@ const BottomNav: React.FC = () => {
       return () => clearTimeout(timer);
     }
   }, []);
+
+  // ADDED: Effect to trigger tour steps based on interactions
+  useEffect(() => {
+    // Check if we should trigger the create button tour step
+    if (tour.currentStep?.id === 'create_button' && location.pathname === '/home-feed') {
+      // The step is already active, CoachMark will handle it
+    }
+    
+    // Check if we should trigger the whispers tour step
+    if (tour.currentStep?.id === 'whispers_feature' && location.pathname === '/home-feed') {
+      // The step is already active, CoachMark will handle it
+    }
+  }, [tour.currentStep, location.pathname]);
 
   // Icons with theme support
   const HomeIcon = ({ active }: { active: boolean }) => (
@@ -101,26 +117,45 @@ const BottomNav: React.FC = () => {
     setShowCreationMenu(false);
   };
 
-  // ADDED: Handle Messages Click
+  // ADDED: Handle Messages Click - UPDATED to trigger tour step completion
   const handleMessagesClick = () => {
+    // If we're on the whispers tour step, complete it
+    if (tour.currentStep?.id === 'whispers_feature') {
+      tour.completeStep('whispers_feature');
+    }
     navigate('/inbox');
     setShowCreationMenu(false);
   };
 
+  // UPDATED: Handle Create Click with tour integration
   const handleCreateClick = (type?: 'scene' | 'monologue' | 'character' | 'frame') => {
     if (type) {
+      // If we're on the create button tour step, complete it
+      if (tour.currentStep?.id === 'create_button') {
+        tour.completeStep('create_button');
+      }
       setShowCreationMenu(false);
       setShowCreateTooltip(false);
       localStorage.setItem('writeframe_tooltip_seen', 'true');
       navigate(`/compose-${type}`);
     } else {
+      // If we're on the create button tour step, complete it when opening menu
+      if (tour.currentStep?.id === 'create_button' && !showCreationMenu) {
+        tour.completeStep('create_button');
+      }
       setShowCreationMenu(!showCreationMenu);
       setShowCreateTooltip(false);
       localStorage.setItem('writeframe_tooltip_seen', 'true');
     }
   };
 
+  // UPDATED: Handle Profile Click with tour integration
   const handleProfileClick = () => {
+    // If we're on the profile access tour step, complete it
+    if (tour.currentStep?.id === 'profile_access') {
+      tour.completeStep('profile_access');
+    }
+    
     if (user?.id) {
       navigate(`/profile/${user.id}`);
     }
@@ -362,6 +397,7 @@ const BottomNav: React.FC = () => {
           {/* CHANGED: Messages Button to Whispers */}
           <button
             onClick={handleMessagesClick}
+            className="whispers-button" // ADDED: Class for tour targeting
             style={{
               background: 'none',
               border: 'none',
@@ -394,6 +430,7 @@ const BottomNav: React.FC = () => {
           {/* Create Button */}
           <button
             onClick={() => handleCreateClick()}
+            className="create-button" // ADDED: Class for tour targeting
             style={{
               background: 'none',
               border: 'none',
@@ -426,6 +463,7 @@ const BottomNav: React.FC = () => {
           {/* Profile Button - FIXED: Only highlight when viewing own profile */}
           <button
             onClick={handleProfileClick}
+            className="profile-button" // ADDED: Class for tour targeting
             style={{
               background: 'none',
               border: 'none',
@@ -456,6 +494,61 @@ const BottomNav: React.FC = () => {
           </button>
         </div>
       </nav>
+
+      {/* ADDED: Tour Coach Marks for BottomNav */}
+      
+      {/* Create Button Coach Mark */}
+      {tour.currentStep?.id === 'create_button' && location.pathname === '/home-feed' && (
+        <CoachMark
+          target=".create-button"
+          title={tour.currentStep.title}
+          description={tour.currentStep.description}
+          position={tour.currentStep.position}
+          step={3}
+          totalSteps={tour.totalSteps}
+          isVisible={true}
+          onDismiss={tour.goToNextStep}
+          onNext={tour.goToNextStep}
+          onPrev={tour.goToPrevStep}
+          showNavigation={tour.currentStep.showNavigation}
+          actionText={tour.currentStep.actionText}
+          onAction={() => handleCreateClick()}
+        />
+      )}
+
+      {/* Whispers Feature Coach Mark */}
+      {tour.currentStep?.id === 'whispers_feature' && location.pathname === '/home-feed' && (
+        <CoachMark
+          target=".whispers-button"
+          title={tour.currentStep.title}
+          description={tour.currentStep.description}
+          position={tour.currentStep.position}
+          step={7} // Last step in the sequence
+          totalSteps={tour.totalSteps}
+          isVisible={true}
+          onDismiss={tour.goToNextStep}
+          onNext={tour.goToNextStep}
+          onPrev={tour.goToPrevStep}
+          showNavigation={tour.currentStep.showNavigation}
+        />
+      )}
+
+      {/* Profile Access Coach Mark */}
+      {tour.currentStep?.id === 'profile_access' && location.pathname === '/home-feed' && (
+        <CoachMark
+          target=".profile-button"
+          title={tour.currentStep.title}
+          description={tour.currentStep.description}
+          position={tour.currentStep.position}
+          step={4}
+          totalSteps={tour.totalSteps}
+          isVisible={true}
+          onDismiss={tour.goToNextStep}
+          onNext={tour.goToNextStep}
+          onPrev={tour.goToPrevStep}
+          showNavigation={tour.currentStep.showNavigation}
+        />
+      )}
 
       <style>
         {`

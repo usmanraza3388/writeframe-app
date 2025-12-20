@@ -22,6 +22,11 @@ import { feedActions } from '../../utils/feedActions';
 import GettingStartedModal from '../GettingStartedModal/GettingStartedModal';
 import { useOnboarding } from '../../hooks/useOnboarding';
 
+// ADDED: Import tour components
+import TourOptInModal from '../TourOptInModal/TourOptInModal';
+import CoachMark from '../CoachMark/CoachMark';
+import { useTourContext } from '../../contexts/TourContext';
+
 // ADDED: Skeleton Loading Components
 const CardSkeleton: React.FC = () => (
   <div style={{
@@ -124,9 +129,50 @@ const HomeFeed: React.FC = () => {
   // ADDED: Use onboarding hook
   const { showOnboarding, handleComplete, handleClose } = useOnboarding();
 
+  // ADDED: Use tour context
+  const tour = useTourContext();
+
+  // ADDED: Tour opt-in modal state
+  const [showTourOptIn, setShowTourOptIn] = useState(false);
+
   // ADDED: Pagination state
   const [visibleCount, setVisibleCount] = useState(10);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
+
+  // ADDED: Tour trigger effect - check and trigger steps when component mounts
+  useEffect(() => {
+    // Check for tour steps that should trigger on home feed
+    tour.checkAndTriggerSteps('/home-feed');
+    
+    // Start the tour if it's enabled and hasn't started yet
+    if (tour.progress.enabled && !tour.progress.skipped && !tour.isActive) {
+      tour.startTour();
+    }
+  }, [tour]);
+
+  // ADDED: Function to handle tour opt-in from GettingStartedModal
+  const handleRequestTourOptIn = useCallback(() => {
+    const hasSeenOptIn = tour.hasSeenOptIn();
+    const hasSkippedTour = tour.progress.skipped;
+    
+    if (!hasSeenOptIn && !hasSkippedTour) {
+      setShowTourOptIn(true);
+      tour.markOptInSeen();
+    }
+  }, [tour]);
+
+  // ADDED: Handle tour opt-in acceptance
+  const handleAcceptTour = useCallback(() => {
+    tour.enableTour();
+    tour.startTour();
+    setShowTourOptIn(false);
+  }, [tour]);
+
+  // ADDED: Handle tour opt-in decline
+  const handleDeclineTour = useCallback(() => {
+    tour.skipTour();
+    setShowTourOptIn(false);
+  }, [tour]);
 
   // ADDED: Infinite scroll handler
   const handleScroll = useCallback(() => {
@@ -518,15 +564,18 @@ const HomeFeed: React.FC = () => {
 
   return (
     <>
-      <div style={{
-        width: '100%',
-        maxWidth: '375px',
-        margin: '0 auto',
-        padding: '16px 0',
-        backgroundColor: '#FFFFFF',
-        paddingBottom: '100px',
-        minHeight: '100vh'
-      }}>
+      <div 
+        style={{
+          width: '100%',
+          maxWidth: '375px',
+          margin: '0 auto',
+          padding: '16px 0',
+          backgroundColor: '#FFFFFF',
+          paddingBottom: '100px',
+          minHeight: '100vh'
+        }}
+        className="home-feed-container" // ADDED: Class for tour targeting
+      >
         <div style={{
           padding: '0 16px 16px 16px',
           borderBottom: '1px solid #E5E5E5',
@@ -549,10 +598,14 @@ const HomeFeed: React.FC = () => {
           gap: '20px',
           padding: '0 16px'
         }}>
-          {displayFeed.map((item) => {
+          {displayFeed.map((item, index) => {
             if (item.type === 'scene') {
               return (
-                <div key={`scene-${item.data.id}`} id={`scene-${item.data.id}`}>
+                <div 
+                  key={`scene-${item.data.id}`} 
+                  id={`scene-${item.data.id}`}
+                  className={index === 0 ? 'scene-card' : ''} // ADDED: Class for tour targeting (first card only)
+                >
                   <SceneCard 
                     scene={item.data}
                     currentUserId={currentUserId}
@@ -562,7 +615,11 @@ const HomeFeed: React.FC = () => {
               );
             } else if (item.type === 'monologue') {
               return (
-                <div key={`monologue-${item.data.id}`} id={`monologue-${item.data.id}`}>
+                <div 
+                  key={`monologue-${item.data.id}`} 
+                  id={`monologue-${item.data.id}`}
+                  className={index === 0 ? 'monologue-card' : ''} // ADDED: Class for tour targeting
+                >
                   <MonologueCard 
                     monologue={item.data}
                     currentUserId={currentUserId}
@@ -582,7 +639,11 @@ const HomeFeed: React.FC = () => {
               );
             } else if (item.type === 'character') {
               return (
-                <div key={`character-${item.data.id}`} id={`character-${item.data.id}`}>
+                <div 
+                  key={`character-${item.data.id}`} 
+                  id={`character-${item.data.id}`}
+                  className={index === 0 ? 'character-card' : ''} // ADDED: Class for tour targeting
+                >
                   <CharacterCard 
                     character={item.data}
                     currentUserId={currentUserId}
@@ -602,7 +663,11 @@ const HomeFeed: React.FC = () => {
               );
             } else if (item.type === 'frame') {
               return (
-                <div key={`frame-${item.data.id}`} id={`frame-${item.data.id}`}>
+                <div 
+                  key={`frame-${item.data.id}`} 
+                  id={`frame-${item.data.id}`}
+                  className={index === 0 ? 'frame-card' : ''} // ADDED: Class for tour targeting
+                >
                   <FrameCard 
                     frame={item.data}
                     currentUserId={currentUserId}
@@ -650,10 +715,53 @@ const HomeFeed: React.FC = () => {
         isOpen={showOnboarding}
         onClose={handleClose}
         onComplete={handleComplete}
+        onRequestTourOptIn={handleRequestTourOptIn} // ADDED: Pass tour opt-in handler
       />
+
+      {/* ADDED: Tour Opt-In Modal */}
+      <TourOptInModal
+        isOpen={showTourOptIn}
+        onAccept={handleAcceptTour}
+        onDecline={handleDeclineTour}
+        onClose={() => setShowTourOptIn(false)}
+      />
+
+      {/* ADDED: Tour Coach Marks */}
+      
+      {/* Home Feed Introduction Coach Mark */}
+      {tour.currentStep?.id === 'home_feed_intro' && (
+        <CoachMark
+          target=".home-feed-container"
+          title={tour.currentStep.title}
+          description={tour.currentStep.description}
+          position={tour.currentStep.position}
+          step={1}
+          totalSteps={tour.totalSteps}
+          isVisible={true}
+          onDismiss={tour.goToNextStep}
+          onNext={tour.goToNextStep}
+          showNavigation={tour.currentStep.showNavigation}
+        />
+      )}
+
+      {/* Feed Interactions Coach Mark */}
+      {tour.currentStep?.id === 'feed_interactions' && (
+        <CoachMark
+          target=".scene-card, .monologue-card, .character-card, .frame-card"
+          title={tour.currentStep.title}
+          description={tour.currentStep.description}
+          position={tour.currentStep.position}
+          step={2}
+          totalSteps={tour.totalSteps}
+          isVisible={true}
+          onDismiss={tour.goToNextStep}
+          onNext={tour.goToNextStep}
+          onPrev={tour.goToPrevStep}
+          showNavigation={tour.currentStep.showNavigation}
+        />
+      )}
     </>
   );
 };
 
 export default HomeFeed;
-
