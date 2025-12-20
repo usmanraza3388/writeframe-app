@@ -518,19 +518,15 @@ const HomeFeed: React.FC = () => {
 
   return (
     <>
-      {/* ADDED: data-home-feed attribute for AppTour */}
-      <div 
-        data-home-feed="true"
-        style={{
-          width: '100%',
-          maxWidth: '375px',
-          margin: '0 auto',
-          padding: '16px 0',
-          backgroundColor: '#FFFFFF',
-          paddingBottom: '100px',
-          minHeight: '100vh'
-        }}
-      >
+      <div style={{
+        width: '100%',
+        maxWidth: '375px',
+        margin: '0 auto',
+        padding: '16px 0',
+        backgroundColor: '#FFFFFF',
+        paddingBottom: '100px',
+        minHeight: '100vh'
+      }}>
         <div style={{
           padding: '0 16px 16px 16px',
           borderBottom: '1px solid #E5E5E5',
@@ -660,3 +656,4 @@ const HomeFeed: React.FC = () => {
 };
 
 export default HomeFeed;
+

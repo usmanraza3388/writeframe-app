@@ -1,7 +1,5 @@
 // src/components/GettingStartedModal/GettingStartedModal.tsx
 import React, { useState } from 'react';
-import { supabase } from '../../assets/lib/supabaseClient';
-import { useAuth } from '../../contexts/AuthContext';
 
 interface GettingStartedModalProps {
   isOpen: boolean;
@@ -15,8 +13,6 @@ const GettingStartedModal: React.FC<GettingStartedModalProps> = ({
   onComplete 
 }) => {
   const [currentStep, setCurrentStep] = useState(0);
-  const [isUpdating, setIsUpdating] = useState(false);
-  const { user } = useAuth();
 
   const steps = [
     {
@@ -52,41 +48,16 @@ const GettingStartedModal: React.FC<GettingStartedModalProps> = ({
     }
   ];
 
-  const markOnboardingComplete = async () => {
-    if (!user?.id) return;
-    
-    setIsUpdating(true);
-    try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({ 
-          onboarding_completed: true,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', user.id);
-
-      if (error) throw error;
-    } catch (error) {
-      console.error('Error updating onboarding status:', error);
-    } finally {
-      setIsUpdating(false);
-    }
-  };
-
-  const handleNext = async () => {
+  const handleNext = () => {
     if (currentStep < steps.length - 1) {
       setCurrentStep(currentStep + 1);
     } else {
-      // Last step - mark onboarding complete in Supabase
-      await markOnboardingComplete();
       onComplete();
       onClose();
     }
   };
 
-  const handleSkip = async () => {
-    // Still mark as complete if user skips
-    await markOnboardingComplete();
+  const handleSkip = () => {
     onClose();
   };
 
@@ -149,7 +120,6 @@ const GettingStartedModal: React.FC<GettingStartedModalProps> = ({
           {/* Close Button - Positioned over progress bar */}
           <button
             onClick={handleSkip}
-            disabled={isUpdating}
             style={{
               position: 'absolute',
               top: '50%',
@@ -159,15 +129,14 @@ const GettingStartedModal: React.FC<GettingStartedModalProps> = ({
               border: 'none',
               fontSize: '24px',
               color: '#9CA3AF',
-              cursor: isUpdating ? 'default' : 'pointer',
+              cursor: 'pointer',
               width: '32px',
               height: '32px',
               borderRadius: '50%',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              zIndex: 1,
-              opacity: isUpdating ? 0.5 : 1
+              zIndex: 1
             }}
           >
             ×
@@ -259,7 +228,6 @@ const GettingStartedModal: React.FC<GettingStartedModalProps> = ({
           {/* Skip Button */}
           <button
             onClick={handleSkip}
-            disabled={isUpdating}
             style={{
               flex: 1,
               padding: '14px 20px',
@@ -270,18 +238,16 @@ const GettingStartedModal: React.FC<GettingStartedModalProps> = ({
               fontSize: '15px',
               fontFamily: "'Cormorant', serif",
               fontWeight: 500,
-              cursor: isUpdating ? 'default' : 'pointer',
-              opacity: isUpdating ? 0.7 : 1,
+              cursor: 'pointer',
               boxSizing: 'border-box'
             }}
           >
-            {isUpdating ? 'Saving...' : 'Skip Tour'}
+            Skip Tour
           </button>
 
           {/* Next/Start Button */}
           <button
             onClick={handleNext}
-            disabled={isUpdating}
             style={{
               flex: 2,
               padding: '14px 20px',
@@ -292,12 +258,11 @@ const GettingStartedModal: React.FC<GettingStartedModalProps> = ({
               fontSize: '15px',
               fontFamily: "'Cormorant', serif",
               fontWeight: 600,
-              cursor: isUpdating ? 'default' : 'pointer',
-              opacity: isUpdating ? 0.7 : 1,
+              cursor: 'pointer',
               boxSizing: 'border-box'
             }}
           >
-            {isUpdating ? 'Saving...' : step.buttonText}
+            {step.buttonText}
           </button>
         </div>
 
@@ -328,3 +293,4 @@ const GettingStartedModal: React.FC<GettingStartedModalProps> = ({
 };
 
 export default GettingStartedModal;
+

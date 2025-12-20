@@ -304,25 +304,22 @@ const BottomNav: React.FC = () => {
       )}
 
       {/* Bottom Navigation Bar - UPDATED: Reduced height and centered */}
-      <nav 
-        style={{
-          position: 'fixed',
-          bottom: 0,
-          left: '50%',
-          transform: 'translateX(-50%)',
-          background: 'var(--background-primary)',
-          borderTop: '1px solid var(--border-color)',
-          padding: '8px 0 12px', // REDUCED: Less padding for smaller height
-          zIndex: 1000,
-          backdropFilter: 'blur(10px)',
-          width: '375px', // ADDED: Fixed width
-          maxWidth: '100vw', // ADDED: Responsive constraint
-          boxSizing: 'border-box', // ADDED: Proper box model
-          borderTopLeftRadius: '12px', // ADDED: Rounded corners
-          borderTopRightRadius: '12px' // ADDED: Rounded corners
-        }}
-        data-nav="true" // ADDED: Data attribute for AppTour
-      >
+      <nav style={{
+        position: 'fixed',
+        bottom: 0,
+        left: '50%',
+        transform: 'translateX(-50%)',
+        background: 'var(--background-primary)',
+        borderTop: '1px solid var(--border-color)',
+        padding: '8px 0 12px', // REDUCED: Less padding for smaller height
+        zIndex: 1000,
+        backdropFilter: 'blur(10px)',
+        width: '375px', // ADDED: Fixed width
+        maxWidth: '100vw', // ADDED: Responsive constraint
+        boxSizing: 'border-box', // ADDED: Proper box model
+        borderTopLeftRadius: '12px', // ADDED: Rounded corners
+        borderTopRightRadius: '12px' // ADDED: Rounded corners
+      }}>
         <div style={{
           display: 'flex',
           justifyContent: 'space-around',
@@ -350,7 +347,6 @@ const BottomNav: React.FC = () => {
             }}
             onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--background-secondary)'}
             onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-            data-nav-button="home" // ADDED: Data attribute for AppTour
           >
             <HomeIcon active={isActive('/home-feed')} />
             <span style={{
@@ -383,7 +379,6 @@ const BottomNav: React.FC = () => {
             }}
             onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--background-secondary)'}
             onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-            data-nav-button="whispers" // ADDED: Data attribute for AppTour
           >
             <MessagesIcon active={isActive('/inbox')} />
             <span style={{
@@ -416,7 +411,6 @@ const BottomNav: React.FC = () => {
             }}
             onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--background-secondary)'}
             onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-            data-nav-button="create" // ADDED: Data attribute for AppTour
           >
             <CreateIcon active={showCreationMenu} />
             <span style={{
@@ -449,7 +443,6 @@ const BottomNav: React.FC = () => {
             }}
             onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--background-secondary)'}
             onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-            data-nav-button="profile" // ADDED: Data attribute for AppTour
           >
             <ProfileIcon active={isOwnProfileActive} />
             <span style={{
