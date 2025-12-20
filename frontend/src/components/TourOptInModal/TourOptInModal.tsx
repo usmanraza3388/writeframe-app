@@ -27,7 +27,7 @@ const TourOptInModal: React.FC<TourOptInModalProps> = ({
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      zIndex: 10000,
+      zIndex: 10002, // INCREASED: Was 10000, now 10002 to ensure above GettingStartedModal (9999)
       padding: '20px'
     }}>
       <div style={{
