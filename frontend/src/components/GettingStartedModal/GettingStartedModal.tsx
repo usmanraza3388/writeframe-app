@@ -56,11 +56,16 @@ const GettingStartedModal: React.FC<GettingStartedModalProps> = ({
     } else {
       // This is the final step - handle completion
       onComplete();
-      // ADDED: Trigger tour opt-in request if callback provided
+      
+      // Trigger tour opt-in request if callback provided
       if (onRequestTourOptIn) {
         onRequestTourOptIn();
       }
-      onClose();
+      
+      // Close modal after a short delay to allow TourOptInModal to appear
+      setTimeout(() => {
+        onClose();
+      }, 150);
     }
   };
 
