@@ -35,7 +35,7 @@ export const TOUR_STEPS: TourStep[] = [
     id: 'home_feed_intro',
     title: 'Explore Creative Work',
     description: 'This is your home feed where you can discover scenes, monologues, characters, and frames from other creators. Scroll to see inspiring work from the community.',
-    target: '.home-feed-container', // You'll need to add this class to HomeFeed
+    target: '.home-feed-container',
     position: 'bottom',
     route: '/home-feed',
     trigger: 'route',
@@ -45,7 +45,7 @@ export const TOUR_STEPS: TourStep[] = [
     id: 'feed_interactions',
     title: 'Engage with Content',
     description: 'Tap on any card to view details. You can like, comment, or repost content that inspires you. Each interaction helps you connect with other creators.',
-    target: '.scene-card, .monologue-card, .character-card, .frame-card', // First card in feed
+    target: '.scene-card:first-of-type, .monologue-card:first-of-type, .character-card:first-of-type, .frame-card:first-of-type', // FIXED: Target first card only
     position: 'bottom-right',
     route: '/home-feed',
     trigger: 'element',
@@ -56,7 +56,7 @@ export const TOUR_STEPS: TourStep[] = [
     id: 'create_button',
     title: 'Create Your Masterpiece',
     description: 'Tap here to access all creation tools. You can write scenes, craft monologues, build characters, or curate visual frames.',
-    target: '.create-button', // The Create button in BottomNav
+    target: '.create-button',
     position: 'top',
     route: '/home-feed',
     trigger: 'interaction',
@@ -68,7 +68,7 @@ export const TOUR_STEPS: TourStep[] = [
     id: 'profile_access',
     title: 'Your Creative Portfolio',
     description: 'Your profile showcases all your creations. It\'s your portfolio where others can discover your unique style and creative journey.',
-    target: '.profile-button', // Profile button in BottomNav
+    target: '.profile-button',
     position: 'top',
     route: '/home-feed',
     trigger: 'route',
@@ -78,7 +78,7 @@ export const TOUR_STEPS: TourStep[] = [
     id: 'profile_stats',
     title: 'Track Your Growth',
     description: 'Here you can see your creative stats: scenes written, characters created, followers, and more. Your stats tell the story of your creative journey.',
-    target: '.stats-container', // Stats section in Profile
+    target: '.stats-container',
     position: 'bottom',
     route: '/profile/:id',
     trigger: 'route',
@@ -88,7 +88,7 @@ export const TOUR_STEPS: TourStep[] = [
     id: 'profile_edit',
     title: 'Personalize Your Space',
     description: 'Edit your profile to add a bio, set your genre persona, and customize how others see your creative identity.',
-    target: '.edit-profile-button', // Edit button in Profile
+    target: '.edit-profile-button',
     position: 'left',
     route: '/profile/:id',
     trigger: 'element',
@@ -99,7 +99,7 @@ export const TOUR_STEPS: TourStep[] = [
     id: 'whispers_feature',
     title: 'Connect Privately',
     description: 'Whispers are private messages for giving feedback, collaborating, or connecting with other creators directly.',
-    target: '.whispers-button', // Whispers button in BottomNav
+    target: '.whispers-button',
     position: 'top',
     route: '/home-feed',
     trigger: 'route',
@@ -282,8 +282,27 @@ const useTour = () => {
     if (step.trigger !== 'element' || !step.target) return false;
     
     try {
+      // Try to find any matching element
       const element = document.querySelector(step.target);
-      if (!element) return false;
+      if (!element) {
+        // For step 2, we might need to check if ANY card is visible
+        if (step.id === 'feed_interactions') {
+          // Check for any card that might be visible
+          const anyCard = document.querySelector('.scene-card, .monologue-card, .character-card, .frame-card');
+          if (!anyCard) return false;
+          
+          const rect = anyCard.getBoundingClientRect();
+          const isVisible = (
+            rect.top >= 0 &&
+            rect.left >= 0 &&
+            rect.bottom <= (window.innerHeight || document.documentElement.clientHeight) &&
+            rect.right <= (window.innerWidth || document.documentElement.clientWidth)
+          );
+          
+          return isVisible;
+        }
+        return false;
+      }
       
       const rect = element.getBoundingClientRect();
       const isVisible = (

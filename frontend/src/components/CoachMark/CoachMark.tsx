@@ -50,17 +50,50 @@ const CoachMark: React.FC<CoachMarkProps> = ({
   showNavigation = false,
   actionText,
   onAction,
-  offset = 15, // INCREASED: More default offset to avoid covering
+  offset = 15,
   noBackdrop = false
 }) => {
   const coachMarkRef = useRef<HTMLDivElement>(null);
   const [targetRect, setTargetRect] = useState<DOMRect | null>(null);
   const [coachMarkRect, setCoachMarkRect] = useState<DOMRect | null>(null);
   const [calculatedPosition, setCalculatedPosition] = useState<ArrowPosition>(position);
+  const [appContainer, setAppContainer] = useState<HTMLElement | null>(null);
+
+  // Find the 375px app container
+  useEffect(() => {
+    if (!isVisible) return;
+    
+    // Try to find the app container (375px max-width centered container)
+    const findAppContainer = (): HTMLElement | null => {
+      // Common selectors for app containers
+      const selectors = [
+        '.home-feed-container',
+        '[style*="max-width: 375px"]',
+        '[style*="max-width:375px"]',
+        '[style*="width: 375px"]',
+        '.MuiContainer-root' // If using Material-UI
+      ];
+      
+      for (const selector of selectors) {
+        const element = document.querySelector<HTMLElement>(selector);
+        if (element && 
+            (element.style.maxWidth === '375px' || 
+             getComputedStyle(element).maxWidth === '375px' ||
+             element.offsetWidth <= 375)) {
+          return element;
+        }
+      }
+      
+      // Fallback to body if no container found
+      return document.body;
+    };
+    
+    setAppContainer(findAppContainer());
+  }, [isVisible]);
 
   // Calculate position and arrow
   useEffect(() => {
-    if (!isVisible) return;
+    if (!isVisible || !appContainer) return;
 
     const updatePosition = () => {
       let targetElement: HTMLElement | null = null;
@@ -79,21 +112,31 @@ const CoachMark: React.FC<CoachMarkProps> = ({
       const rect = targetElement.getBoundingClientRect();
       setTargetRect(rect);
 
-      // Auto-adjust position if element is near viewport edges
-      const viewportWidth = window.innerWidth;
-      const viewportHeight = window.innerHeight;
+      // Get container bounds
+      const containerRect = appContainer.getBoundingClientRect();
+      const isAppContainer = appContainer !== document.body;
       
+      // Auto-adjust position based on container bounds
       let adjustedPosition = position;
       
-      // Check if default position would push tooltip out of viewport
-      if (position === 'bottom' && rect.bottom + 250 > viewportHeight) {
+      if (position === 'bottom' && rect.bottom + 250 > containerRect.bottom) {
         adjustedPosition = 'top';
-      } else if (position === 'top' && rect.top - 250 < 0) {
+      } else if (position === 'top' && rect.top - 250 < containerRect.top) {
         adjustedPosition = 'bottom';
-      } else if (position === 'right' && rect.right + 400 > viewportWidth) {
+      } else if (position === 'right' && rect.right + 400 > containerRect.right) {
         adjustedPosition = 'left';
-      } else if (position === 'left' && rect.left - 400 < 0) {
+      } else if (position === 'left' && rect.left - 400 < containerRect.left) {
         adjustedPosition = 'right';
+      }
+      
+      // Additional adjustment for app container constraints
+      if (isAppContainer) {
+        // Ensure tooltip stays within 375px container horizontally
+        if (position === 'left' && rect.left - 320 < containerRect.left) {
+          adjustedPosition = 'right';
+        } else if (position === 'right' && rect.right + 320 > containerRect.right) {
+          adjustedPosition = 'left';
+        }
       }
       
       setCalculatedPosition(adjustedPosition);
@@ -107,7 +150,7 @@ const CoachMark: React.FC<CoachMarkProps> = ({
       window.removeEventListener('resize', updatePosition);
       window.removeEventListener('scroll', updatePosition, true);
     };
-  }, [isVisible, target, position]);
+  }, [isVisible, target, position, appContainer]);
 
   // Update coach mark dimensions after render
   useEffect(() => {
@@ -117,9 +160,9 @@ const CoachMark: React.FC<CoachMarkProps> = ({
     }
   }, [isVisible]);
 
-  // Calculate tooltip position - UPDATED: Smart positioning that avoids covering target
+  // Calculate tooltip position with container awareness
   const getTooltipStyle = (): React.CSSProperties => {
-    if (!targetRect || !coachMarkRect) return { display: 'none' };
+    if (!targetRect || !coachMarkRect || !appContainer) return { display: 'none' };
 
     const style: React.CSSProperties = {
       position: 'fixed',
@@ -129,14 +172,17 @@ const CoachMark: React.FC<CoachMarkProps> = ({
       transition: 'opacity 0.3s ease, transform 0.3s ease'
     };
 
-    // Viewport dimensions with safe margins
-    const viewportWidth = window.innerWidth;
-    const viewportHeight = window.innerHeight;
+    // Get container bounds
+    const containerRect = appContainer.getBoundingClientRect();
+    const isAppContainer = appContainer !== document.body;
+    
+    // Safe margins
+    const containerMargin = 15;
     const viewportMargin = 15;
 
-    // Calculate positions with smart avoidance
+    // Calculate positions relative to container
     const calculatePosition = (pos: ArrowPosition): { top: number; left: number; pos: ArrowPosition } => {
-      const safeOffset = offset + 20; // Extra offset to ensure no covering
+      const safeOffset = offset + 20;
       
       switch (pos) {
         case 'top':
@@ -230,22 +276,51 @@ const CoachMark: React.FC<CoachMarkProps> = ({
       }
     }
 
-    // Ensure tooltip stays within viewport
+    // Adjust position based on container constraints
     let finalTop = positionData.top;
     let finalLeft = positionData.left;
 
-    // Adjust horizontal position if needed
-    if (finalLeft < viewportMargin) {
-      finalLeft = viewportMargin;
-    } else if (finalLeft + coachMarkRect.width > viewportWidth - viewportMargin) {
-      finalLeft = viewportWidth - coachMarkRect.width - viewportMargin;
+    if (isAppContainer) {
+      // Constrain to app container (375px)
+      const containerLeft = containerRect.left;
+      const containerRight = containerRect.right;
+      const containerTop = containerRect.top;
+      const containerBottom = containerRect.bottom;
+
+      // Horizontal constraints within container
+      if (finalLeft < containerLeft + containerMargin) {
+        finalLeft = containerLeft + containerMargin;
+      } else if (finalLeft + coachMarkRect.width > containerRight - containerMargin) {
+        finalLeft = containerRight - coachMarkRect.width - containerMargin;
+      }
+
+      // Vertical constraints within container
+      if (finalTop < containerTop + containerMargin) {
+        finalTop = containerTop + containerMargin;
+      } else if (finalTop + coachMarkRect.height > containerBottom - containerMargin) {
+        finalTop = containerBottom - coachMarkRect.height - containerMargin;
+      }
+
+      // Ensure tooltip doesn't go outside viewport (safety check)
+      if (finalLeft < viewportMargin) {
+        finalLeft = viewportMargin;
+      } else if (finalLeft + coachMarkRect.width > window.innerWidth - viewportMargin) {
+        finalLeft = window.innerWidth - coachMarkRect.width - viewportMargin;
+      }
+    } else {
+      // Fallback to viewport constraints
+      if (finalLeft < viewportMargin) {
+        finalLeft = viewportMargin;
+      } else if (finalLeft + coachMarkRect.width > window.innerWidth - viewportMargin) {
+        finalLeft = window.innerWidth - coachMarkRect.width - viewportMargin;
+      }
     }
 
-    // Adjust vertical position if needed
+    // Vertical safety for both cases
     if (finalTop < viewportMargin) {
       finalTop = viewportMargin;
-    } else if (finalTop + coachMarkRect.height > viewportHeight - viewportMargin) {
-      finalTop = viewportHeight - coachMarkRect.height - viewportMargin;
+    } else if (finalTop + coachMarkRect.height > window.innerHeight - viewportMargin) {
+      finalTop = window.innerHeight - coachMarkRect.height - viewportMargin;
     }
 
     style.top = `${finalTop}px`;
@@ -254,7 +329,7 @@ const CoachMark: React.FC<CoachMarkProps> = ({
     return style;
   };
 
-  // Calculate arrow position
+  // Calculate arrow position with container awareness
   const getArrowStyle = (): React.CSSProperties => {
     if (!targetRect || !coachMarkRect) return { display: 'none' };
 
@@ -265,7 +340,7 @@ const CoachMark: React.FC<CoachMarkProps> = ({
       borderStyle: 'solid'
     };
 
-    const arrowSize = 10; // Slightly larger for better visibility
+    const arrowSize = 10;
 
     switch (calculatedPosition) {
       case 'top':
@@ -320,6 +395,13 @@ const CoachMark: React.FC<CoachMarkProps> = ({
         arrowStyle.borderWidth = `0 ${arrowSize}px ${arrowSize}px ${arrowSize}px`;
         arrowStyle.borderColor = `transparent transparent #1A1A1A transparent`;
         break;
+      default:
+        // Default to bottom arrow
+        arrowStyle.top = `-${arrowSize}px`;
+        arrowStyle.left = '50%';
+        arrowStyle.transform = 'translateX(-50%)';
+        arrowStyle.borderWidth = `0 ${arrowSize}px ${arrowSize}px ${arrowSize}px`;
+        arrowStyle.borderColor = `transparent transparent #1A1A1A transparent`;
     }
 
     return arrowStyle;
@@ -365,11 +447,12 @@ const CoachMark: React.FC<CoachMarkProps> = ({
           bottom: 0,
           backgroundColor: 'rgba(0, 0, 0, 0.5)',
           zIndex: 10000,
-          animation: 'fadeIn 0.3s ease'
+          animation: 'fadeIn 0.3s ease',
+          pointerEvents: 'auto' // Ensure backdrop receives clicks
         }} />
       )}
 
-      {/* Highlight overlay for target element */}
+      {/* Highlight overlay for target element - FIXED: Ensure target stays above backdrop */}
       {targetRect && !noBackdrop && (
         <div style={{
           position: 'fixed',
@@ -380,7 +463,7 @@ const CoachMark: React.FC<CoachMarkProps> = ({
           border: '2px solid rgba(212, 175, 55, 0.8)',
           borderRadius: '8px',
           boxShadow: '0 0 0 9999px rgba(0, 0, 0, 0.5), 0 0 20px rgba(212, 175, 55, 0.6)',
-          zIndex: 10000,
+          zIndex: 10001, // One above backdrop to ensure visibility
           pointerEvents: 'none',
           animation: 'pulse 2s infinite'
         }} />

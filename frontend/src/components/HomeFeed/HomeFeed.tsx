@@ -598,13 +598,13 @@ const HomeFeed: React.FC = () => {
           gap: '20px',
           padding: '0 16px'
         }}>
-          {displayFeed.map((item, index) => {
+          {displayFeed.map((item) => { // FIXED: Removed unused index parameter
             if (item.type === 'scene') {
               return (
                 <div 
                   key={`scene-${item.data.id}`} 
                   id={`scene-${item.data.id}`}
-                  className={index === 0 ? 'scene-card' : ''} // ADDED: Class for tour targeting (first card only)
+                  className="scene-card" // FIXED: Always add class, not just for first card
                 >
                   <SceneCard 
                     scene={item.data}
@@ -618,7 +618,7 @@ const HomeFeed: React.FC = () => {
                 <div 
                   key={`monologue-${item.data.id}`} 
                   id={`monologue-${item.data.id}`}
-                  className={index === 0 ? 'monologue-card' : ''} // ADDED: Class for tour targeting
+                  className="monologue-card" // FIXED: Always add class, not just for first card
                 >
                   <MonologueCard 
                     monologue={item.data}
@@ -642,7 +642,7 @@ const HomeFeed: React.FC = () => {
                 <div 
                   key={`character-${item.data.id}`} 
                   id={`character-${item.data.id}`}
-                  className={index === 0 ? 'character-card' : ''} // ADDED: Class for tour targeting
+                  className="character-card" // FIXED: Always add class, not just for first card
                 >
                   <CharacterCard 
                     character={item.data}
@@ -666,7 +666,7 @@ const HomeFeed: React.FC = () => {
                 <div 
                   key={`frame-${item.data.id}`} 
                   id={`frame-${item.data.id}`}
-                  className={index === 0 ? 'frame-card' : ''} // ADDED: Class for tour targeting
+                  className="frame-card" // FIXED: Always add class, not just for first card
                 >
                   <FrameCard 
                     frame={item.data}
