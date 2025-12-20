@@ -50,7 +50,7 @@ const CoachMark: React.FC<CoachMarkProps> = ({
   showNavigation = false,
   actionText,
   onAction,
-  offset = 10,
+  offset = 15, // INCREASED: More default offset to avoid covering
   noBackdrop = false
 }) => {
   const coachMarkRef = useRef<HTMLDivElement>(null);
@@ -86,13 +86,13 @@ const CoachMark: React.FC<CoachMarkProps> = ({
       let adjustedPosition = position;
       
       // Check if default position would push tooltip out of viewport
-      if (position === 'bottom' && rect.bottom + 200 > viewportHeight) {
+      if (position === 'bottom' && rect.bottom + 250 > viewportHeight) {
         adjustedPosition = 'top';
-      } else if (position === 'top' && rect.top - 200 < 0) {
+      } else if (position === 'top' && rect.top - 250 < 0) {
         adjustedPosition = 'bottom';
-      } else if (position === 'right' && rect.right + 350 > viewportWidth) {
+      } else if (position === 'right' && rect.right + 400 > viewportWidth) {
         adjustedPosition = 'left';
-      } else if (position === 'left' && rect.left - 350 < 0) {
+      } else if (position === 'left' && rect.left - 400 < 0) {
         adjustedPosition = 'right';
       }
       
@@ -117,7 +117,7 @@ const CoachMark: React.FC<CoachMarkProps> = ({
     }
   }, [isVisible]);
 
-  // Calculate tooltip position
+  // Calculate tooltip position - UPDATED: Smart positioning that avoids covering target
   const getTooltipStyle = (): React.CSSProperties => {
     if (!targetRect || !coachMarkRect) return { display: 'none' };
 
@@ -129,54 +129,127 @@ const CoachMark: React.FC<CoachMarkProps> = ({
       transition: 'opacity 0.3s ease, transform 0.3s ease'
     };
 
-    // Position calculations
-    switch (calculatedPosition) {
-      case 'top':
-        style.top = `${targetRect.top - coachMarkRect.height - offset}px`;
-        style.left = `${targetRect.left + (targetRect.width / 2) - (coachMarkRect.width / 2)}px`;
-        break;
-      case 'bottom':
-        style.top = `${targetRect.bottom + offset}px`;
-        style.left = `${targetRect.left + (targetRect.width / 2) - (coachMarkRect.width / 2)}px`;
-        break;
-      case 'left':
-        style.top = `${targetRect.top + (targetRect.height / 2) - (coachMarkRect.height / 2)}px`;
-        style.left = `${targetRect.left - coachMarkRect.width - offset}px`;
-        break;
-      case 'right':
-        style.top = `${targetRect.top + (targetRect.height / 2) - (coachMarkRect.height / 2)}px`;
-        style.left = `${targetRect.right + offset}px`;
-        break;
-      case 'top-left':
-        style.top = `${targetRect.top - coachMarkRect.height - offset}px`;
-        style.left = `${targetRect.left}px`;
-        break;
-      case 'top-right':
-        style.top = `${targetRect.top - coachMarkRect.height - offset}px`;
-        style.left = `${targetRect.right - coachMarkRect.width}px`;
-        break;
-      case 'bottom-left':
-        style.top = `${targetRect.bottom + offset}px`;
-        style.left = `${targetRect.left}px`;
-        break;
-      case 'bottom-right':
-        style.top = `${targetRect.bottom + offset}px`;
-        style.left = `${targetRect.right - coachMarkRect.width}px`;
-        break;
+    // Viewport dimensions with safe margins
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+    const viewportMargin = 15;
+
+    // Calculate positions with smart avoidance
+    const calculatePosition = (pos: ArrowPosition): { top: number; left: number; pos: ArrowPosition } => {
+      const safeOffset = offset + 20; // Extra offset to ensure no covering
+      
+      switch (pos) {
+        case 'top':
+          return {
+            top: targetRect.top - coachMarkRect.height - safeOffset,
+            left: targetRect.left + (targetRect.width / 2) - (coachMarkRect.width / 2),
+            pos: 'top'
+          };
+        case 'bottom':
+          return {
+            top: targetRect.bottom + safeOffset,
+            left: targetRect.left + (targetRect.width / 2) - (coachMarkRect.width / 2),
+            pos: 'bottom'
+          };
+        case 'left':
+          return {
+            top: targetRect.top + (targetRect.height / 2) - (coachMarkRect.height / 2),
+            left: targetRect.left - coachMarkRect.width - safeOffset,
+            pos: 'left'
+          };
+        case 'right':
+          return {
+            top: targetRect.top + (targetRect.height / 2) - (coachMarkRect.height / 2),
+            left: targetRect.right + safeOffset,
+            pos: 'right'
+          };
+        case 'top-left':
+          return {
+            top: targetRect.top - coachMarkRect.height - safeOffset,
+            left: targetRect.left,
+            pos: 'top-left'
+          };
+        case 'top-right':
+          return {
+            top: targetRect.top - coachMarkRect.height - safeOffset,
+            left: targetRect.right - coachMarkRect.width,
+            pos: 'top-right'
+          };
+        case 'bottom-left':
+          return {
+            top: targetRect.bottom + safeOffset,
+            left: targetRect.left,
+            pos: 'bottom-left'
+          };
+        case 'bottom-right':
+          return {
+            top: targetRect.bottom + safeOffset,
+            left: targetRect.right - coachMarkRect.width,
+            pos: 'bottom-right'
+          };
+        default:
+          return {
+            top: targetRect.bottom + safeOffset,
+            left: targetRect.left + (targetRect.width / 2) - (coachMarkRect.width / 2),
+            pos: 'bottom'
+          };
+      }
+    };
+
+    // Get position for the requested placement
+    let positionData = calculatePosition(calculatedPosition);
+    
+    // Check if this position would cover the target
+    const coversTarget = (
+      positionData.top < targetRect.bottom && 
+      positionData.top + coachMarkRect.height > targetRect.top &&
+      positionData.left < targetRect.right && 
+      positionData.left + coachMarkRect.width > targetRect.left
+    );
+
+    // If position covers target, try alternative positions
+    if (coversTarget) {
+      const alternativePositions: ArrowPosition[] = ['bottom', 'top', 'right', 'left', 'bottom-right', 'bottom-left', 'top-right', 'top-left'];
+      
+      for (const altPos of alternativePositions) {
+        if (altPos === calculatedPosition) continue;
+        
+        const altPosition = calculatePosition(altPos);
+        const altCoversTarget = (
+          altPosition.top < targetRect.bottom && 
+          altPosition.top + coachMarkRect.height > targetRect.top &&
+          altPosition.left < targetRect.right && 
+          altPosition.left + coachMarkRect.width > targetRect.left
+        );
+        
+        if (!altCoversTarget) {
+          positionData = altPosition;
+          setCalculatedPosition(altPos);
+          break;
+        }
+      }
     }
 
     // Ensure tooltip stays within viewport
-    const leftNum = typeof style.left === 'string' ? parseFloat(style.left) : style.left;
-    const topNum = typeof style.top === 'string' ? parseFloat(style.top) : style.top;
-    
-    if (leftNum !== undefined && leftNum < 10) style.left = 10;
-    if (topNum !== undefined && topNum < 10) style.top = 10;
-    
-    const maxLeft = window.innerWidth - (coachMarkRect?.width || 300) - 10;
-    if (leftNum !== undefined && leftNum > maxLeft) style.left = maxLeft;
-    
-    const maxTop = window.innerHeight - (coachMarkRect?.height || 200) - 10;
-    if (topNum !== undefined && topNum > maxTop) style.top = maxTop;
+    let finalTop = positionData.top;
+    let finalLeft = positionData.left;
+
+    // Adjust horizontal position if needed
+    if (finalLeft < viewportMargin) {
+      finalLeft = viewportMargin;
+    } else if (finalLeft + coachMarkRect.width > viewportWidth - viewportMargin) {
+      finalLeft = viewportWidth - coachMarkRect.width - viewportMargin;
+    }
+
+    // Adjust vertical position if needed
+    if (finalTop < viewportMargin) {
+      finalTop = viewportMargin;
+    } else if (finalTop + coachMarkRect.height > viewportHeight - viewportMargin) {
+      finalTop = viewportHeight - coachMarkRect.height - viewportMargin;
+    }
+
+    style.top = `${finalTop}px`;
+    style.left = `${finalLeft}px`;
 
     return style;
   };
@@ -192,7 +265,7 @@ const CoachMark: React.FC<CoachMarkProps> = ({
       borderStyle: 'solid'
     };
 
-    const arrowSize = 8;
+    const arrowSize = 10; // Slightly larger for better visibility
 
     switch (calculatedPosition) {
       case 'top':
@@ -225,25 +298,25 @@ const CoachMark: React.FC<CoachMarkProps> = ({
         break;
       case 'top-left':
         arrowStyle.bottom = `-${arrowSize}px`;
-        arrowStyle.left = '20px';
+        arrowStyle.left = '25px';
         arrowStyle.borderWidth = `${arrowSize}px ${arrowSize}px 0 ${arrowSize}px`;
         arrowStyle.borderColor = `#1A1A1A transparent transparent transparent`;
         break;
       case 'top-right':
         arrowStyle.bottom = `-${arrowSize}px`;
-        arrowStyle.right = '20px';
+        arrowStyle.right = '25px';
         arrowStyle.borderWidth = `${arrowSize}px ${arrowSize}px 0 ${arrowSize}px`;
         arrowStyle.borderColor = `#1A1A1A transparent transparent transparent`;
         break;
       case 'bottom-left':
         arrowStyle.top = `-${arrowSize}px`;
-        arrowStyle.left = '20px';
+        arrowStyle.left = '25px';
         arrowStyle.borderWidth = `0 ${arrowSize}px ${arrowSize}px ${arrowSize}px`;
         arrowStyle.borderColor = `transparent transparent #1A1A1A transparent`;
         break;
       case 'bottom-right':
         arrowStyle.top = `-${arrowSize}px`;
-        arrowStyle.right = '20px';
+        arrowStyle.right = '25px';
         arrowStyle.borderWidth = `0 ${arrowSize}px ${arrowSize}px ${arrowSize}px`;
         arrowStyle.borderColor = `transparent transparent #1A1A1A transparent`;
         break;
