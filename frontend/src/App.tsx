@@ -27,6 +27,10 @@ import HomeFeed from "./components/HomeFeed/HomeFeed";
 import { WhisperComposer } from "./components/Whisper/WhisperComposer";
 import { InboxPage } from "./components/Whisper/InboxPage";
 import { WhisperThread } from "./components/Whisper/WhisperThread";
+// ADDED: Tour Invitation Modal
+import TourInvitationModal from "./components/TourInvitationModal/TourInvitationModal";
+// ADDED: App Tour Component
+import AppTour from "./components/AppTour/AppTour";
 
 function AppContent() {
   useUserSettings();
@@ -34,6 +38,9 @@ function AppContent() {
   const [loading, setLoading] = useState(true);
   const [session, setSession] = useState<any>(null);
   const [profile, setProfile] = useState<any>(null);
+  // ADDED: Tour states
+  const [showTourInvitation, setShowTourInvitation] = useState(false);
+  const [isTourActive, setIsTourActive] = useState(false);
 
   useEffect(() => {
     const init = async () => {
@@ -45,7 +52,7 @@ function AppContent() {
       if (session?.user) {
         const { data: profileData } = await supabase
           .from("profiles")
-          .select("full_name, username, genre_persona, expression")
+          .select("full_name, username, genre_persona, expression, onboarding_completed, tour_status, tour_last_shown")
           .eq("id", session.user.id)
           .single();
         setProfile(profileData);
@@ -65,195 +72,296 @@ function AppContent() {
     return () => listener.subscription.unsubscribe();
   }, []);
 
+  // ADDED: Check tour status when profile loads
+  useEffect(() => {
+    const checkTourInvitation = async () => {
+      if (!session?.user?.id || !profile) return;
+
+      try {
+        // Check if user has completed onboarding
+        if (!profile.onboarding_completed) {
+          return;
+        }
+
+        const tourStatus = profile.tour_status;
+        const tourLastShown = profile.tour_last_shown;
+        
+        // Determine if we should show tour invitation
+        const shouldShowTour = 
+          !tourStatus || // Never been asked
+          tourStatus === 'not_shown' || // Explicitly not shown yet
+          (tourStatus === 'remind_later' && 
+           // Show again if last shown > 24 hours ago
+           (!tourLastShown || 
+            new Date(tourLastShown) < new Date(Date.now() - 24 * 60 * 60 * 1000)));
+
+        if (shouldShowTour) {
+          // Show after a short delay
+          setTimeout(() => {
+            setShowTourInvitation(true);
+          }, 1000);
+        }
+        
+      } catch (error) {
+        console.error('Error checking tour status:', error);
+      }
+    };
+
+    checkTourInvitation();
+  }, [session, profile]);
+
+  // ADDED: Tour invitation handlers
+  const handleAcceptTour = () => {
+    setShowTourInvitation(false);
+    // Start the tour
+    setTimeout(() => {
+      setIsTourActive(true);
+    }, 300); // Small delay to ensure modal is fully closed
+  };
+
+  const handleDeclineTour = () => {
+    setShowTourInvitation(false);
+    // Status already updated by TourInvitationModal
+  };
+
+  const handleRemindLater = () => {
+    setShowTourInvitation(false);
+    // Status already updated by TourInvitationModal
+  };
+
+  // ADDED: App Tour handlers
+  const handleTourComplete = async () => {
+    setIsTourActive(false);
+    
+    // Mark tour as completed in Supabase
+    if (session?.user?.id) {
+      try {
+        await supabase
+          .from('profiles')
+          .update({ 
+            tour_status: 'completed',
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', session.user.id);
+      } catch (error) {
+        console.error('Error updating tour completion status:', error);
+      }
+    }
+  };
+
+  const handleSkipTour = () => {
+    setIsTourActive(false);
+    // Status already set to 'accepted' by TourInvitationModal
+    // We don't change it to 'declined' here because user started but skipped
+  };
+
   if (loading) return <div>Loading...</div>;
 
   return (
-    <Router>
-      <Routes>
-        {/* Temporary testing route - REMOVE BEFORE DEPLOYMENT */}
-        <Route path="/test-scene-composer" element={<SceneComposer />} />
-        <Route path="/test-monologue-composer" element={<MonologueComposer />} />
-        <Route path="/test-home-feed" element={<HomeFeed />} />
-        <Route path="/test-frame-composer" element={<FrameComposer />} />
+    <>
+      <Router>
+        <Routes>
+          {/* Temporary testing route - REMOVE BEFORE DEPLOYMENT */}
+          <Route path="/test-scene-composer" element={<SceneComposer />} />
+          <Route path="/test-monologue-composer" element={<MonologueComposer />} />
+          <Route path="/test-home-feed" element={<HomeFeed />} />
+          <Route path="/test-frame-composer" element={<FrameComposer />} />
 
-        {/* 👇 UPDATED: Landing Page as Root Route 👇 */}
-        <Route path="/" element={<LandingPage />} />
+          {/* 👇 UPDATED: Landing Page as Root Route 👇 */}
+          <Route path="/" element={<LandingPage />} />
 
-        {/* 👇 ADDED: About Page Route (Public) 👇 */}
-        <Route path="/about" element={<AboutPage />} />
+          {/* 👇 ADDED: About Page Route (Public) 👇 */}
+          <Route path="/about" element={<AboutPage />} />
 
-        {/* 👇 UPDATED: Root route for logged-in users - REMOVED studio-ready redirect 👇 */}
-        <Route
-          path="/app"
-          element={
-            !session ? (
-              <Navigate to="/" replace />
-            ) : !profile?.genre_persona ? (
-              <Navigate to="/welcome" replace />
-            ) : !profile?.expression ? (
-              <Navigate to="/expression-selection" replace />
-            ) : (
-              // REMOVED studio-ready redirect - now goes directly to home-feed
-              <Navigate to="/home-feed" replace />
-            )
-          }
-        />
+          {/* 👇 UPDATED: Root route for logged-in users - REMOVED studio-ready redirect 👇 */}
+          <Route
+            path="/app"
+            element={
+              !session ? (
+                <Navigate to="/" replace />
+              ) : !profile?.genre_persona ? (
+                <Navigate to="/welcome" replace />
+              ) : !profile?.expression ? (
+                <Navigate to="/expression-selection" replace />
+              ) : (
+                // REMOVED studio-ready redirect - now goes directly to home-feed
+                <Navigate to="/home-feed" replace />
+              )
+            }
+          />
 
-        {/* 👇 UPDATED: Main Home Feed Route - NOW PUBLIC 👇 */}
-        <Route path="/home-feed" element={<HomeFeed />} />
+          {/* 👇 UPDATED: Main Home Feed Route - NOW PUBLIC 👇 */}
+          <Route path="/home-feed" element={<HomeFeed />} />
 
-        {/* NEW: Dashboard Route */}
-        <Route
-          path="/dashboard"
-          element={session ? <Dashboard /> : <Navigate to="/signin" replace />}
-        />
+          {/* NEW: Dashboard Route */}
+          <Route
+            path="/dashboard"
+            element={session ? <Dashboard /> : <Navigate to="/signin" replace />}
+          />
 
-        {/* NEW: Drafts Route */}
-        <Route
-          path="/drafts"
-          element={session ? <Drafts /> : <Navigate to="/signin" replace />}
-        />
+          {/* NEW: Drafts Route */}
+          <Route
+            path="/drafts"
+            element={session ? <Drafts /> : <Navigate to="/signin" replace />}
+          />
 
-        {/* NEW: Settings Route */}
-        <Route
-          path="/settings"
-          element={session ? <Settings /> : <Navigate to="/signin" replace />}
-        />
+          {/* NEW: Settings Route */}
+          <Route
+            path="/settings"
+            element={session ? <Settings /> : <Navigate to="/signin" replace />}
+          />
 
-        {/* NEW: Inbox Route */}
-        <Route
-          path="/inbox"
-          element={session ? <InboxPage /> : <Navigate to="/signin" replace />}
-        />
+          {/* NEW: Inbox Route */}
+          <Route
+            path="/inbox"
+            element={session ? <InboxPage /> : <Navigate to="/signin" replace />}
+          />
 
-        {/* ADDED: Whisper Thread Route */}
-        <Route
-          path="/whisper-thread/:userId"
-          element={session ? <WhisperThread /> : <Navigate to="/signin" replace />}
-        />
+          {/* ADDED: Whisper Thread Route */}
+          <Route
+            path="/whisper-thread/:userId"
+            element={session ? <WhisperThread /> : <Navigate to="/signin" replace />}
+          />
 
-        {/* Auth Screens - REMOVED session checks to fix OAuth */}
-        <Route path="/signup" element={<SignUp />} />
-        <Route path="/signin" element={<SignIn />} />
-        <Route path="/forgot-password" element={<ForgotPassword />} />
-        <Route path="/reset-password" element={<ResetPassword />} />
-        <Route path="/auth/callback" element={<AuthCallback />} />
+          {/* Auth Screens - REMOVED session checks to fix OAuth */}
+          <Route path="/signup" element={<SignUp />} />
+          <Route path="/signin" element={<SignIn />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/auth/callback" element={<AuthCallback />} />
 
-        {/* Onboarding Flow */}
-        <Route
-          path="/welcome"
-          element={session ? <Welcome /> : <Navigate to="/signup" replace />}
-        />
-        <Route
-          path="/genre-selection"
-          element={session ? <GenreSelection /> : <Navigate to="/signup" replace />}
-        />
-        <Route
-          path="/expression-selection"
-          element={session ? <ExpressionSelection /> : <Navigate to="/signup" replace />}
-        />
-        
-        {/* REMOVED: Studio Ready Guide Route - No longer needed */}
-        {/* <Route path="/studio-ready" element={session ? <StudioReadyGuide /> : <Navigate to="/signin" replace />} /> */}
+          {/* Onboarding Flow */}
+          <Route
+            path="/welcome"
+            element={session ? <Welcome /> : <Navigate to="/signup" replace />}
+          />
+          <Route
+            path="/genre-selection"
+            element={session ? <GenreSelection /> : <Navigate to="/signup" replace />}
+          />
+          <Route
+            path="/expression-selection"
+            element={session ? <ExpressionSelection /> : <Navigate to="/signup" replace />}
+          />
+          
+          {/* REMOVED: Studio Ready Guide Route - No longer needed */}
+          {/* <Route path="/studio-ready" element={session ? <StudioReadyGuide /> : <Navigate to="/signin" replace />} /> */}
 
-        {/* Profile Route */}
-        <Route
-          path="/profile/:id"
-          element={session ? <Profile /> : <Navigate to="/signin" replace />}
-        />
+          {/* Profile Route */}
+          <Route
+            path="/profile/:id"
+            element={session ? <Profile /> : <Navigate to="/signin" replace />}
+          />
 
-        {/* Scene Composer Route */}
-        <Route
-          path="/compose-scene"
-          element={session ? <SceneComposer /> : <Navigate to="/signin" replace />}
-        />
+          {/* Scene Composer Route */}
+          <Route
+            path="/compose-scene"
+            element={session ? <SceneComposer /> : <Navigate to="/signin" replace />}
+          />
 
-        {/* Monologue Composer Route */}
-        <Route
-          path="/compose-monologue"
-          element={session ? <MonologueComposer /> : <Navigate to="/signin" replace />}
-        />
+          {/* Monologue Composer Route */}
+          <Route
+            path="/compose-monologue"
+            element={session ? <MonologueComposer /> : <Navigate to="/signin" replace />}
+          />
 
-        {/* Character Composer Route */}
-        <Route
-          path="/compose-character"
-          element={session ? <CharacterComposer /> : <Navigate to="/signin" replace />}
-        />
+          {/* Character Composer Route */}
+          <Route
+            path="/compose-character"
+            element={session ? <CharacterComposer /> : <Navigate to="/signin" replace />}
+          />
 
-        {/* Frame Composer Route */}
-        <Route
-          path="/compose-frame"
-          element={session ? <FrameComposer /> : <Navigate to="/signin" replace />}
-        />
+          {/* Frame Composer Route */}
+          <Route
+            path="/compose-frame"
+            element={session ? <FrameComposer /> : <Navigate to="/signin" replace />}
+          />
 
-        {/* ADDED: Whisper Composer Route */}
-        <Route
-          path="/whisper/:userId"
-          element={session ? <WhisperComposer /> : <Navigate to="/signin" replace />}
-        />
+          {/* ADDED: Whisper Composer Route */}
+          <Route
+            path="/whisper/:userId"
+            element={session ? <WhisperComposer /> : <Navigate to="/signin" replace />}
+          />
 
-        {/* Fallback 404 */}
-        <Route
-          path="*"
-          element={
-            <div style={{ 
-              display: 'flex', 
-              minHeight: '100vh', 
-              flexDirection: 'column', 
-              gap: '24px', 
-              alignItems: 'center', 
-              justifyContent: 'center', 
-              backgroundColor: '#f5f5f5',
-              fontFamily: 'Playfair Display, serif'
-            }}>
-              <h1 style={{ fontSize: '36px', fontWeight: 'bold', color: '#1C1C1C' }}>404 | Page Not Found</h1>
-              <div style={{ display: 'flex', gap: '16px' }}>
-                <Link
-                  to="/"
-                  style={{
-                    backgroundColor: '#1C1C1C',
-                    color: 'white',
-                    padding: '12px 24px',
-                    borderRadius: '8px',
-                    textDecoration: 'none',
-                    fontFamily: 'Playfair Display, serif'
-                  }}
-                >
-                  Go to Home
-                </Link>
-                <Link
-                  to="/signin"
-                  style={{
-                    backgroundColor: '#55524F',
-                    color: 'white',
-                    padding: '12px 24px',
-                    borderRadius: '8px',
-                    textDecoration: 'none',
-                    fontFamily: 'Playfair Display, serif'
-                  }}
-                >
-                  Go to Sign In
-                </Link>
-                <Link
-                  to="/home-feed"
-                  style={{
-                    backgroundColor: '#FAF8F2',
-                    color: '#1C1C1C',
-                    padding: '12px 24px',
-                    borderRadius: '8px',
-                    textDecoration: 'none',
-                    border: '1px solid #1C1C1C',
-                    fontFamily: 'Playfair Display, serif'
-                  }}
-                >
-                  Go to Home Feed
-                </Link>
+          {/* Fallback 404 */}
+          <Route
+            path="*"
+            element={
+              <div style={{ 
+                display: 'flex', 
+                minHeight: '100vh', 
+                flexDirection: 'column', 
+                gap: '24px', 
+                alignItems: 'center', 
+                justifyContent: 'center', 
+                backgroundColor: '#f5f5f5',
+                fontFamily: 'Playfair Display, serif'
+              }}>
+                <h1 style={{ fontSize: '36px', fontWeight: 'bold', color: '#1C1C1C' }}>404 | Page Not Found</h1>
+                <div style={{ display: 'flex', gap: '16px' }}>
+                  <Link
+                    to="/"
+                    style={{
+                      backgroundColor: '#1C1C1C',
+                      color: 'white',
+                      padding: '12px 24px',
+                      borderRadius: '8px',
+                      textDecoration: 'none',
+                      fontFamily: 'Playfair Display, serif'
+                    }}
+                  >
+                    Go to Home
+                  </Link>
+                  <Link
+                    to="/signin"
+                    style={{
+                      backgroundColor: '#55524F',
+                      color: 'white',
+                      padding: '12px 24px',
+                      borderRadius: '8px',
+                      textDecoration: 'none',
+                      fontFamily: 'Playfair Display, serif'
+                    }}
+                  >
+                    Go to Sign In
+                  </Link>
+                  <Link
+                    to="/home-feed"
+                    style={{
+                      backgroundColor: '#FAF8F2',
+                      color: '#1C1C1C',
+                      padding: '12px 24px',
+                      borderRadius: '8px',
+                      textDecoration: 'none',
+                      border: '1px solid #1C1C1C',
+                      fontFamily: 'Playfair Display, serif'
+                    }}
+                  >
+                    Go to Home Feed
+                  </Link>
+                </div>
               </div>
-            </div>
-          }
-        />
-      </Routes>
-    </Router>
+            }
+          />
+        </Routes>
+      </Router>
+
+      {/* ADDED: Tour Invitation Modal */}
+      <TourInvitationModal
+        isOpen={showTourInvitation}
+        onAccept={handleAcceptTour}
+        onDecline={handleDeclineTour}
+        onRemindLater={handleRemindLater}
+        userId={session?.user?.id}
+      />
+
+      {/* ADDED: App Tour */}
+      <AppTour
+        isActive={isTourActive}
+        onComplete={handleTourComplete}
+        onSkip={handleSkipTour}
+      />
+    </>
   );
 }
 
