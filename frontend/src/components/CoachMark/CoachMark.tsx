@@ -50,50 +50,17 @@ const CoachMark: React.FC<CoachMarkProps> = ({
   showNavigation = false,
   actionText,
   onAction,
-  offset = 15,
+  offset = 10,
   noBackdrop = false
 }) => {
   const coachMarkRef = useRef<HTMLDivElement>(null);
   const [targetRect, setTargetRect] = useState<DOMRect | null>(null);
   const [coachMarkRect, setCoachMarkRect] = useState<DOMRect | null>(null);
   const [calculatedPosition, setCalculatedPosition] = useState<ArrowPosition>(position);
-  const [appContainer, setAppContainer] = useState<HTMLElement | null>(null);
-
-  // Find the 375px app container
-  useEffect(() => {
-    if (!isVisible) return;
-    
-    // Try to find the app container (375px max-width centered container)
-    const findAppContainer = (): HTMLElement | null => {
-      // Common selectors for app containers
-      const selectors = [
-        '.home-feed-container',
-        '[style*="max-width: 375px"]',
-        '[style*="max-width:375px"]',
-        '[style*="width: 375px"]',
-        '.MuiContainer-root' // If using Material-UI
-      ];
-      
-      for (const selector of selectors) {
-        const element = document.querySelector<HTMLElement>(selector);
-        if (element && 
-            (element.style.maxWidth === '375px' || 
-             getComputedStyle(element).maxWidth === '375px' ||
-             element.offsetWidth <= 375)) {
-          return element;
-        }
-      }
-      
-      // Fallback to body if no container found
-      return document.body;
-    };
-    
-    setAppContainer(findAppContainer());
-  }, [isVisible]);
 
   // Calculate position and arrow
   useEffect(() => {
-    if (!isVisible || !appContainer) return;
+    if (!isVisible) return;
 
     const updatePosition = () => {
       let targetElement: HTMLElement | null = null;
@@ -112,31 +79,21 @@ const CoachMark: React.FC<CoachMarkProps> = ({
       const rect = targetElement.getBoundingClientRect();
       setTargetRect(rect);
 
-      // Get container bounds
-      const containerRect = appContainer.getBoundingClientRect();
-      const isAppContainer = appContainer !== document.body;
+      // Auto-adjust position if element is near viewport edges
+      const viewportWidth = window.innerWidth;
+      const viewportHeight = window.innerHeight;
       
-      // Auto-adjust position based on container bounds
       let adjustedPosition = position;
       
-      if (position === 'bottom' && rect.bottom + 250 > containerRect.bottom) {
+      // Check if default position would push tooltip out of viewport
+      if (position === 'bottom' && rect.bottom + 200 > viewportHeight) {
         adjustedPosition = 'top';
-      } else if (position === 'top' && rect.top - 250 < containerRect.top) {
+      } else if (position === 'top' && rect.top - 200 < 0) {
         adjustedPosition = 'bottom';
-      } else if (position === 'right' && rect.right + 400 > containerRect.right) {
+      } else if (position === 'right' && rect.right + 350 > viewportWidth) {
         adjustedPosition = 'left';
-      } else if (position === 'left' && rect.left - 400 < containerRect.left) {
+      } else if (position === 'left' && rect.left - 350 < 0) {
         adjustedPosition = 'right';
-      }
-      
-      // Additional adjustment for app container constraints
-      if (isAppContainer) {
-        // Ensure tooltip stays within 375px container horizontally
-        if (position === 'left' && rect.left - 320 < containerRect.left) {
-          adjustedPosition = 'right';
-        } else if (position === 'right' && rect.right + 320 > containerRect.right) {
-          adjustedPosition = 'left';
-        }
       }
       
       setCalculatedPosition(adjustedPosition);
@@ -150,7 +107,7 @@ const CoachMark: React.FC<CoachMarkProps> = ({
       window.removeEventListener('resize', updatePosition);
       window.removeEventListener('scroll', updatePosition, true);
     };
-  }, [isVisible, target, position, appContainer]);
+  }, [isVisible, target, position]);
 
   // Update coach mark dimensions after render
   useEffect(() => {
@@ -160,176 +117,72 @@ const CoachMark: React.FC<CoachMarkProps> = ({
     }
   }, [isVisible]);
 
-  // Calculate tooltip position with container awareness
+  // Calculate tooltip position
   const getTooltipStyle = (): React.CSSProperties => {
-    if (!targetRect || !coachMarkRect || !appContainer) return { display: 'none' };
+    if (!targetRect || !coachMarkRect) return { display: 'none' };
 
     const style: React.CSSProperties = {
       position: 'fixed',
       zIndex: 10001,
       opacity: isVisible ? 1 : 0,
       transform: isVisible ? 'translateY(0) scale(1)' : 'translateY(10px) scale(0.95)',
-      transition: 'opacity 0.3s ease, transform 0.3s ease'
+      transition: 'opacity 0.3s ease, transform 0.3s ease',
+      pointerEvents: 'none' // ADDED: Allow clicks to pass through
     };
 
-    // Get container bounds
-    const containerRect = appContainer.getBoundingClientRect();
-    const isAppContainer = appContainer !== document.body;
+    // Position calculations
+    switch (calculatedPosition) {
+      case 'top':
+        style.top = `${targetRect.top - coachMarkRect.height - offset}px`;
+        style.left = `${targetRect.left + (targetRect.width / 2) - (coachMarkRect.width / 2)}px`;
+        break;
+      case 'bottom':
+        style.top = `${targetRect.bottom + offset}px`;
+        style.left = `${targetRect.left + (targetRect.width / 2) - (coachMarkRect.width / 2)}px`;
+        break;
+      case 'left':
+        style.top = `${targetRect.top + (targetRect.height / 2) - (coachMarkRect.height / 2)}px`;
+        style.left = `${targetRect.left - coachMarkRect.width - offset}px`;
+        break;
+      case 'right':
+        style.top = `${targetRect.top + (targetRect.height / 2) - (coachMarkRect.height / 2)}px`;
+        style.left = `${targetRect.right + offset}px`;
+        break;
+      case 'top-left':
+        style.top = `${targetRect.top - coachMarkRect.height - offset}px`;
+        style.left = `${targetRect.left}px`;
+        break;
+      case 'top-right':
+        style.top = `${targetRect.top - coachMarkRect.height - offset}px`;
+        style.left = `${targetRect.right - coachMarkRect.width}px`;
+        break;
+      case 'bottom-left':
+        style.top = `${targetRect.bottom + offset}px`;
+        style.left = `${targetRect.left}px`;
+        break;
+      case 'bottom-right':
+        style.top = `${targetRect.bottom + offset}px`;
+        style.left = `${targetRect.right - coachMarkRect.width}px`;
+        break;
+    }
+
+    // Ensure tooltip stays within viewport
+    const leftNum = typeof style.left === 'string' ? parseFloat(style.left) : style.left;
+    const topNum = typeof style.top === 'string' ? parseFloat(style.top) : style.top;
     
-    // Safe margins
-    const containerMargin = 15;
-    const viewportMargin = 15;
-
-    // Calculate positions relative to container
-    const calculatePosition = (pos: ArrowPosition): { top: number; left: number; pos: ArrowPosition } => {
-      const safeOffset = offset + 20;
-      
-      switch (pos) {
-        case 'top':
-          return {
-            top: targetRect.top - coachMarkRect.height - safeOffset,
-            left: targetRect.left + (targetRect.width / 2) - (coachMarkRect.width / 2),
-            pos: 'top'
-          };
-        case 'bottom':
-          return {
-            top: targetRect.bottom + safeOffset,
-            left: targetRect.left + (targetRect.width / 2) - (coachMarkRect.width / 2),
-            pos: 'bottom'
-          };
-        case 'left':
-          return {
-            top: targetRect.top + (targetRect.height / 2) - (coachMarkRect.height / 2),
-            left: targetRect.left - coachMarkRect.width - safeOffset,
-            pos: 'left'
-          };
-        case 'right':
-          return {
-            top: targetRect.top + (targetRect.height / 2) - (coachMarkRect.height / 2),
-            left: targetRect.right + safeOffset,
-            pos: 'right'
-          };
-        case 'top-left':
-          return {
-            top: targetRect.top - coachMarkRect.height - safeOffset,
-            left: targetRect.left,
-            pos: 'top-left'
-          };
-        case 'top-right':
-          return {
-            top: targetRect.top - coachMarkRect.height - safeOffset,
-            left: targetRect.right - coachMarkRect.width,
-            pos: 'top-right'
-          };
-        case 'bottom-left':
-          return {
-            top: targetRect.bottom + safeOffset,
-            left: targetRect.left,
-            pos: 'bottom-left'
-          };
-        case 'bottom-right':
-          return {
-            top: targetRect.bottom + safeOffset,
-            left: targetRect.right - coachMarkRect.width,
-            pos: 'bottom-right'
-          };
-        default:
-          return {
-            top: targetRect.bottom + safeOffset,
-            left: targetRect.left + (targetRect.width / 2) - (coachMarkRect.width / 2),
-            pos: 'bottom'
-          };
-      }
-    };
-
-    // Get position for the requested placement
-    let positionData = calculatePosition(calculatedPosition);
+    if (leftNum !== undefined && leftNum < 10) style.left = 10;
+    if (topNum !== undefined && topNum < 10) style.top = 10;
     
-    // Check if this position would cover the target
-    const coversTarget = (
-      positionData.top < targetRect.bottom && 
-      positionData.top + coachMarkRect.height > targetRect.top &&
-      positionData.left < targetRect.right && 
-      positionData.left + coachMarkRect.width > targetRect.left
-    );
-
-    // If position covers target, try alternative positions
-    if (coversTarget) {
-      const alternativePositions: ArrowPosition[] = ['bottom', 'top', 'right', 'left', 'bottom-right', 'bottom-left', 'top-right', 'top-left'];
-      
-      for (const altPos of alternativePositions) {
-        if (altPos === calculatedPosition) continue;
-        
-        const altPosition = calculatePosition(altPos);
-        const altCoversTarget = (
-          altPosition.top < targetRect.bottom && 
-          altPosition.top + coachMarkRect.height > targetRect.top &&
-          altPosition.left < targetRect.right && 
-          altPosition.left + coachMarkRect.width > targetRect.left
-        );
-        
-        if (!altCoversTarget) {
-          positionData = altPosition;
-          setCalculatedPosition(altPos);
-          break;
-        }
-      }
-    }
-
-    // Adjust position based on container constraints
-    let finalTop = positionData.top;
-    let finalLeft = positionData.left;
-
-    if (isAppContainer) {
-      // Constrain to app container (375px)
-      const containerLeft = containerRect.left;
-      const containerRight = containerRect.right;
-      const containerTop = containerRect.top;
-      const containerBottom = containerRect.bottom;
-
-      // Horizontal constraints within container
-      if (finalLeft < containerLeft + containerMargin) {
-        finalLeft = containerLeft + containerMargin;
-      } else if (finalLeft + coachMarkRect.width > containerRight - containerMargin) {
-        finalLeft = containerRight - coachMarkRect.width - containerMargin;
-      }
-
-      // Vertical constraints within container
-      if (finalTop < containerTop + containerMargin) {
-        finalTop = containerTop + containerMargin;
-      } else if (finalTop + coachMarkRect.height > containerBottom - containerMargin) {
-        finalTop = containerBottom - coachMarkRect.height - containerMargin;
-      }
-
-      // Ensure tooltip doesn't go outside viewport (safety check)
-      if (finalLeft < viewportMargin) {
-        finalLeft = viewportMargin;
-      } else if (finalLeft + coachMarkRect.width > window.innerWidth - viewportMargin) {
-        finalLeft = window.innerWidth - coachMarkRect.width - viewportMargin;
-      }
-    } else {
-      // Fallback to viewport constraints
-      if (finalLeft < viewportMargin) {
-        finalLeft = viewportMargin;
-      } else if (finalLeft + coachMarkRect.width > window.innerWidth - viewportMargin) {
-        finalLeft = window.innerWidth - coachMarkRect.width - viewportMargin;
-      }
-    }
-
-    // Vertical safety for both cases
-    if (finalTop < viewportMargin) {
-      finalTop = viewportMargin;
-    } else if (finalTop + coachMarkRect.height > window.innerHeight - viewportMargin) {
-      finalTop = window.innerHeight - coachMarkRect.height - viewportMargin;
-    }
-
-    style.top = `${finalTop}px`;
-    style.left = `${finalLeft}px`;
+    const maxLeft = window.innerWidth - (coachMarkRect?.width || 300) - 10;
+    if (leftNum !== undefined && leftNum > maxLeft) style.left = maxLeft;
+    
+    const maxTop = window.innerHeight - (coachMarkRect?.height || 200) - 10;
+    if (topNum !== undefined && topNum > maxTop) style.top = maxTop;
 
     return style;
   };
 
-  // Calculate arrow position with container awareness
+  // Calculate arrow position
   const getArrowStyle = (): React.CSSProperties => {
     if (!targetRect || !coachMarkRect) return { display: 'none' };
 
@@ -340,7 +193,7 @@ const CoachMark: React.FC<CoachMarkProps> = ({
       borderStyle: 'solid'
     };
 
-    const arrowSize = 10;
+    const arrowSize = 8;
 
     switch (calculatedPosition) {
       case 'top':
@@ -373,35 +226,28 @@ const CoachMark: React.FC<CoachMarkProps> = ({
         break;
       case 'top-left':
         arrowStyle.bottom = `-${arrowSize}px`;
-        arrowStyle.left = '25px';
+        arrowStyle.left = '20px';
         arrowStyle.borderWidth = `${arrowSize}px ${arrowSize}px 0 ${arrowSize}px`;
         arrowStyle.borderColor = `#1A1A1A transparent transparent transparent`;
         break;
       case 'top-right':
         arrowStyle.bottom = `-${arrowSize}px`;
-        arrowStyle.right = '25px';
+        arrowStyle.right = '20px';
         arrowStyle.borderWidth = `${arrowSize}px ${arrowSize}px 0 ${arrowSize}px`;
         arrowStyle.borderColor = `#1A1A1A transparent transparent transparent`;
         break;
       case 'bottom-left':
         arrowStyle.top = `-${arrowSize}px`;
-        arrowStyle.left = '25px';
+        arrowStyle.left = '20px';
         arrowStyle.borderWidth = `0 ${arrowSize}px ${arrowSize}px ${arrowSize}px`;
         arrowStyle.borderColor = `transparent transparent #1A1A1A transparent`;
         break;
       case 'bottom-right':
         arrowStyle.top = `-${arrowSize}px`;
-        arrowStyle.right = '25px';
+        arrowStyle.right = '20px';
         arrowStyle.borderWidth = `0 ${arrowSize}px ${arrowSize}px ${arrowSize}px`;
         arrowStyle.borderColor = `transparent transparent #1A1A1A transparent`;
         break;
-      default:
-        // Default to bottom arrow
-        arrowStyle.top = `-${arrowSize}px`;
-        arrowStyle.left = '50%';
-        arrowStyle.transform = 'translateX(-50%)';
-        arrowStyle.borderWidth = `0 ${arrowSize}px ${arrowSize}px ${arrowSize}px`;
-        arrowStyle.borderColor = `transparent transparent #1A1A1A transparent`;
     }
 
     return arrowStyle;
@@ -447,29 +293,11 @@ const CoachMark: React.FC<CoachMarkProps> = ({
           bottom: 0,
           backgroundColor: 'rgba(0, 0, 0, 0.5)',
           zIndex: 10000,
-          animation: 'fadeIn 0.3s ease',
-          pointerEvents: 'auto' // Ensure backdrop receives clicks
+          animation: 'fadeIn 0.3s ease'
         }} />
       )}
 
-      {/* Highlight overlay for target element - FIXED: Ensure target stays above backdrop */}
-      {targetRect && !noBackdrop && (
-        <div style={{
-          position: 'fixed',
-          top: `${targetRect.top}px`,
-          left: `${targetRect.left}px`,
-          width: `${targetRect.width}px`,
-          height: `${targetRect.height}px`,
-          border: '2px solid rgba(212, 175, 55, 0.8)',
-          borderRadius: '8px',
-          boxShadow: '0 0 0 9999px rgba(0, 0, 0, 0.5), 0 0 20px rgba(212, 175, 55, 0.6)',
-          zIndex: 10001, // One above backdrop to ensure visibility
-          pointerEvents: 'none',
-          animation: 'pulse 2s infinite'
-        }} />
-      )}
-
-      {/* Tooltip */}
+      {/* Tooltip - RENDERED FIRST */}
       <div
         ref={coachMarkRef}
         style={getTooltipStyle()}
@@ -477,7 +305,7 @@ const CoachMark: React.FC<CoachMarkProps> = ({
         {/* Arrow */}
         <div style={getArrowStyle()} />
 
-        {/* Tooltip Content */}
+        {/* Tooltip Content - with pointer-events: auto to allow button clicks */}
         <div style={{
           background: '#1A1A1A',
           borderRadius: '12px',
@@ -485,7 +313,8 @@ const CoachMark: React.FC<CoachMarkProps> = ({
           minWidth: '280px',
           maxWidth: '320px',
           boxShadow: '0 10px 40px rgba(0, 0, 0, 0.3)',
-          border: '1px solid rgba(255, 255, 255, 0.1)'
+          border: '1px solid rgba(255, 255, 255, 0.1)',
+          pointerEvents: 'auto' // ADDED: Allow clicks inside tooltip
         }}>
           {/* Step indicator */}
           {(step !== undefined && totalSteps !== undefined) && (
@@ -521,7 +350,8 @@ const CoachMark: React.FC<CoachMarkProps> = ({
                   cursor: 'pointer',
                   fontSize: '16px',
                   padding: 0,
-                  transition: 'all 0.2s ease'
+                  transition: 'all 0.2s ease',
+                  pointerEvents: 'auto' // ADDED: Ensure button is clickable
                 }}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.2)';
@@ -565,7 +395,8 @@ const CoachMark: React.FC<CoachMarkProps> = ({
             display: 'flex',
             gap: '10px',
             justifyContent: showNavigation ? 'space-between' : 'flex-end',
-            alignItems: 'center'
+            alignItems: 'center',
+            pointerEvents: 'auto' // ADDED: Ensure buttons are clickable
           }}>
             {/* Navigation buttons */}
             {showNavigation && (
@@ -583,7 +414,8 @@ const CoachMark: React.FC<CoachMarkProps> = ({
                       fontFamily: "'Cormorant', serif",
                       fontWeight: 500,
                       cursor: 'pointer',
-                      transition: 'all 0.2s ease'
+                      transition: 'all 0.2s ease',
+                      pointerEvents: 'auto'
                     }}
                     onMouseEnter={(e) => {
                       e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
@@ -611,7 +443,8 @@ const CoachMark: React.FC<CoachMarkProps> = ({
                       fontFamily: "'Cormorant', serif",
                       fontWeight: 600,
                       cursor: 'pointer',
-                      transition: 'all 0.2s ease'
+                      transition: 'all 0.2s ease',
+                      pointerEvents: 'auto'
                     }}
                     onMouseEnter={(e) => {
                       e.currentTarget.style.backgroundColor = '#FFFFFF';
@@ -643,7 +476,8 @@ const CoachMark: React.FC<CoachMarkProps> = ({
                     fontFamily: "'Cormorant', serif",
                     fontWeight: 600,
                     cursor: 'pointer',
-                    transition: 'all 0.2s ease'
+                    transition: 'all 0.2s ease',
+                    pointerEvents: 'auto'
                   }}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.transform = 'translateY(-1px)';
@@ -669,7 +503,8 @@ const CoachMark: React.FC<CoachMarkProps> = ({
                     fontFamily: "'Cormorant', serif",
                     fontWeight: 500,
                     cursor: 'pointer',
-                    transition: 'all 0.2s ease'
+                    transition: 'all 0.2s ease',
+                    pointerEvents: 'auto'
                   }}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.2)';
@@ -687,6 +522,23 @@ const CoachMark: React.FC<CoachMarkProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Highlight overlay for target element - RENDERED LAST with HIGHER z-index */}
+      {targetRect && !noBackdrop && (
+        <div style={{
+          position: 'fixed',
+          top: `${targetRect.top}px`,
+          left: `${targetRect.left}px`,
+          width: `${targetRect.width}px`,
+          height: `${targetRect.height}px`,
+          border: '2px solid rgba(212, 175, 55, 0.8)',
+          borderRadius: '8px',
+          boxShadow: '0 0 0 9999px rgba(0, 0, 0, 0.5), 0 0 20px rgba(212, 175, 55, 0.6)',
+          zIndex: 10002, // CHANGED: Increased from 10000 to 10002
+          pointerEvents: 'none',
+          animation: 'pulse 2s infinite'
+        }} />
+      )}
 
       <style>
         {`

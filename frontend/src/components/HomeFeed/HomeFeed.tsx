@@ -150,21 +150,16 @@ const HomeFeed: React.FC = () => {
     }
   }, [tour]);
 
-  // ADDED: Check for tour opt-in when onboarding completes
-  const handleOnboardingComplete = useCallback(() => {
-    handleComplete();
+  // ADDED: Function to handle tour opt-in from GettingStartedModal
+  const handleRequestTourOptIn = useCallback(() => {
+    const hasSeenOptIn = tour.hasSeenOptIn();
+    const hasSkippedTour = tour.progress.skipped;
     
-    // Show tour opt-in modal after a short delay
-    setTimeout(() => {
-      const hasSeenOptIn = tour.hasSeenOptIn();
-      const hasSkippedTour = tour.progress.skipped;
-      
-      if (!hasSeenOptIn && !hasSkippedTour) {
-        setShowTourOptIn(true);
-        tour.markOptInSeen();
-      }
-    }, 300);
-  }, [handleComplete, tour]);
+    if (!hasSeenOptIn && !hasSkippedTour) {
+      setShowTourOptIn(true);
+      tour.markOptInSeen();
+    }
+  }, [tour]);
 
   // ADDED: Handle tour opt-in acceptance
   const handleAcceptTour = useCallback(() => {
@@ -603,13 +598,13 @@ const HomeFeed: React.FC = () => {
           gap: '20px',
           padding: '0 16px'
         }}>
-          {displayFeed.map((item) => { // FIXED: Removed unused index parameter
+          {displayFeed.map((item, index) => {
             if (item.type === 'scene') {
               return (
                 <div 
                   key={`scene-${item.data.id}`} 
                   id={`scene-${item.data.id}`}
-                  className="scene-card" // FIXED: Always add class, not just for first card
+                  className={index === 0 ? 'scene-card' : ''} // ADDED: Class for tour targeting (first card only)
                 >
                   <SceneCard 
                     scene={item.data}
@@ -623,7 +618,7 @@ const HomeFeed: React.FC = () => {
                 <div 
                   key={`monologue-${item.data.id}`} 
                   id={`monologue-${item.data.id}`}
-                  className="monologue-card" // FIXED: Always add class, not just for first card
+                  className={index === 0 ? 'monologue-card' : ''} // ADDED: Class for tour targeting
                 >
                   <MonologueCard 
                     monologue={item.data}
@@ -647,7 +642,7 @@ const HomeFeed: React.FC = () => {
                 <div 
                   key={`character-${item.data.id}`} 
                   id={`character-${item.data.id}`}
-                  className="character-card" // FIXED: Always add class, not just for first card
+                  className={index === 0 ? 'character-card' : ''} // ADDED: Class for tour targeting
                 >
                   <CharacterCard 
                     character={item.data}
@@ -671,7 +666,7 @@ const HomeFeed: React.FC = () => {
                 <div 
                   key={`frame-${item.data.id}`} 
                   id={`frame-${item.data.id}`}
-                  className="frame-card" // FIXED: Always add class, not just for first card
+                  className={index === 0 ? 'frame-card' : ''} // ADDED: Class for tour targeting
                 >
                   <FrameCard 
                     frame={item.data}
@@ -719,7 +714,8 @@ const HomeFeed: React.FC = () => {
       <GettingStartedModal
         isOpen={showOnboarding}
         onClose={handleClose}
-        onComplete={handleOnboardingComplete} // Use the new handler
+        onComplete={handleComplete}
+        onRequestTourOptIn={handleRequestTourOptIn} // ADDED: Pass tour opt-in handler
       />
 
       {/* ADDED: Tour Opt-In Modal */}
