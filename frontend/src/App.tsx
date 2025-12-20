@@ -3,7 +3,6 @@ import { BrowserRouter as Router, Routes, Route, Link, Navigate } from "react-ro
 import { supabase } from "./assets/lib/supabaseClient";
 import { AuthProvider } from "./contexts/AuthContext";
 import { ThemeProvider } from "./contexts/ThemeContext";
-import { TourProvider } from "./contexts/TourContext"; // ADDED: Import TourProvider
 import { useUserSettings } from "./hooks/useUserSettings";
 import LandingPage from "./pages/LandingPage";
 import SignUp from "./pages/SignUp";
@@ -262,12 +261,11 @@ function App() {
   return (
     <ThemeProvider>
       <AuthProvider>
-        <TourProvider> {/* ADDED: Wrap with TourProvider */}
-          <AppContent />
-        </TourProvider>
+        <AppContent />
       </AuthProvider>
     </ThemeProvider>
   );
 }
 
 export default App;
+
