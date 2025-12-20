@@ -70,15 +70,18 @@ const GettingStartedModal: React.FC<GettingStartedModalProps> = ({
     <div style={{
       position: 'fixed',
       top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
+      left: '50%',
+      transform: 'translateX(-50%)',
+      width: '100%',
+      maxWidth: '375px',
+      height: '100vh',
       backgroundColor: 'rgba(0, 0, 0, 0.5)',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
       zIndex: 9999,
-      padding: '20px'
+      padding: '20px',
+      boxSizing: 'border-box'
     }}>
       <div style={{
         width: '100%',
@@ -87,7 +90,8 @@ const GettingStartedModal: React.FC<GettingStartedModalProps> = ({
         borderRadius: '20px',
         padding: '32px 24px',
         boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)',
-        position: 'relative'
+        position: 'relative',
+        boxSizing: 'border-box'
       }}>
         {/* Close Button */}
         <button
@@ -161,7 +165,8 @@ const GettingStartedModal: React.FC<GettingStartedModalProps> = ({
               background: '#FAF8F2',
               borderRadius: '12px',
               padding: '16px',
-              marginTop: '20px'
+              marginTop: '20px',
+              boxSizing: 'border-box'
             }}>
               {step.details.map((detail, index) => {
                 const colonIndex = detail.indexOf(':');
@@ -175,7 +180,8 @@ const GettingStartedModal: React.FC<GettingStartedModalProps> = ({
                       padding: '12px 0',
                       fontSize: '15px',
                       color: '#4B5563',
-                      borderBottom: index < step.details!.length - 1 ? '1px solid rgba(0, 0, 0, 0.08)' : 'none'
+                      borderBottom: index < step.details!.length - 1 ? '1px solid rgba(0, 0, 0, 0.08)' : 'none',
+                      boxSizing: 'border-box'
                     }}
                   >
                     <div style={{
@@ -204,7 +210,8 @@ const GettingStartedModal: React.FC<GettingStartedModalProps> = ({
         {/* Action Buttons */}
         <div style={{
           display: 'flex',
-          gap: '12px'
+          gap: '12px',
+          boxSizing: 'border-box'
         }}>
           {/* Skip Button */}
           <button
@@ -219,7 +226,8 @@ const GettingStartedModal: React.FC<GettingStartedModalProps> = ({
               fontSize: '15px',
               fontFamily: "'Cormorant', serif",
               fontWeight: 500,
-              cursor: 'pointer'
+              cursor: 'pointer',
+              boxSizing: 'border-box'
             }}
           >
             Skip Tour
@@ -238,7 +246,8 @@ const GettingStartedModal: React.FC<GettingStartedModalProps> = ({
               fontSize: '15px',
               fontFamily: "'Cormorant', serif",
               fontWeight: 600,
-              cursor: 'pointer'
+              cursor: 'pointer',
+              boxSizing: 'border-box'
             }}
           >
             {step.buttonText}
@@ -250,7 +259,8 @@ const GettingStartedModal: React.FC<GettingStartedModalProps> = ({
           display: 'flex',
           justifyContent: 'center',
           gap: '8px',
-          marginTop: '24px'
+          marginTop: '24px',
+          boxSizing: 'border-box'
         }}>
           {steps.map((_, index) => (
             <div
@@ -259,7 +269,8 @@ const GettingStartedModal: React.FC<GettingStartedModalProps> = ({
                 width: '8px',
                 height: '8px',
                 borderRadius: '50%',
-                background: index === currentStep ? '#1A1A1A' : '#E5E7EB'
+                background: index === currentStep ? '#1A1A1A' : '#E5E7EB',
+                boxSizing: 'border-box'
               }}
             />
           ))}
