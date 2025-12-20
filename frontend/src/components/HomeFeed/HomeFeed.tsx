@@ -134,6 +134,7 @@ const HomeFeed: React.FC = () => {
 
   // ADDED: Tour opt-in modal state
   const [showTourOptIn, setShowTourOptIn] = useState(false);
+  const [shouldCheckTourOptIn, setShouldCheckTourOptIn] = useState(false);
 
   // ADDED: Pagination state
   const [visibleCount, setVisibleCount] = useState(10);
@@ -150,16 +151,25 @@ const HomeFeed: React.FC = () => {
     }
   }, [tour]);
 
+  // ADDED: Check for tour opt-in after GettingStartedModal closes
+  useEffect(() => {
+    if (shouldCheckTourOptIn && !showOnboarding) {
+      const hasSeenOptIn = tour.hasSeenOptIn();
+      const hasSkippedTour = tour.progress.skipped;
+      
+      if (!hasSeenOptIn && !hasSkippedTour) {
+        setShowTourOptIn(true);
+        tour.markOptInSeen();
+      }
+      setShouldCheckTourOptIn(false);
+    }
+  }, [shouldCheckTourOptIn, showOnboarding, tour]);
+
   // ADDED: Function to handle tour opt-in from GettingStartedModal
   const handleRequestTourOptIn = useCallback(() => {
-    const hasSeenOptIn = tour.hasSeenOptIn();
-    const hasSkippedTour = tour.progress.skipped;
-    
-    if (!hasSeenOptIn && !hasSkippedTour) {
-      setShowTourOptIn(true);
-      tour.markOptInSeen();
-    }
-  }, [tour]);
+    // Instead of showing immediately, set a flag to show after modal closes
+    setShouldCheckTourOptIn(true);
+  }, []);
 
   // ADDED: Handle tour opt-in acceptance
   const handleAcceptTour = useCallback(() => {
@@ -713,7 +723,11 @@ const HomeFeed: React.FC = () => {
       {/* ADDED: Getting Started Modal */}
       <GettingStartedModal
         isOpen={showOnboarding}
-        onClose={handleClose}
+        onClose={() => {
+          handleClose();
+          // Also trigger tour opt-in check when modal closes
+          setShouldCheckTourOptIn(true);
+        }}
         onComplete={handleComplete}
         onRequestTourOptIn={handleRequestTourOptIn} // ADDED: Pass tour opt-in handler
       />
