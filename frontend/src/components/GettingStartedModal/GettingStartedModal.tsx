@@ -82,7 +82,7 @@ const GettingStartedModal: React.FC<GettingStartedModalProps> = ({
     }}>
       <div style={{
         width: '100%',
-        maxWidth: 'min(400px, calc(100vw - 40px))',
+        maxWidth: '375px',
         background: '#FFFFFF',
         borderRadius: '20px',
         padding: '32px 24px',
