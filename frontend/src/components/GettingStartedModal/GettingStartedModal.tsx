@@ -93,42 +93,54 @@ const GettingStartedModal: React.FC<GettingStartedModalProps> = ({
         position: 'relative',
         boxSizing: 'border-box'
       }}>
-        {/* Close Button */}
-        <button
-          onClick={handleSkip}
-          style={{
-            position: 'absolute',
-            top: '16px',
-            right: '16px',
-            background: 'none',
-            border: 'none',
-            fontSize: '24px',
-            color: '#9CA3AF',
-            cursor: 'pointer',
-            width: '32px',
-            height: '32px',
-            borderRadius: '50%',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center'
-          }}
-        >
-          ×
-        </button>
-
-        {/* Progress Bar */}
+        {/* Progress Bar with Close Button Overlay */}
         <div style={{
-          height: '4px',
-          background: '#F3F4F6',
-          borderRadius: '2px',
-          marginBottom: '32px'
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          marginBottom: '24px',
+          position: 'relative'
         }}>
+          {/* Progress Bar */}
           <div style={{
-            height: '100%',
-            width: `${progress}%`,
-            background: '#1A1A1A',
-            borderRadius: '2px'
-          }} />
+            flex: 1,
+            height: '4px',
+            background: '#F3F4F6',
+            borderRadius: '2px',
+            marginRight: '40px' // Space for close button
+          }}>
+            <div style={{
+              height: '100%',
+              width: `${progress}%`,
+              background: '#1A1A1A',
+              borderRadius: '2px'
+            }} />
+          </div>
+
+          {/* Close Button - Positioned over progress bar */}
+          <button
+            onClick={handleSkip}
+            style={{
+              position: 'absolute',
+              top: '50%',
+              right: '0',
+              transform: 'translateY(-50%)',
+              background: 'none',
+              border: 'none',
+              fontSize: '24px',
+              color: '#9CA3AF',
+              cursor: 'pointer',
+              width: '32px',
+              height: '32px',
+              borderRadius: '50%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 1
+            }}
+          >
+            ×
+          </button>
         </div>
 
         {/* Step Content */}
