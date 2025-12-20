@@ -45,7 +45,7 @@ export const TOUR_STEPS: TourStep[] = [
     id: 'feed_interactions',
     title: 'Engage with Content',
     description: 'Tap on any card to view details. You can like, comment, or repost content that inspires you. Each interaction helps you connect with other creators.',
-    target: '.scene-card:first-of-type, .monologue-card:first-of-type, .character-card:first-of-type, .frame-card:first-of-type', // FIXED: Target first card only
+    target: '.scene-card, .monologue-card, .character-card, .frame-card', // REVERTED: Original working selector
     position: 'bottom-right',
     route: '/home-feed',
     trigger: 'element',
@@ -282,39 +282,22 @@ const useTour = () => {
     if (step.trigger !== 'element' || !step.target) return false;
     
     try {
-      // Try to find any matching element
+      // SIMPLIFIED: Just check if any matching element exists
       const element = document.querySelector(step.target);
-      if (!element) {
-        // For step 2, we might need to check if ANY card is visible
-        if (step.id === 'feed_interactions') {
-          // Check for any card that might be visible
-          const anyCard = document.querySelector('.scene-card, .monologue-card, .character-card, .frame-card');
-          if (!anyCard) return false;
-          
-          const rect = anyCard.getBoundingClientRect();
-          const isVisible = (
-            rect.top >= 0 &&
-            rect.left >= 0 &&
-            rect.bottom <= (window.innerHeight || document.documentElement.clientHeight) &&
-            rect.right <= (window.innerWidth || document.documentElement.clientWidth)
-          );
-          
-          return isVisible;
-        }
-        return false;
+      
+      // For Step 2, if no element found, check if feed has any content
+      if (!element && step.id === 'feed_interactions') {
+        // Check if feed has any content at all
+        const feedContainer = document.querySelector('.home-feed-container');
+        if (!feedContainer) return false;
+        
+        // Return true if feed exists (element will be found when CoachMark tries to highlight)
+        return true;
       }
       
-      const rect = element.getBoundingClientRect();
-      const isVisible = (
-        rect.top >= 0 &&
-        rect.left >= 0 &&
-        rect.bottom <= (window.innerHeight || document.documentElement.clientHeight) &&
-        rect.right <= (window.innerWidth || document.documentElement.clientWidth)
-      );
-      
-      return isVisible;
+      return !!element; // Just check existence, not visibility
     } catch (error) {
-      console.warn('Error checking element visibility:', error);
+      console.warn('Error checking element trigger:', error);
       return false;
     }
   }, []);
@@ -345,12 +328,11 @@ const useTour = () => {
         case 'route':
           return checkRouteTrigger(step, currentRoute);
         case 'element':
+          // For element triggers, add a small delay to ensure DOM is ready
           return checkElementTrigger(step);
         case 'delay':
-          // This would need a timeout setup
           return false;
         case 'interaction':
-          // Interaction triggers are handled by components directly
           return false;
         default:
           return false;
@@ -359,7 +341,10 @@ const useTour = () => {
     
     // Trigger the first eligible step
     if (eligibleSteps.length > 0) {
-      setCurrentStep(eligibleSteps[0]);
+      // Small delay to ensure smooth transition between steps
+      setTimeout(() => {
+        setCurrentStep(eligibleSteps[0]);
+      }, 300);
     }
   }, [progress.enabled, isActive, currentStep, progress.completedSteps, checkRouteTrigger, checkElementTrigger]);
 
