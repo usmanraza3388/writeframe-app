@@ -117,24 +117,7 @@ const CoachMark: React.FC<CoachMarkProps> = ({
     }
   }, [isVisible]);
 
-  // Helper function to calculate the 375px centered container bounds
-  const getContainerBounds = () => {
-    const viewportWidth = window.innerWidth;
-    const containerWidth = 375;
-    const containerPadding = 16;
-    
-    // Calculate centered container position
-    const containerLeft = Math.max(containerPadding, (viewportWidth - containerWidth) / 2);
-    const containerRight = containerLeft + containerWidth - containerPadding;
-    
-    return {
-      left: containerLeft,
-      right: containerRight,
-      width: containerWidth - (containerPadding * 2) // Available space inside container
-    };
-  };
-
-  // Calculate tooltip position - FIXED: Respects 375px container and avoids covering target
+  // Calculate tooltip position
   const getTooltipStyle = (): React.CSSProperties => {
     if (!targetRect || !coachMarkRect) return { display: 'none' };
 
@@ -146,113 +129,77 @@ const CoachMark: React.FC<CoachMarkProps> = ({
       transition: 'opacity 0.3s ease, transform 0.3s ease'
     };
 
-    // Get container boundaries
-    const containerBounds = getContainerBounds();
-    const tooltipWidth = coachMarkRect.width;
-    const tooltipHeight = coachMarkRect.height;
+    // Calculate the centered 375px container position
+    const viewportWidth = window.innerWidth;
+    const containerWidth = 375;
+    const containerPadding = 16;
+    
+    // Container is centered, so calculate its left edge
+    const containerLeft = Math.max(containerPadding, (viewportWidth - containerWidth) / 2);
+    const containerRight = containerLeft + containerWidth - containerPadding;
 
-    // Calculate initial position
-    let top = 0;
-    let left = 0;
-
+    // Position calculations
     switch (calculatedPosition) {
       case 'top':
-        top = targetRect.top - tooltipHeight - offset;
-        left = targetRect.left + (targetRect.width / 2) - (tooltipWidth / 2);
+        style.top = `${targetRect.top - coachMarkRect.height - offset}px`;
+        style.left = `${targetRect.left + (targetRect.width / 2) - (coachMarkRect.width / 2)}px`;
         break;
       case 'bottom':
-        top = targetRect.bottom + offset;
-        left = targetRect.left + (targetRect.width / 2) - (tooltipWidth / 2);
+        style.top = `${targetRect.bottom + offset}px`;
+        style.left = `${targetRect.left + (targetRect.width / 2) - (coachMarkRect.width / 2)}px`;
         break;
       case 'left':
-        top = targetRect.top + (targetRect.height / 2) - (tooltipHeight / 2);
-        left = targetRect.left - tooltipWidth - offset;
+        style.top = `${targetRect.top + (targetRect.height / 2) - (coachMarkRect.height / 2)}px`;
+        style.left = `${targetRect.left - coachMarkRect.width - offset}px`;
         break;
       case 'right':
-        top = targetRect.top + (targetRect.height / 2) - (tooltipHeight / 2);
-        left = targetRect.right + offset;
+        style.top = `${targetRect.top + (targetRect.height / 2) - (coachMarkRect.height / 2)}px`;
+        style.left = `${targetRect.right + offset}px`;
         break;
       case 'top-left':
-        top = targetRect.top - tooltipHeight - offset;
-        left = targetRect.left;
+        style.top = `${targetRect.top - coachMarkRect.height - offset}px`;
+        style.left = `${targetRect.left}px`;
         break;
       case 'top-right':
-        top = targetRect.top - tooltipHeight - offset;
-        left = targetRect.right - tooltipWidth;
+        style.top = `${targetRect.top - coachMarkRect.height - offset}px`;
+        style.left = `${targetRect.right - coachMarkRect.width}px`;
         break;
       case 'bottom-left':
-        top = targetRect.bottom + offset;
-        left = targetRect.left;
+        style.top = `${targetRect.bottom + offset}px`;
+        style.left = `${targetRect.left}px`;
         break;
       case 'bottom-right':
-        top = targetRect.bottom + offset;
-        left = targetRect.right - tooltipWidth;
+        style.top = `${targetRect.bottom + offset}px`;
+        style.left = `${targetRect.right - coachMarkRect.width}px`;
         break;
     }
 
-    // FIX FOR ISSUE 1: Check if tooltip covers the target and adjust
-    const tooltipOverlapsTarget = (
-      left < targetRect.right &&
-      left + tooltipWidth > targetRect.left &&
-      top < targetRect.bottom &&
-      top + tooltipHeight > targetRect.top
-    );
-
-    if (tooltipOverlapsTarget) {
-      // If tooltip covers target, adjust position to avoid overlap
-      switch (calculatedPosition) {
-        case 'top':
-          // Move further up
-          top = targetRect.top - tooltipHeight - offset - 20;
-          break;
-        case 'bottom':
-          // Move further down
-          top = targetRect.bottom + offset + 20;
-          break;
-        case 'left':
-          // Move further left
-          left = targetRect.left - tooltipWidth - offset - 20;
-          break;
-        case 'right':
-          // Move further right
-          left = targetRect.right + offset + 20;
-          break;
-      }
-    }
-
-    // FIX FOR ISSUE 3: Constrain to 375px container
-    // Ensure left stays within container bounds
-    if (left < containerBounds.left) {
-      left = containerBounds.left;
-    } else if (left + tooltipWidth > containerBounds.right) {
-      left = containerBounds.right - tooltipWidth;
-    }
-
-    // Ensure top stays within viewport (with some margin)
-    const minTop = 10;
-    const maxTop = window.innerHeight - tooltipHeight - 10;
+    // Ensure tooltip stays within 375px container boundaries
+    const leftNum = typeof style.left === 'string' ? parseFloat(style.left) : style.left;
+    const topNum = typeof style.top === 'string' ? parseFloat(style.top) : style.top;
     
-    if (top < minTop) {
-      top = minTop;
-      // If we hit top boundary, try to position below target instead
-      if (calculatedPosition === 'top' || calculatedPosition.includes('top')) {
-        top = targetRect.bottom + offset;
-      }
-    } else if (top > maxTop) {
-      top = maxTop;
-      // If we hit bottom boundary, try to position above target instead
-      if (calculatedPosition === 'bottom' || calculatedPosition.includes('bottom')) {
-        top = targetRect.top - tooltipHeight - offset;
+    // Horizontal constraints: containerLeft to containerRight
+    if (leftNum !== undefined) {
+      if (leftNum < containerLeft) {
+        style.left = containerLeft;
+      } else {
+        const maxLeft = containerRight - (coachMarkRect?.width || 300);
+        if (leftNum > maxLeft) {
+          style.left = maxLeft;
+        }
       }
     }
-
-    style.top = `${top}px`;
-    style.left = `${left}px`;
+    
+    // Vertical constraints: viewport bounds
+    if (topNum !== undefined && topNum < 10) style.top = 10;
+    
+    const maxTop = window.innerHeight - (coachMarkRect?.height || 200) - 10;
+    if (topNum !== undefined && topNum > maxTop) style.top = maxTop;
 
     return style;
   };
 
-  // Calculate arrow position - UPDATED to match adjusted tooltip position
+  // Calculate arrow position
   const getArrowStyle = (): React.CSSProperties => {
     if (!targetRect || !coachMarkRect) return { display: 'none' };
 
