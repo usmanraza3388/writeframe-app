@@ -1,7 +1,7 @@
 // src/components/CoachMark/CoachMark.tsx
 import React, { useState, useEffect, useRef } from 'react';
 
-type ArrowPosition = 'top' | 'bottom' | 'left' | 'right' | 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
+type ArrowPosition = 'top' | 'bottom' | 'left' | 'right' | 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right' | 'center';
 
 interface CoachMarkProps {
   /** The target element to highlight (CSS selector or ref) */
@@ -117,7 +117,7 @@ const CoachMark: React.FC<CoachMarkProps> = ({
     }
   }, [isVisible]);
 
-  // Calculate tooltip position
+  // Calculate tooltip position with intelligent placement
   const getTooltipStyle = (): React.CSSProperties => {
     if (!targetRect || !coachMarkRect) return { display: 'none' };
 
@@ -129,79 +129,142 @@ const CoachMark: React.FC<CoachMarkProps> = ({
       transition: 'opacity 0.3s ease, transform 0.3s ease'
     };
 
-    // Calculate the centered 375px container position
+    // App container bounds (375px centered)
+    const CONTAINER_WIDTH = 375;
+    const CONTAINER_PADDING = 16;
     const viewportWidth = window.innerWidth;
-    const containerWidth = 375;
-    const containerPadding = 16;
+    const viewportHeight = window.innerHeight;
     
-    // Container is centered, so calculate its left edge
-    const containerLeft = Math.max(containerPadding, (viewportWidth - containerWidth) / 2);
-    const containerRight = containerLeft + containerWidth - containerPadding;
+    const containerLeft = Math.max(CONTAINER_PADDING, (viewportWidth - CONTAINER_WIDTH) / 2);
+    const containerRight = containerLeft + CONTAINER_WIDTH - CONTAINER_PADDING;
 
-    // Position calculations
-    switch (calculatedPosition) {
-      case 'top':
-        style.top = `${targetRect.top - coachMarkRect.height - offset}px`;
-        style.left = `${targetRect.left + (targetRect.width / 2) - (coachMarkRect.width / 2)}px`;
-        break;
-      case 'bottom':
-        style.top = `${targetRect.bottom + offset}px`;
-        style.left = `${targetRect.left + (targetRect.width / 2) - (coachMarkRect.width / 2)}px`;
-        break;
-      case 'left':
-        style.top = `${targetRect.top + (targetRect.height / 2) - (coachMarkRect.height / 2)}px`;
-        style.left = `${targetRect.left - coachMarkRect.width - offset}px`;
-        break;
-      case 'right':
-        style.top = `${targetRect.top + (targetRect.height / 2) - (coachMarkRect.height / 2)}px`;
-        style.left = `${targetRect.right + offset}px`;
-        break;
-      case 'top-left':
-        style.top = `${targetRect.top - coachMarkRect.height - offset}px`;
-        style.left = `${targetRect.left}px`;
-        break;
-      case 'top-right':
-        style.top = `${targetRect.top - coachMarkRect.height - offset}px`;
-        style.left = `${targetRect.right - coachMarkRect.width}px`;
-        break;
-      case 'bottom-left':
-        style.top = `${targetRect.bottom + offset}px`;
-        style.left = `${targetRect.left}px`;
-        break;
-      case 'bottom-right':
-        style.top = `${targetRect.bottom + offset}px`;
-        style.left = `${targetRect.right - coachMarkRect.width}px`;
-        break;
-    }
+    const tooltipWidth = coachMarkRect.width;
+    const tooltipHeight = coachMarkRect.height;
 
-    // Ensure tooltip stays within 375px container boundaries
-    const leftNum = typeof style.left === 'string' ? parseFloat(style.left) : style.left;
-    const topNum = typeof style.top === 'string' ? parseFloat(style.top) : style.top;
-    
-    // Horizontal constraints: containerLeft to containerRight
-    if (leftNum !== undefined) {
-      if (leftNum < containerLeft) {
-        style.left = containerLeft;
-      } else {
-        const maxLeft = containerRight - (coachMarkRect?.width || 300);
-        if (leftNum > maxLeft) {
-          style.left = maxLeft;
-        }
+    // Define ALL possible positions with their coordinates
+    const positionOptions = [
+      // Top positions
+      {
+        id: 'top',
+        top: targetRect.top - tooltipHeight - offset,
+        left: targetRect.left + (targetRect.width / 2) - (tooltipWidth / 2),
+        arrowPosition: 'bottom'
+      },
+      {
+        id: 'top-left',
+        top: targetRect.top - tooltipHeight - offset,
+        left: targetRect.left,
+        arrowPosition: 'bottom-left'
+      },
+      {
+        id: 'top-right',
+        top: targetRect.top - tooltipHeight - offset,
+        left: targetRect.right - tooltipWidth,
+        arrowPosition: 'bottom-right'
+      },
+      // Bottom positions
+      {
+        id: 'bottom',
+        top: targetRect.bottom + offset,
+        left: targetRect.left + (targetRect.width / 2) - (tooltipWidth / 2),
+        arrowPosition: 'top'
+      },
+      {
+        id: 'bottom-left',
+        top: targetRect.bottom + offset,
+        left: targetRect.left,
+        arrowPosition: 'top-left'
+      },
+      {
+        id: 'bottom-right',
+        top: targetRect.bottom + offset,
+        left: targetRect.right - tooltipWidth,
+        arrowPosition: 'top-right'
+      },
+      // Side positions
+      {
+        id: 'left',
+        top: targetRect.top + (targetRect.height / 2) - (tooltipHeight / 2),
+        left: targetRect.left - tooltipWidth - offset,
+        arrowPosition: 'right'
+      },
+      {
+        id: 'right',
+        top: targetRect.top + (targetRect.height / 2) - (tooltipHeight / 2),
+        left: targetRect.right + offset,
+        arrowPosition: 'left'
       }
+    ];
+
+    // Score each position based on fit and visibility
+    const scoredPositions = positionOptions.map((pos, index) => {
+      let score = 0;
+      
+      // Check horizontal bounds (must fit in 375px container)
+      const fitsHorizontally = pos.left >= containerLeft && (pos.left + tooltipWidth) <= containerRight;
+      if (!fitsHorizontally) score -= 100;
+      
+      // Check vertical bounds (viewport)
+      const fitsVertically = pos.top >= 10 && (pos.top + tooltipHeight) <= (viewportHeight - 10);
+      if (!fitsVertically) score -= 100;
+      
+      // Check if covers target (big penalty)
+      const coversTarget = (
+        pos.left < targetRect.right &&
+        pos.left + tooltipWidth > targetRect.left &&
+        pos.top < targetRect.bottom &&
+        pos.top + tooltipHeight > targetRect.top
+      );
+      if (coversTarget) score -= 200;
+      
+      // Bonus for preferred position
+      if (pos.id === calculatedPosition) score += 20;
+      
+      // Bonus for center-aligned positions (looks better)
+      if (pos.id === 'top' || pos.id === 'bottom') score += 10;
+      
+      // Penalty for side positions (less ideal)
+      if (pos.id === 'left' || pos.id === 'right') score -= 5;
+      
+      return { ...pos, score, originalIndex: index };
+    });
+
+    // Find the best position
+    const bestPosition = scoredPositions.reduce((best, current) => 
+      current.score > best.score ? current : best
+    );
+
+    // If no good position found (all scores negative), fallback to centered
+    if (bestPosition.score < -50) {
+      style.top = '50%';
+      style.left = '50%';
+      style.transform = isVisible ? 'translate(-50%, -50%) scale(1)' : 'translate(-50%, -50%) scale(0.95)';
+      setCalculatedPosition('center');
+      return style;
     }
-    
-    // Vertical constraints: viewport bounds
-    if (topNum !== undefined && topNum < 10) style.top = 10;
-    
-    const maxTop = window.innerHeight - (coachMarkRect?.height || 200) - 10;
-    if (topNum !== undefined && topNum > maxTop) style.top = maxTop;
+
+    // Apply the best position with constraints
+    let top = bestPosition.top;
+    let left = bestPosition.left;
+
+    // Constrain to container horizontally
+    if (left < containerLeft) left = containerLeft;
+    if (left + tooltipWidth > containerRight) left = containerRight - tooltipWidth;
+
+    // Constrain to viewport vertically
+    if (top < 10) top = 10;
+    if (top + tooltipHeight > viewportHeight - 10) top = viewportHeight - tooltipHeight - 10;
+
+    style.top = `${top}px`;
+    style.left = `${left}px`;
+    setCalculatedPosition(bestPosition.id as ArrowPosition);
 
     return style;
   };
 
   // Calculate arrow position
   const getArrowStyle = (): React.CSSProperties => {
-    if (!targetRect || !coachMarkRect) return { display: 'none' };
+    if (!targetRect) return { display: 'none' };
 
     const arrowStyle: React.CSSProperties = {
       position: 'absolute',
@@ -214,6 +277,8 @@ const CoachMark: React.FC<CoachMarkProps> = ({
 
     switch (calculatedPosition) {
       case 'top':
+      case 'top-left':
+      case 'top-right':
         arrowStyle.bottom = `-${arrowSize}px`;
         arrowStyle.left = '50%';
         arrowStyle.transform = 'translateX(-50%)';
@@ -221,6 +286,8 @@ const CoachMark: React.FC<CoachMarkProps> = ({
         arrowStyle.borderColor = `#1A1A1A transparent transparent transparent`;
         break;
       case 'bottom':
+      case 'bottom-left':
+      case 'bottom-right':
         arrowStyle.top = `-${arrowSize}px`;
         arrowStyle.left = '50%';
         arrowStyle.transform = 'translateX(-50%)';
@@ -241,30 +308,11 @@ const CoachMark: React.FC<CoachMarkProps> = ({
         arrowStyle.borderWidth = `${arrowSize}px ${arrowSize}px ${arrowSize}px 0`;
         arrowStyle.borderColor = `transparent #1A1A1A transparent transparent`;
         break;
-      case 'top-left':
-        arrowStyle.bottom = `-${arrowSize}px`;
-        arrowStyle.left = '20px';
-        arrowStyle.borderWidth = `${arrowSize}px ${arrowSize}px 0 ${arrowSize}px`;
-        arrowStyle.borderColor = `#1A1A1A transparent transparent transparent`;
+      case 'center':
+        arrowStyle.display = 'none';
         break;
-      case 'top-right':
-        arrowStyle.bottom = `-${arrowSize}px`;
-        arrowStyle.right = '20px';
-        arrowStyle.borderWidth = `${arrowSize}px ${arrowSize}px 0 ${arrowSize}px`;
-        arrowStyle.borderColor = `#1A1A1A transparent transparent transparent`;
-        break;
-      case 'bottom-left':
-        arrowStyle.top = `-${arrowSize}px`;
-        arrowStyle.left = '20px';
-        arrowStyle.borderWidth = `0 ${arrowSize}px ${arrowSize}px ${arrowSize}px`;
-        arrowStyle.borderColor = `transparent transparent #1A1A1A transparent`;
-        break;
-      case 'bottom-right':
-        arrowStyle.top = `-${arrowSize}px`;
-        arrowStyle.right = '20px';
-        arrowStyle.borderWidth = `0 ${arrowSize}px ${arrowSize}px ${arrowSize}px`;
-        arrowStyle.borderColor = `transparent transparent #1A1A1A transparent`;
-        break;
+      default:
+        arrowStyle.display = 'none';
     }
 
     return arrowStyle;
