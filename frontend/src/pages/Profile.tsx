@@ -783,12 +783,7 @@ export default function Profile() {
       <div style={containerStyle}>
         {/* Header Section */}
         <div style={headerStyle}>
-          {/* TOUR ATTRIBUTE ADDED: data-tour="profile-avatar" */}
-          <div 
-            style={avatarContainerStyle} 
-            className="avatar-container"
-            data-tour="profile-avatar" // TOUR ATTRIBUTE ADDED
-          >
+          <div style={avatarContainerStyle} className="avatar-container">
             {displayAvatarUrl === '/placeholder-avatar.png' ? ( // FIXED: Removed && isOwnProfile
               <div style={emptyAvatarStyle}>
                 <div style={emptyAvatarIconStyle}>👤</div>
@@ -919,17 +914,14 @@ export default function Profile() {
             </div>
           )}
 
-          {/* FIXED: Wrap Edit Profile button in unconditional container for tour */}
-          <div data-tour="profile-edit"> {/* ✅ ALWAYS PRESENT CONTAINER */}
-            {isOwnProfile && (
-              <button 
-                onClick={() => setShowEditModal(true)}
-                style={editButtonStyle}
-              >
-                Edit Profile
-              </button>
-            )}
-          </div>
+          {isOwnProfile && (
+            <button 
+              onClick={() => setShowEditModal(true)}
+              style={editButtonStyle}
+            >
+              Edit Profile
+            </button>
+          )}
         </div>
 
         {/* Stats Section - Conditionally Rendered - UPDATED: Completely separate designs */}
@@ -977,11 +969,7 @@ export default function Profile() {
             </div>
 
             {/* Row 2: Content Stats - All Content Types */}
-            {/* TOUR ATTRIBUTE ADDED: data-tour="profile-stats" */}
-            <div 
-              style={statsContainerStyle}
-              data-tour="profile-stats" // TOUR ATTRIBUTE ADDED
-            >
+            <div style={statsContainerStyle}>
               {/* Scenes & Remakes Container */}
               <div style={combinedStatItemStyle}>
                 <div style={combinedStatValueStyle}>
@@ -1064,11 +1052,7 @@ export default function Profile() {
 
         {/* Tabs - Filtered by Creative Focus */}
         {availableTabs.length > 0 ? (
-          /* TOUR ATTRIBUTE ADDED: data-tour="profile-tabs" */
-          <div 
-            style={tabsContainerStyle}
-            data-tour="profile-tabs" // TOUR ATTRIBUTE ADDED
-          >
+          <div style={tabsContainerStyle}>
             {availableTabs.map((tab) => (
               <button
                 key={tab}
@@ -1766,3 +1750,4 @@ const errorStyle: React.CSSProperties = {
   fontSize: '16px',
   fontFamily: "'Cormorant', serif",
 };
+

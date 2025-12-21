@@ -22,10 +22,6 @@ import { feedActions } from '../../utils/feedActions';
 import GettingStartedModal from '../GettingStartedModal/GettingStartedModal';
 import { useOnboarding } from '../../hooks/useOnboarding';
 
-// ADDED: Import Tour Components
-import TourOptInModal from '../TourOptInModal/TourOptInModal';
-import TourManager from '../TourManager/TourManager';
-
 // ADDED: Skeleton Loading Components
 const CardSkeleton: React.FC = () => (
   <div style={{
@@ -126,10 +122,7 @@ const HomeFeed: React.FC = () => {
   const navigate = useNavigate();
 
   // ADDED: Use onboarding hook
-  const { showOnboarding, handleComplete: completeOnboarding, handleClose } = useOnboarding();
-
-  // ADDED: Tour State
-  const [showTourOptIn, setShowTourOptIn] = useState(false);
+  const { showOnboarding, handleComplete, handleClose } = useOnboarding();
 
   // ADDED: Pagination state
   const [visibleCount, setVisibleCount] = useState(10);
@@ -233,20 +226,6 @@ const HomeFeed: React.FC = () => {
     loadCharacters();
     loadFrames();
   }, [loadCharacters, loadFrames]);
-
-  // ADDED: Tour Opt-In Handlers
-  const handleTourAccept = () => {
-    setShowTourOptIn(false);
-    localStorage.setItem('tour_opted_in', 'true');
-    localStorage.setItem('tour_completed', 'false');
-    // TourManager will automatically start the tour
-  };
-  
-  const handleTourDecline = () => {
-    setShowTourOptIn(false);
-    localStorage.setItem('tour_opted_in', 'false');
-    localStorage.setItem('tour_completed', 'true'); // Mark as completed so it doesn't show again
-  };
 
   const handleSceneAction = useCallback(async (action: string, sceneId: string, contextText?: string) => {
     if (action === 'Edit') {
@@ -548,22 +527,18 @@ const HomeFeed: React.FC = () => {
         paddingBottom: '100px',
         minHeight: '100vh'
       }}>
-        {/* TOUR ATTRIBUTE ADDED HERE: data-tour="home-feed-header" */}
         <div style={{
           padding: '0 16px 16px 16px',
           borderBottom: '1px solid #E5E5E5',
           marginBottom: '16px'
         }}>
-          <h1 
-            data-tour="home-feed-header" // TOUR ATTRIBUTE ADDED
-            style={{
-              fontFamily: 'Playfair Display, serif',
-              fontSize: '24px',
-              fontWeight: 'bold',
-              color: '#1C1C1C',
-              margin: 0
-            }}
-          >
+          <h1 style={{
+            fontFamily: 'Playfair Display, serif',
+            fontSize: '24px',
+            fontWeight: 'bold',
+            color: '#1C1C1C',
+            margin: 0
+          }}>
             writeFrame
           </h1>
         </div>
@@ -670,27 +645,15 @@ const HomeFeed: React.FC = () => {
         <BottomNav />
       </div>
 
-      {/* ADDED: Getting Started Modal - UPDATED with tour opt-in */}
+      {/* ADDED: Getting Started Modal */}
       <GettingStartedModal
         isOpen={showOnboarding}
         onClose={handleClose}
-        onComplete={() => {
-          completeOnboarding(); // Call original handler
-          setShowTourOptIn(true); // Show tour opt-in modal
-        }}
+        onComplete={handleComplete}
       />
-      
-      {/* ADDED: Tour Opt-In Modal */}
-      <TourOptInModal
-        isOpen={showTourOptIn}
-        onAccept={handleTourAccept}
-        onDecline={handleTourDecline}
-      />
-      
-      {/* ADDED: Tour Manager - This will run the actual tour */}
-      <TourManager />
     </>
   );
 };
 
 export default HomeFeed;
+
