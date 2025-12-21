@@ -783,7 +783,12 @@ export default function Profile() {
       <div style={containerStyle}>
         {/* Header Section */}
         <div style={headerStyle}>
-          <div style={avatarContainerStyle} className="avatar-container">
+          {/* TOUR ATTRIBUTE ADDED: data-tour="profile-avatar" */}
+          <div 
+            style={avatarContainerStyle} 
+            className="avatar-container"
+            data-tour="profile-avatar" // TOUR ATTRIBUTE ADDED
+          >
             {displayAvatarUrl === '/placeholder-avatar.png' ? ( // FIXED: Removed && isOwnProfile
               <div style={emptyAvatarStyle}>
                 <div style={emptyAvatarIconStyle}>👤</div>
@@ -917,6 +922,7 @@ export default function Profile() {
           {isOwnProfile && (
             <button 
               onClick={() => setShowEditModal(true)}
+              data-tour="profile-edit" // TOUR ATTRIBUTE ADDED
               style={editButtonStyle}
             >
               Edit Profile
@@ -969,7 +975,11 @@ export default function Profile() {
             </div>
 
             {/* Row 2: Content Stats - All Content Types */}
-            <div style={statsContainerStyle}>
+            {/* TOUR ATTRIBUTE ADDED: data-tour="profile-stats" */}
+            <div 
+              style={statsContainerStyle}
+              data-tour="profile-stats" // TOUR ATTRIBUTE ADDED
+            >
               {/* Scenes & Remakes Container */}
               <div style={combinedStatItemStyle}>
                 <div style={combinedStatValueStyle}>
@@ -1052,7 +1062,11 @@ export default function Profile() {
 
         {/* Tabs - Filtered by Creative Focus */}
         {availableTabs.length > 0 ? (
-          <div style={tabsContainerStyle}>
+          /* TOUR ATTRIBUTE ADDED: data-tour="profile-tabs" */
+          <div 
+            style={tabsContainerStyle}
+            data-tour="profile-tabs" // TOUR ATTRIBUTE ADDED
+          >
             {availableTabs.map((tab) => (
               <button
                 key={tab}

@@ -327,9 +327,10 @@ const BottomNav: React.FC = () => {
           margin: '0 auto', // CHANGED: Remove maxWidth constraint
           padding: '0 20px'
         }}>
-          {/* Home Button */}
+          {/* Home Button - TOUR ATTRIBUTE ADDED */}
           <button
             onClick={handleHomeClick}
+            data-tour="bottom-nav-home" // TOUR ATTRIBUTE ADDED
             style={{
               background: 'none',
               border: 'none',
@@ -359,9 +360,10 @@ const BottomNav: React.FC = () => {
             </span>
           </button>
 
-          {/* CHANGED: Messages Button to Whispers */}
+          {/* CHANGED: Messages Button to Whispers - TOUR ATTRIBUTE ADDED */}
           <button
             onClick={handleMessagesClick}
+            data-tour="bottom-nav-whispers" // TOUR ATTRIBUTE ADDED
             style={{
               background: 'none',
               border: 'none',
@@ -391,9 +393,10 @@ const BottomNav: React.FC = () => {
             </span>
           </button>
 
-          {/* Create Button */}
+          {/* Create Button - TOUR ATTRIBUTE ADDED */}
           <button
             onClick={() => handleCreateClick()}
+            data-tour="bottom-nav-create" // TOUR ATTRIBUTE ADDED
             style={{
               background: 'none',
               border: 'none',
@@ -423,9 +426,10 @@ const BottomNav: React.FC = () => {
             </span>
           </button>
 
-          {/* Profile Button - FIXED: Only highlight when viewing own profile */}
+          {/* Profile Button - FIXED: Only highlight when viewing own profile - TOUR ATTRIBUTE ADDED */}
           <button
             onClick={handleProfileClick}
+            data-tour="bottom-nav-profile" // TOUR ATTRIBUTE ADDED
             style={{
               background: 'none',
               border: 'none',
@@ -490,4 +494,3 @@ const BottomNav: React.FC = () => {
 };
 
 export default BottomNav;
-

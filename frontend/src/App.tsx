@@ -28,6 +28,9 @@ import { WhisperComposer } from "./components/Whisper/WhisperComposer";
 import { InboxPage } from "./components/Whisper/InboxPage";
 import { WhisperThread } from "./components/Whisper/WhisperThread";
 
+// ADDED: Import TourManager
+import TourManager from "./components/TourManager/TourManager";
+
 function AppContent() {
   useUserSettings();
   
@@ -253,6 +256,9 @@ function AppContent() {
           }
         />
       </Routes>
+      
+      {/* ADDED: Tour Manager - Renders at app root level */}
+      <TourManager />
     </Router>
   );
 }
@@ -268,4 +274,3 @@ function App() {
 }
 
 export default App;
-
