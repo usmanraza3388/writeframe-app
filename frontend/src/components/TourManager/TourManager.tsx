@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import TourOverlay from '../TourOverlay/TourOverlay';
@@ -16,28 +16,32 @@ const TourManager: React.FC = () => {
   const [targetElement, setTargetElement] = useState<HTMLElement | null>(null);
   const [targetRect, setTargetRect] = useState<DOMRect | null>(null);
 
+  // ADDED: Retry counter ref and max retries constant
+  const retryCountRef = useRef(0);
+  const MAX_RETRIES = 5;
+
   // Get tour steps for current user
   const tourSteps = getTourStepsForUser(user?.id);
   const currentStep = tourSteps[currentStepIndex];
   const totalSteps = tourSteps.length;
 
-  // Check if tour should be active
+  // Check if tour should be active - UPDATED: Wait for user data
   useEffect(() => {
     const tourOptedIn = localStorage.getItem('tour_opted_in') === 'true';
     const tourCompleted = localStorage.getItem('tour_completed') === 'true';
     
-    if (tourOptedIn && !tourCompleted && !isActive) {
+    if (tourOptedIn && !tourCompleted && !isActive && user?.id) {
       // Start tour on next tick to ensure DOM is ready
       setTimeout(() => {
         setIsActive(true);
         setCurrentStepIndex(0);
       }, 500);
     }
-  }, [isActive]);
+  }, [isActive, user?.id]);
 
-  // Handle route changes for tour steps
+  // Handle route changes for tour steps - UPDATED: Wait for navigation to complete
   useEffect(() => {
-    if (!isActive || !currentStep) return;
+    if (!isActive || !currentStep || isNavigating) return;
 
     // Check if we're on the correct route for the current step
     const currentRoute = location.pathname;
@@ -49,17 +53,30 @@ const TourManager: React.FC = () => {
       ? currentRoute.startsWith('/profile/')
       : currentRoute === stepRoute;
 
-    if (!isCorrectRoute && !isNavigating) {
+    if (!isCorrectRoute) {
       setIsNavigating(true);
+      
+      // Navigate and wait for page to load
       navigate(stepRoute);
+      
+      // Reset retry counter for new page
+      retryCountRef.current = 0;
+      
+      // Set a timeout to reset navigation flag (page load time)
+      const navigationTimeout = setTimeout(() => {
+        setIsNavigating(false);
+      }, 1000);
+      
+      return () => clearTimeout(navigationTimeout);
     }
   }, [isActive, currentStep, location.pathname, navigate, isNavigating]);
 
-  // Find and measure target element when step changes
+  // Find and measure target element when step changes - FIXED: Remove targetElement from deps
   useEffect(() => {
     if (!isActive || !currentStep) {
       setTargetElement(null);
       setTargetRect(null);
+      retryCountRef.current = 0; // Reset retry counter
       return;
     }
 
@@ -69,6 +86,7 @@ const TourManager: React.FC = () => {
       if (element) {
         setTargetElement(element);
         setTargetRect(element.getBoundingClientRect());
+        retryCountRef.current = 0; // Reset retry counter on success
         
         // Scroll element into view if needed
         setTimeout(() => {
@@ -78,13 +96,26 @@ const TourManager: React.FC = () => {
           });
         }, 300);
       } else {
-        // Retry finding element
-        setTimeout(findElement, 200);
+        retryCountRef.current += 1;
+        
+        if (retryCountRef.current < MAX_RETRIES) {
+          // Retry finding element with increasing delay
+          setTimeout(findElement, 300 * retryCountRef.current);
+        } else {
+          // Element not found after max retries - skip step after delay
+          console.warn(`Tour element not found after ${MAX_RETRIES} attempts: ${currentStep.target}`);
+          
+          // Auto-skip to next step after 1.5 seconds
+          const skipTimeout = setTimeout(() => {
+            handleNext();
+          }, 1500);
+          
+          return () => clearTimeout(skipTimeout);
+        }
       }
     };
 
-    // Reset navigation flag when step changes
-    setIsNavigating(false);
+    // Don't reset isNavigating here - let navigation effect handle it
     
     // Find the target element
     findElement();
@@ -100,7 +131,7 @@ const TourManager: React.FC = () => {
     return () => {
       window.removeEventListener('resize', handleResize);
     };
-  }, [isActive, currentStep, currentStepIndex, targetElement]);
+  }, [isActive, currentStep, currentStepIndex]); // REMOVED: targetElement from dependencies
 
   // Handle next step
   const handleNext = useCallback(() => {

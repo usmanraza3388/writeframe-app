@@ -919,15 +919,17 @@ export default function Profile() {
             </div>
           )}
 
-          {isOwnProfile && (
-            <button 
-              onClick={() => setShowEditModal(true)}
-              data-tour="profile-edit" // TOUR ATTRIBUTE ADDED
-              style={editButtonStyle}
-            >
-              Edit Profile
-            </button>
-          )}
+          {/* FIXED: Wrap Edit Profile button in unconditional container for tour */}
+          <div data-tour="profile-edit"> {/* ✅ ALWAYS PRESENT CONTAINER */}
+            {isOwnProfile && (
+              <button 
+                onClick={() => setShowEditModal(true)}
+                style={editButtonStyle}
+              >
+                Edit Profile
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Stats Section - Conditionally Rendered - UPDATED: Completely separate designs */}

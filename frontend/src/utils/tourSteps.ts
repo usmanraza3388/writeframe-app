@@ -90,10 +90,23 @@ export const tourSteps: TourStep[] = [
   }
 ];
 
-// Helper function to get steps for current user
+// Helper function to get steps for current user - FIXED: Better error handling
 export const getTourStepsForUser = (userId?: string): TourStep[] => {
+  // If no user ID, return empty array to prevent broken tour
+  if (!userId) {
+    console.warn('No user ID available for tour steps. Tour will not start.');
+    return [];
+  }
+  
+  // Validate that userId is a valid string (not 'undefined', 'null', or 'current')
+  if (userId === 'undefined' || userId === 'null' || userId === 'current') {
+    console.warn('Invalid user ID for tour steps:', userId);
+    return [];
+  }
+  
+  // Replace :userId with actual user ID
   return tourSteps.map(step => ({
     ...step,
-    route: step.route.replace(':userId', userId || 'current')
+    route: step.route.replace(':userId', userId)
   }));
 };
