@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNavGuide } from '../../hooks/useNavGuide';
-import { useOnboarding } from '../../hooks/useOnboarding';
 
 const BottomNav: React.FC = () => {
   const navigate = useNavigate();
@@ -11,35 +10,18 @@ const BottomNav: React.FC = () => {
   const [showCreationMenu, setShowCreationMenu] = React.useState(false);
   const [showCreateTooltip, setShowCreateTooltip] = useState(false);
   
-  // ADDED: Navigation guide hooks
-  const { showOnboarding } = useOnboarding();
+  // Navigation guide hook
   const { navGuideSeen, markNavGuideSeen } = useNavGuide();
   const [currentTooltip, setCurrentTooltip] = useState<'create' | 'profile' | null>(null);
   const [hasStartedSequence, setHasStartedSequence] = useState(false);
 
-  useEffect(() => {
-    // Check if user has completed onboarding but hasn't seen the tooltip
-    const hasCompletedOnboarding = localStorage.getItem('writeframe_onboarding_complete');
-    const hasSeenTooltip = localStorage.getItem('writeframe_tooltip_seen');
-    
-    if (hasCompletedOnboarding && !hasSeenTooltip) {
-      // Show tooltip after a short delay
-      const timer = setTimeout(() => {
-        setShowCreateTooltip(true);
-      }, 2000); // Show after 2 seconds on home feed
-      
-      return () => clearTimeout(timer);
-    }
-  }, []);
-
-  // ADDED: Navigation guide sequence logic
+  // Navigation guide sequence logic
   useEffect(() => {
     // Don't start if:
-    // 1. Onboarding is still showing
-    // 2. Already seen nav guide
-    // 3. Already started sequence
-    // 4. Not on home-feed or own profile page
-    if (showOnboarding || navGuideSeen || hasStartedSequence) return;
+    // 1. Already seen nav guide
+    // 2. Already started sequence
+    // 3. Not on home-feed or own profile page
+    if (navGuideSeen || hasStartedSequence) return;
 
     const isHomeFeed = location.pathname === '/home-feed';
     const isOwnProfile = location.pathname === `/profile/${user?.id}`;
@@ -69,9 +51,9 @@ const BottomNav: React.FC = () => {
       clearTimeout(timer2);
       clearTimeout(timer3);
     };
-  }, [showOnboarding, navGuideSeen, hasStartedSequence, location.pathname, user?.id, markNavGuideSeen]);
+  }, [navGuideSeen, hasStartedSequence, location.pathname, user?.id, markNavGuideSeen]);
 
-  // ADDED: Clean tooltip dismissal on any click
+  // Clean tooltip dismissal on any click
   useEffect(() => {
     const handleClick = () => {
       if (currentTooltip) {
@@ -92,7 +74,7 @@ const BottomNav: React.FC = () => {
     </svg>
   );
 
-  // ADDED: Messages Icon
+  // Messages Icon
   const MessagesIcon = ({ active }: { active: boolean }) => (
     <svg width="24" height="24" viewBox="0 0 24 24" fill={active ? "var(--text-primary)" : "none"} stroke="currentColor" strokeWidth="2">
       <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
@@ -161,7 +143,7 @@ const BottomNav: React.FC = () => {
     setShowCreationMenu(false);
   };
 
-  // ADDED: Handle Messages Click
+  // Handle Messages Click
   const handleMessagesClick = () => {
     navigate('/inbox');
     setShowCreationMenu(false);
@@ -171,15 +153,13 @@ const BottomNav: React.FC = () => {
     if (type) {
       setShowCreationMenu(false);
       setShowCreateTooltip(false);
-      localStorage.setItem('writeframe_tooltip_seen', 'true');
       navigate(`/compose-${type}`);
     } else {
       setShowCreationMenu(!showCreationMenu);
       setShowCreateTooltip(false);
-      localStorage.setItem('writeframe_tooltip_seen', 'true');
     }
     
-    // ADDED: Dismiss navigation guide if showing
+    // Dismiss navigation guide if showing
     if (currentTooltip) {
       setCurrentTooltip(null);
       markNavGuideSeen();
@@ -192,7 +172,7 @@ const BottomNav: React.FC = () => {
     }
     setShowCreationMenu(false);
     
-    // ADDED: Dismiss navigation guide if showing
+    // Dismiss navigation guide if showing
     if (currentTooltip) {
       setCurrentTooltip(null);
       markNavGuideSeen();
@@ -201,10 +181,10 @@ const BottomNav: React.FC = () => {
 
   const isActive = (path: string) => location.pathname === path;
 
-  // FIXED: Only highlight profile when viewing own profile
+  // Only highlight profile when viewing own profile
   const isOwnProfileActive = location.pathname === `/profile/${user?.id}`;
 
-  // FIXED: Tooltip components - corrected duplicate transform property
+  // Tooltip components
   const CreateTooltip = () => (
     <div style={{
       position: 'fixed',
@@ -325,7 +305,7 @@ const BottomNav: React.FC = () => {
         />
       )}
 
-      {/* ADDED: Navigation Guide Tooltips */}
+      {/* Navigation Guide Tooltips */}
       {currentTooltip === 'create' && <CreateTooltip />}
       {currentTooltip === 'profile' && <ProfileTooltip />}
 
@@ -449,7 +429,7 @@ const BottomNav: React.FC = () => {
         </div>
       )}
 
-      {/* Bottom Navigation Bar - UPDATED: Reduced height and centered */}
+      {/* Bottom Navigation Bar */}
       <nav style={{
         position: 'fixed',
         bottom: 0,
@@ -505,7 +485,7 @@ const BottomNav: React.FC = () => {
             </span>
           </button>
 
-          {/* CHANGED: Messages Button to Whispers */}
+          {/* Whispers Button */}
           <button
             onClick={handleMessagesClick}
             style={{
@@ -569,7 +549,7 @@ const BottomNav: React.FC = () => {
             </span>
           </button>
 
-          {/* Profile Button - FIXED: Only highlight when viewing own profile */}
+          {/* Profile Button */}
           <button
             onClick={handleProfileClick}
             style={{
