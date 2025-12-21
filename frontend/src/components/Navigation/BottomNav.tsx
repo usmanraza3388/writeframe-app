@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { useNavGuide } from '../../hooks/useNavGuide';
 
 const BottomNav: React.FC = () => {
   const navigate = useNavigate();
@@ -9,62 +8,21 @@ const BottomNav: React.FC = () => {
   const { user } = useAuth();
   const [showCreationMenu, setShowCreationMenu] = React.useState(false);
   const [showCreateTooltip, setShowCreateTooltip] = useState(false);
-  
-  // Navigation guide hook
-  const { navGuideSeen, markNavGuideSeen } = useNavGuide();
-  const [currentTooltip, setCurrentTooltip] = useState<'create' | 'profile' | null>(null);
-  const [hasStartedSequence, setHasStartedSequence] = useState(false);
 
-  // Navigation guide sequence logic
   useEffect(() => {
-    // Don't start if:
-    // 1. Already seen nav guide
-    // 2. Already started sequence
-    // 3. Not on home-feed or own profile page
-    if (navGuideSeen || hasStartedSequence) return;
-
-    const isHomeFeed = location.pathname === '/home-feed';
-    const isOwnProfile = location.pathname === `/profile/${user?.id}`;
+    // Check if user has completed onboarding but hasn't seen the tooltip
+    const hasCompletedOnboarding = localStorage.getItem('writeframe_onboarding_complete');
+    const hasSeenTooltip = localStorage.getItem('writeframe_tooltip_seen');
     
-    if (!isHomeFeed && !isOwnProfile) return;
-
-    setHasStartedSequence(true);
-
-    // Sequence: Create button first
-    const timer1 = setTimeout(() => {
-      setCurrentTooltip('create');
-    }, 1000); // 1 second delay
-
-    // Then profile button
-    const timer2 = setTimeout(() => {
-      setCurrentTooltip('profile');
-    }, 3500); // 2.5 seconds later (total 3.5s)
-
-    // Clear and mark as seen
-    const timer3 = setTimeout(() => {
-      setCurrentTooltip(null);
-      markNavGuideSeen();
-    }, 6000); // Clear after 2.5 more seconds (total 6s)
-
-    return () => {
-      clearTimeout(timer1);
-      clearTimeout(timer2);
-      clearTimeout(timer3);
-    };
-  }, [navGuideSeen, hasStartedSequence, location.pathname, user?.id, markNavGuideSeen]);
-
-  // Clean tooltip dismissal on any click
-  useEffect(() => {
-    const handleClick = () => {
-      if (currentTooltip) {
-        setCurrentTooltip(null);
-        markNavGuideSeen();
-      }
-    };
-
-    window.addEventListener('click', handleClick);
-    return () => window.removeEventListener('click', handleClick);
-  }, [currentTooltip, markNavGuideSeen]);
+    if (hasCompletedOnboarding && !hasSeenTooltip) {
+      // Show tooltip after a short delay
+      const timer = setTimeout(() => {
+        setShowCreateTooltip(true);
+      }, 2000); // Show after 2 seconds on home feed
+      
+      return () => clearTimeout(timer);
+    }
+  }, []);
 
   // Icons with theme support
   const HomeIcon = ({ active }: { active: boolean }) => (
@@ -74,7 +32,7 @@ const BottomNav: React.FC = () => {
     </svg>
   );
 
-  // Messages Icon
+  // ADDED: Messages Icon
   const MessagesIcon = ({ active }: { active: boolean }) => (
     <svg width="24" height="24" viewBox="0 0 24 24" fill={active ? "var(--text-primary)" : "none"} stroke="currentColor" strokeWidth="2">
       <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
@@ -143,7 +101,7 @@ const BottomNav: React.FC = () => {
     setShowCreationMenu(false);
   };
 
-  // Handle Messages Click
+  // ADDED: Handle Messages Click
   const handleMessagesClick = () => {
     navigate('/inbox');
     setShowCreationMenu(false);
@@ -153,16 +111,12 @@ const BottomNav: React.FC = () => {
     if (type) {
       setShowCreationMenu(false);
       setShowCreateTooltip(false);
+      localStorage.setItem('writeframe_tooltip_seen', 'true');
       navigate(`/compose-${type}`);
     } else {
       setShowCreationMenu(!showCreationMenu);
       setShowCreateTooltip(false);
-    }
-    
-    // Dismiss navigation guide if showing
-    if (currentTooltip) {
-      setCurrentTooltip(null);
-      markNavGuideSeen();
+      localStorage.setItem('writeframe_tooltip_seen', 'true');
     }
   };
 
@@ -171,88 +125,12 @@ const BottomNav: React.FC = () => {
       navigate(`/profile/${user.id}`);
     }
     setShowCreationMenu(false);
-    
-    // Dismiss navigation guide if showing
-    if (currentTooltip) {
-      setCurrentTooltip(null);
-      markNavGuideSeen();
-    }
   };
 
   const isActive = (path: string) => location.pathname === path;
 
-  // Only highlight profile when viewing own profile
+  // FIXED: Only highlight profile when viewing own profile
   const isOwnProfileActive = location.pathname === `/profile/${user?.id}`;
-
-  // Tooltip components
-  const CreateTooltip = () => (
-    <div style={{
-      position: 'fixed',
-      bottom: '85px',
-      left: '50%',
-      transform: 'translateX(-50%)',
-      background: '#1A1A1A',
-      color: 'white',
-      padding: '12px 16px',
-      borderRadius: '12px',
-      fontSize: '14px',
-      fontFamily: "'Cormorant', serif",
-      zIndex: 10000,
-      whiteSpace: 'nowrap',
-      boxShadow: '0 8px 24px rgba(0, 0, 0, 0.2)',
-      animation: 'fadeInUp 0.3s ease-out',
-      maxWidth: '300px',
-      textAlign: 'center',
-      border: '1px solid rgba(255, 255, 255, 0.1)'
-    }}>
-      <div style={{
-        position: 'absolute',
-        bottom: '-6px',
-        left: '50%',
-        transform: 'translateX(-50%) rotate(45deg)',
-        width: '12px',
-        height: '12px',
-        background: '#1A1A1A',
-        borderRight: '1px solid rgba(255, 255, 255, 0.1)',
-        borderBottom: '1px solid rgba(255, 255, 255, 0.1)'
-      }} />
-      Start here to create your first scene, monologue, character, or frame
-    </div>
-  );
-
-  const ProfileTooltip = () => (
-    <div style={{
-      position: 'fixed',
-      bottom: '85px',
-      right: '16px',
-      background: '#1A1A1A',
-      color: 'white',
-      padding: '12px 16px',
-      borderRadius: '12px',
-      fontSize: '14px',
-      fontFamily: "'Cormorant', serif",
-      zIndex: 10000,
-      whiteSpace: 'nowrap',
-      boxShadow: '0 8px 24px rgba(0, 0, 0, 0.2)',
-      animation: 'fadeInUp 0.3s ease-out',
-      maxWidth: '280px',
-      textAlign: 'center',
-      border: '1px solid rgba(255, 255, 255, 0.1)'
-    }}>
-      <div style={{
-        position: 'absolute',
-        bottom: '-6px',
-        right: '20px',
-        width: '12px',
-        height: '12px',
-        background: '#1A1A1A',
-        transform: 'rotate(45deg)',
-        borderRight: '1px solid rgba(255, 255, 255, 0.1)',
-        borderBottom: '1px solid rgba(255, 255, 255, 0.1)'
-      }} />
-      Your profile showcases all your creations and portfolio
-    </div>
-  );
 
   // Creation options data
   const creationOptions = [
@@ -304,10 +182,6 @@ const BottomNav: React.FC = () => {
           onClick={() => setShowCreationMenu(false)}
         />
       )}
-
-      {/* Navigation Guide Tooltips */}
-      {currentTooltip === 'create' && <CreateTooltip />}
-      {currentTooltip === 'profile' && <ProfileTooltip />}
 
       {/* Create Button Tooltip - Only for first-time users */}
       {showCreateTooltip && (
@@ -429,7 +303,7 @@ const BottomNav: React.FC = () => {
         </div>
       )}
 
-      {/* Bottom Navigation Bar */}
+      {/* Bottom Navigation Bar - UPDATED: Reduced height and centered */}
       <nav style={{
         position: 'fixed',
         bottom: 0,
@@ -437,20 +311,20 @@ const BottomNav: React.FC = () => {
         transform: 'translateX(-50%)',
         background: 'var(--background-primary)',
         borderTop: '1px solid var(--border-color)',
-        padding: '8px 0 12px',
+        padding: '8px 0 12px', // REDUCED: Less padding for smaller height
         zIndex: 1000,
         backdropFilter: 'blur(10px)',
-        width: '375px',
-        maxWidth: '100vw',
-        boxSizing: 'border-box',
-        borderTopLeftRadius: '12px',
-        borderTopRightRadius: '12px'
+        width: '375px', // ADDED: Fixed width
+        maxWidth: '100vw', // ADDED: Responsive constraint
+        boxSizing: 'border-box', // ADDED: Proper box model
+        borderTopLeftRadius: '12px', // ADDED: Rounded corners
+        borderTopRightRadius: '12px' // ADDED: Rounded corners
       }}>
         <div style={{
           display: 'flex',
           justifyContent: 'space-around',
           alignItems: 'center',
-          margin: '0 auto',
+          margin: '0 auto', // CHANGED: Remove maxWidth constraint
           padding: '0 20px'
         }}>
           {/* Home Button */}
@@ -460,12 +334,12 @@ const BottomNav: React.FC = () => {
               background: 'none',
               border: 'none',
               cursor: 'pointer',
-              padding: '8px 12px',
+              padding: '8px 12px', // REDUCED: Less padding
               borderRadius: '12px',
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
-              gap: '4px',
+              gap: '4px', // REDUCED: Less gap
               color: isActive('/home-feed') ? 'var(--text-primary)' : 'var(--text-gray)',
               transition: 'all 0.2s ease',
               flex: 1,
@@ -485,19 +359,19 @@ const BottomNav: React.FC = () => {
             </span>
           </button>
 
-          {/* Whispers Button */}
+          {/* CHANGED: Messages Button to Whispers */}
           <button
             onClick={handleMessagesClick}
             style={{
               background: 'none',
               border: 'none',
               cursor: 'pointer',
-              padding: '8px 12px',
+              padding: '8px 12px', // REDUCED: Less padding
               borderRadius: '12px',
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
-              gap: '4px',
+              gap: '4px', // REDUCED: Less gap
               color: isActive('/inbox') ? 'var(--text-primary)' : 'var(--text-gray)',
               transition: 'all 0.2s ease',
               flex: 1,
@@ -524,12 +398,12 @@ const BottomNav: React.FC = () => {
               background: 'none',
               border: 'none',
               cursor: 'pointer',
-              padding: '8px 12px',
+              padding: '8px 12px', // REDUCED: Less padding
               borderRadius: '12px',
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
-              gap: '4px',
+              gap: '4px', // REDUCED: Less gap
               color: showCreationMenu ? 'var(--text-primary)' : 'var(--text-gray)',
               transition: 'all 0.2s ease',
               flex: 1,
@@ -549,19 +423,19 @@ const BottomNav: React.FC = () => {
             </span>
           </button>
 
-          {/* Profile Button */}
+          {/* Profile Button - FIXED: Only highlight when viewing own profile */}
           <button
             onClick={handleProfileClick}
             style={{
               background: 'none',
               border: 'none',
               cursor: 'pointer',
-              padding: '8px 12px',
+              padding: '8px 12px', // REDUCED: Less padding
               borderRadius: '12px',
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
-              gap: '4px',
+              gap: '4px', // REDUCED: Less gap
               color: isOwnProfileActive ? 'var(--text-primary)' : 'var(--text-gray)',
               transition: 'all 0.2s ease',
               flex: 1,
@@ -616,3 +490,4 @@ const BottomNav: React.FC = () => {
 };
 
 export default BottomNav;
+
