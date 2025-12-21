@@ -67,7 +67,113 @@ const skeletonStyles = `
 }
 `;
 
-// ADDED: Skeleton Loading Component
+// ADD: Main tabs container styles (MOVED ABOVE)
+const mainTabsContainerStyle: React.CSSProperties = {
+  display: 'flex',
+  gap: 8,
+  background: '#FAF8F2',
+  borderRadius: 14,
+  padding: 6,
+  width: '100%',
+  marginBottom: 16,
+};
+
+const mainTabButtonStyle: React.CSSProperties = {
+  padding: '12px 16px',
+  background: 'transparent',
+  border: 'none',
+  borderRadius: 10,
+  fontSize: 14,
+  cursor: 'pointer',
+  flex: 1,
+  fontFamily: "'Cormorant', serif",
+  fontWeight: 500,
+  transition: 'all 0.3s ease',
+  color: '#6B7280',
+};
+
+// ADD TABS CONTAINER STYLES (MOVED ABOVE)
+const tabsContainerStyle: React.CSSProperties = {
+  display: 'flex',
+  gap: 4,
+  background: '#FAF8F2',
+  borderRadius: 14,
+  padding: 6,
+  width: '100%',
+  minWidth: 0,
+  overflowX: 'auto',
+};
+
+const tabButtonStyle: React.CSSProperties = {
+  padding: '10px 8px',
+  background: 'transparent',
+  border: 'none',
+  borderRadius: 10,
+  fontSize: 12,
+  cursor: 'pointer',
+  flex: 1,
+  fontFamily: "'Cormorant', serif",
+  fontWeight: 500,
+  transition: 'all 0.3s ease',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  color: '#6B7280',
+  minWidth: 0,
+  whiteSpace: 'nowrap',
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+};
+
+const sectionStyle: React.CSSProperties = {
+  display: 'flex',
+  flexDirection: 'column',
+  gap: 16,
+};
+
+const dividerStyle: React.CSSProperties = {
+  height: 1,
+  background: 'rgba(0,0,0,0.08)',
+  width: '100%',
+  margin: '8px 0',
+};
+
+const draftItemStyle: React.CSSProperties = {
+  display: 'flex',
+  justifyContent: 'space-between',
+  alignItems: 'center',
+  padding: '16px 0',
+  cursor: 'pointer',
+  borderBottom: '1px solid rgba(0,0,0,0.08)',
+};
+
+const draftContentStyle: React.CSSProperties = {
+  display: 'flex',
+  flexDirection: 'column',
+  gap: 4,
+  flex: 1,
+};
+
+const engagementStyle: React.CSSProperties = {
+  fontFamily: "'Cormorant', serif",
+  fontSize: 14,
+  fontWeight: 600,
+  color: '#1A1A1A',
+  minWidth: 20,
+  textAlign: 'center',
+};
+
+const menuButtonStyle: React.CSSProperties = {
+  background: 'none',
+  border: 'none',
+  cursor: 'pointer',
+  padding: '8px',
+  borderRadius: '4px',
+  color: '#1A1A1A',
+  fontSize: 18,
+};
+
+// ADDED: Skeleton Loading Component (NOW AFTER STYLE DEFINITIONS)
 const DraftsSkeleton: React.FC = () => (
   <div style={containerStyle}>
     {/* Header Skeleton */}
@@ -465,69 +571,11 @@ const { savedItems, loading: savedLoading } = useSavedItems();
     letterSpacing: '-0.02em',
   };
 
-  // ADD: Main tabs container styles
-  const mainTabsContainerStyle: React.CSSProperties = {
-    display: 'flex',
-    gap: 8,
-    background: '#FAF8F2',
-    borderRadius: 14,
-    padding: 6,
-    width: '100%',
-    marginBottom: 16,
-  };
-
-  const mainTabButtonStyle: React.CSSProperties = {
-    padding: '12px 16px',
-    background: 'transparent',
-    border: 'none',
-    borderRadius: 10,
-    fontSize: 14,
-    cursor: 'pointer',
-    flex: 1,
-    fontFamily: "'Cormorant', serif",
-    fontWeight: 500,
-    transition: 'all 0.3s ease',
-    color: '#6B7280',
-  };
-
   const activeMainTabButtonStyle: React.CSSProperties = {
     background: '#FFFFFF',
     color: '#1A1A1A',
     fontWeight: 600,
     boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
-  };
-
-  // ADD TABS CONTAINER STYLES
-  const tabsContainerStyle: React.CSSProperties = {
-    display: 'flex',
-    gap: 4,
-    background: '#FAF8F2',
-    borderRadius: 14,
-    padding: 6,
-    width: '100%',
-    minWidth: 0,
-    overflowX: 'auto',
-  };
-
-  const tabButtonStyle: React.CSSProperties = {
-    padding: '10px 8px',
-    background: 'transparent',
-    border: 'none',
-    borderRadius: 10,
-    fontSize: 12,
-    cursor: 'pointer',
-    flex: 1,
-    fontFamily: "'Cormorant', serif",
-    fontWeight: 500,
-    transition: 'all 0.3s ease',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    color: '#6B7280',
-    minWidth: 0,
-    whiteSpace: 'nowrap',
-    overflow: 'hidden',
-    textOverflow: 'ellipsis',
   };
 
   const activeTabButtonStyle: React.CSSProperties = {
@@ -537,41 +585,12 @@ const { savedItems, loading: savedLoading } = useSavedItems();
     boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
   };
 
-  const sectionStyle: React.CSSProperties = {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: 16,
-  };
-
   const sectionHeaderStyle: React.CSSProperties = {
     fontFamily: "'Playfair Display', serif",
     fontSize: 20,
     fontWeight: 600,
     color: '#1A1A1A',
     margin: 0,
-  };
-
-  const dividerStyle: React.CSSProperties = {
-    height: 1,
-    background: 'rgba(0,0,0,0.08)',
-    width: '100%',
-    margin: '8px 0',
-  };
-
-  const draftItemStyle: React.CSSProperties = {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: '16px 0',
-    cursor: 'pointer',
-    borderBottom: '1px solid rgba(0,0,0,0.08)',
-  };
-
-  const draftContentStyle: React.CSSProperties = {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: 4,
-    flex: 1,
   };
 
   const draftTitleStyle: React.CSSProperties = {
@@ -597,27 +616,8 @@ const { savedItems, loading: savedLoading } = useSavedItems();
     margin: 0,
   };
 
-  const engagementStyle: React.CSSProperties = {
-    fontFamily: "'Cormorant', serif",
-    fontSize: 14,
-    fontWeight: 600,
-    color: '#1A1A1A',
-    minWidth: 20,
-    textAlign: 'center',
-  };
-
   const menuContainerStyle: React.CSSProperties = {
     position: 'relative',
-  };
-
-  const menuButtonStyle: React.CSSProperties = {
-    background: 'none',
-    border: 'none',
-    cursor: 'pointer',
-    padding: '8px',
-    borderRadius: '4px',
-    color: '#1A1A1A',
-    fontSize: 18,
   };
 
   const menuStyle: React.CSSProperties = {
