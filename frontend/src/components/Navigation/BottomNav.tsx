@@ -29,29 +29,21 @@ const BottomNav: React.FC = () => {
     }
   }, []);
 
-  // ADDED: Start bottom-nav tooltip sequence when on home-feed - FIXED LOGIC
+  // FIXED: Start bottom-nav tooltip sequence when on home-feed - CORRECTED
   useEffect(() => {
     if (location.pathname === '/home-feed') {
+      // Check if user has completed onboarding
       const hasCompletedOnboarding = localStorage.getItem('writeframe_onboarding_complete');
       
-      if (hasCompletedOnboarding) {
-        // Check tooltip progress
+      if (hasCompletedOnboarding === 'true') {
+        // Check if bottom-nav sequence hasn't been completed yet
         const tooltipProgress = localStorage.getItem('writeframe_tooltip_progress');
         
-        if (!tooltipProgress) {
-          // FIRST TIME: No progress exists, start the tour
-          const timer = setTimeout(() => {
-            startSequence('bottom-nav');
-          }, 1500);
-          return () => clearTimeout(timer);
-        } else {
-          // RESUME: Progress exists, check if bottom-nav is not completed
+        if (tooltipProgress) {
           try {
             const progress = JSON.parse(tooltipProgress);
-            const bottomNavProgress = progress['bottom-nav'];
-            
-            // Start if: no progress OR not completed
-            if (!bottomNavProgress || !bottomNavProgress.completed) {
+            if (!progress['bottom-nav']?.completed) {
+              // Start sequence after a short delay
               const timer = setTimeout(() => {
                 startSequence('bottom-nav');
               }, 1500);
@@ -59,13 +51,14 @@ const BottomNav: React.FC = () => {
             }
           } catch (error) {
             console.error('Failed to parse tooltip progress:', error);
-            // If corrupted, clear and start fresh
-            localStorage.removeItem('writeframe_tooltip_progress');
-            const timer = setTimeout(() => {
-              startSequence('bottom-nav');
-            }, 1500);
-            return () => clearTimeout(timer);
           }
+        } else {
+          // No progress exists yet, but onboarding is complete
+          // This means user just completed onboarding, start the tour
+          const timer = setTimeout(() => {
+            startSequence('bottom-nav');
+          }, 1500);
+          return () => clearTimeout(timer);
         }
       }
     }
