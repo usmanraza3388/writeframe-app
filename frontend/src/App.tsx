@@ -27,8 +27,6 @@ import HomeFeed from "./components/HomeFeed/HomeFeed";
 import { WhisperComposer } from "./components/Whisper/WhisperComposer";
 import { InboxPage } from "./components/Whisper/InboxPage";
 import { WhisperThread } from "./components/Whisper/WhisperThread";
-// ADDED: ContextualTooltip import
-import ContextualTooltip from "./components/ContextualTooltip/ContextualTooltip";
 
 function AppContent() {
   useUserSettings();
@@ -71,9 +69,6 @@ function AppContent() {
 
   return (
     <Router>
-      {/* ADDED: ContextualTooltip - renders globally */}
-      <ContextualTooltip />
-      
       <Routes>
         {/* Temporary testing route - REMOVE BEFORE DEPLOYMENT */}
         <Route path="/test-scene-composer" element={<SceneComposer />} />
@@ -151,11 +146,11 @@ function AppContent() {
         />
         <Route
           path="/genre-selection"
-          element={session ? <GenreSelection /> : <Navigate to="/signin" replace />}
+          element={session ? <GenreSelection /> : <Navigate to="/signup" replace />}
         />
         <Route
           path="/expression-selection"
-          element={session ? <ExpressionSelection /> : <Navigate to="/signin" replace />}
+          element={session ? <ExpressionSelection /> : <Navigate to="/signup" replace />}
         />
         
         {/* REMOVED: Studio Ready Guide Route - No longer needed */}
@@ -273,3 +268,4 @@ function App() {
 }
 
 export default App;
+

@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-// ADDED: Import useTooltipSequence hook
-import { useTooltipSequence } from '../../hooks/useTooltipSequence.ts';
 
 const BottomNav: React.FC = () => {
   const navigate = useNavigate();
@@ -10,9 +8,6 @@ const BottomNav: React.FC = () => {
   const { user } = useAuth();
   const [showCreationMenu, setShowCreationMenu] = React.useState(false);
   const [showCreateTooltip, setShowCreateTooltip] = useState(false);
-  
-  // ADDED: Use tooltip sequence hook
-  const { startSequence, isSequenceActive } = useTooltipSequence();
 
   useEffect(() => {
     // Check if user has completed onboarding but hasn't seen the tooltip
@@ -28,41 +23,6 @@ const BottomNav: React.FC = () => {
       return () => clearTimeout(timer);
     }
   }, []);
-
-  // FIXED: Start bottom-nav tooltip sequence when on home-feed - CORRECTED
-  useEffect(() => {
-    if (location.pathname === '/home-feed') {
-      // Check if user has completed onboarding
-      const hasCompletedOnboarding = localStorage.getItem('writeframe_onboarding_complete');
-      
-      if (hasCompletedOnboarding === 'true') {
-        // Check if bottom-nav sequence hasn't been completed yet
-        const tooltipProgress = localStorage.getItem('writeframe_tooltip_progress');
-        
-        if (tooltipProgress) {
-          try {
-            const progress = JSON.parse(tooltipProgress);
-            if (!progress['bottom-nav']?.completed) {
-              // Start sequence after a short delay
-              const timer = setTimeout(() => {
-                startSequence('bottom-nav');
-              }, 1500);
-              return () => clearTimeout(timer);
-            }
-          } catch (error) {
-            console.error('Failed to parse tooltip progress:', error);
-          }
-        } else {
-          // No progress exists yet, but onboarding is complete
-          // This means user just completed onboarding, start the tour
-          const timer = setTimeout(() => {
-            startSequence('bottom-nav');
-          }, 1500);
-          return () => clearTimeout(timer);
-        }
-      }
-    }
-  }, [location.pathname, startSequence]);
 
   // Icons with theme support
   const HomeIcon = ({ active }: { active: boolean }) => (
@@ -171,9 +131,6 @@ const BottomNav: React.FC = () => {
 
   // FIXED: Only highlight profile when viewing own profile
   const isOwnProfileActive = location.pathname === `/profile/${user?.id}`;
-
-  // ADDED: Check if bottom-nav tour is active
-  const isBottomNavTourActive = isSequenceActive('bottom-nav');
 
   // Creation options data
   const creationOptions = [
@@ -370,10 +327,9 @@ const BottomNav: React.FC = () => {
           margin: '0 auto', // CHANGED: Remove maxWidth constraint
           padding: '0 20px'
         }}>
-          {/* Home Button - ADDED: data-tooltip attribute */}
+          {/* Home Button */}
           <button
             onClick={handleHomeClick}
-            data-tooltip="bottomnav-home"
             style={{
               background: 'none',
               border: 'none',
@@ -387,8 +343,7 @@ const BottomNav: React.FC = () => {
               color: isActive('/home-feed') ? 'var(--text-primary)' : 'var(--text-gray)',
               transition: 'all 0.2s ease',
               flex: 1,
-              maxWidth: '70px',
-              position: 'relative'
+              maxWidth: '70px'
             }}
             onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--background-secondary)'}
             onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
@@ -404,10 +359,9 @@ const BottomNav: React.FC = () => {
             </span>
           </button>
 
-          {/* CHANGED: Messages Button to Whispers - ADDED: data-tooltip attribute */}
+          {/* CHANGED: Messages Button to Whispers */}
           <button
             onClick={handleMessagesClick}
-            data-tooltip="bottomnav-whispers"
             style={{
               background: 'none',
               border: 'none',
@@ -421,8 +375,7 @@ const BottomNav: React.FC = () => {
               color: isActive('/inbox') ? 'var(--text-primary)' : 'var(--text-gray)',
               transition: 'all 0.2s ease',
               flex: 1,
-              maxWidth: '70px',
-              position: 'relative'
+              maxWidth: '70px'
             }}
             onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--background-secondary)'}
             onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
@@ -438,10 +391,9 @@ const BottomNav: React.FC = () => {
             </span>
           </button>
 
-          {/* Create Button - ADDED: data-tooltip attribute */}
+          {/* Create Button */}
           <button
             onClick={() => handleCreateClick()}
-            data-tooltip="bottomnav-create"
             style={{
               background: 'none',
               border: 'none',
@@ -455,8 +407,7 @@ const BottomNav: React.FC = () => {
               color: showCreationMenu ? 'var(--text-primary)' : 'var(--text-gray)',
               transition: 'all 0.2s ease',
               flex: 1,
-              maxWidth: '70px',
-              position: 'relative'
+              maxWidth: '70px'
             }}
             onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--background-secondary)'}
             onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
@@ -472,10 +423,9 @@ const BottomNav: React.FC = () => {
             </span>
           </button>
 
-          {/* Profile Button - FIXED: Only highlight when viewing own profile - ADDED: data-tooltip attribute */}
+          {/* Profile Button - FIXED: Only highlight when viewing own profile */}
           <button
             onClick={handleProfileClick}
-            data-tooltip="bottomnav-profile"
             style={{
               background: 'none',
               border: 'none',
@@ -489,8 +439,7 @@ const BottomNav: React.FC = () => {
               color: isOwnProfileActive ? 'var(--text-primary)' : 'var(--text-gray)',
               transition: 'all 0.2s ease',
               flex: 1,
-              maxWidth: '70px',
-              position: 'relative'
+              maxWidth: '70px'
             }}
             onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--background-secondary)'}
             onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
@@ -534,18 +483,6 @@ const BottomNav: React.FC = () => {
               transform: translateX(-50%) translateY(0);
             }
           }
-          
-          /* ADDED: Style for when tooltip tour is active */
-          [data-tooltip] {
-            transition: all 0.3s ease;
-          }
-          
-          /* Prevent interaction with other tooltips when bottom-nav tour is active */
-          ${isBottomNavTourActive ? `
-            .contextual-tooltip-overlay {
-              pointer-events: auto !important;
-            }
-          ` : ''}
         `}
       </style>
     </>
@@ -553,3 +490,4 @@ const BottomNav: React.FC = () => {
 };
 
 export default BottomNav;
+

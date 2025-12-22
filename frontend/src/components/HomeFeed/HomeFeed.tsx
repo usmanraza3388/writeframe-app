@@ -21,8 +21,6 @@ import { feedActions } from '../../utils/feedActions';
 // ADDED: Import GettingStartedModal and useOnboarding hook
 import GettingStartedModal from '../GettingStartedModal/GettingStartedModal';
 import { useOnboarding } from '../../hooks/useOnboarding';
-// ADDED: Import useTooltipSequence hook
-import { useTooltipSequence } from '../../hooks/useTooltipSequence';
 
 // ADDED: Skeleton Loading Components
 const CardSkeleton: React.FC = () => (
@@ -125,9 +123,6 @@ const HomeFeed: React.FC = () => {
 
   // ADDED: Use onboarding hook
   const { showOnboarding, handleComplete, handleClose } = useOnboarding();
-  
-  // ADDED: Use tooltip sequence hook
-  const { startSequence, isSequenceActive } = useTooltipSequence();
 
   // ADDED: Pagination state
   const [visibleCount, setVisibleCount] = useState(10);
@@ -422,40 +417,6 @@ const HomeFeed: React.FC = () => {
       .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
   }, [scenes, monologues, repostedMonologues, characters, repostedCharacters, frames, repostedFrames]);
 
-  // FIXED: Improved home-feed tooltip sequence triggering logic
-  useEffect(() => {
-    // Check if user has completed onboarding
-    const hasCompletedOnboarding = localStorage.getItem('writeframe_onboarding_complete');
-    
-    if (hasCompletedOnboarding) {
-      // Check tooltip progress
-      const tooltipProgress = localStorage.getItem('writeframe_tooltip_progress');
-      
-      if (tooltipProgress) {
-        try {
-          const progress = JSON.parse(tooltipProgress);
-          const bottomNavCompleted = progress['bottom-nav']?.completed;
-          const homeFeedCompleted = progress['home-feed']?.completed;
-          
-          // Only start home-feed tour if:
-          // 1. Bottom-nav is complete
-          // 2. Home-feed is not completed
-          // 3. There's content in the feed
-          if (bottomNavCompleted && !homeFeedCompleted && mixedFeed.length > 0) {
-            // Wait for content to load and then start sequence
-            const timer = setTimeout(() => {
-              startSequence('home-feed');
-            }, 2000); // Wait 2 seconds for content to render
-            
-            return () => clearTimeout(timer);
-          }
-        } catch (error) {
-          console.error('Failed to parse tooltip progress:', error);
-        }
-      }
-    }
-  }, [mixedFeed.length, startSequence]);
-
   // ADDED: Paginated feed
   const displayFeed = useMemo(() => mixedFeed.slice(0, visibleCount), [mixedFeed, visibleCount]);
 
@@ -469,9 +430,6 @@ const HomeFeed: React.FC = () => {
     loadFrames();
     setVisibleCount(10); // Reset pagination on refresh
   };
-
-  // ADDED: Check if home-feed tour is active
-  const isHomeFeedTourActive = isSequenceActive('home-feed');
 
   // ADDED: Enhanced loading state with skeletons
   if (loading && mixedFeed.length === 0) {
@@ -591,15 +549,10 @@ const HomeFeed: React.FC = () => {
           gap: '20px',
           padding: '0 16px'
         }}>
-          {displayFeed.map((item, index) => {
+          {displayFeed.map((item) => {
             if (item.type === 'scene') {
               return (
-                <div 
-                  key={`scene-${item.data.id}`} 
-                  id={`scene-${item.data.id}`}
-                  // ADDED: data-tooltip attribute for first scene card
-                  {...(index === 0 ? { 'data-tooltip': 'feed-scene-card' } : {})}
-                >
+                <div key={`scene-${item.data.id}`} id={`scene-${item.data.id}`}>
                   <SceneCard 
                     scene={item.data}
                     currentUserId={currentUserId}
@@ -675,18 +628,15 @@ const HomeFeed: React.FC = () => {
           {/* ADDED: Loading more indicator */}
           {isLoadingMore && <CardSkeleton />}
 
-          {/* ADDED: End of feed message with dynamic text - ADDED data-tooltip attribute */}
+          {/* ADDED: End of feed message with dynamic text */}
           {visibleCount >= mixedFeed.length && mixedFeed.length > 0 && (
-            <div 
-              style={{
-                padding: '20px 16px',
-                textAlign: 'center',
-                fontFamily: 'Playfair Display, serif',
-                color: '#55524F',
-                fontSize: '14px'
-              }}
-              data-tooltip="feed-infinite-scroll"
-            >
+            <div style={{
+              padding: '20px 16px',
+              textAlign: 'center',
+              fontFamily: 'Playfair Display, serif',
+              color: '#55524F',
+              fontSize: '14px'
+            }}>
               — {mixedFeed.length > 50 ? "You've reached the end for now" : "That's all for now"} —
             </div>
           )}
@@ -701,24 +651,9 @@ const HomeFeed: React.FC = () => {
         onClose={handleClose}
         onComplete={handleComplete}
       />
-      
-      <style>
-        {`
-          /* ADDED: Style for when home-feed tour is active */
-          ${isHomeFeedTourActive ? `
-            .contextual-tooltip-overlay {
-              pointer-events: auto !important;
-            }
-            
-            /* Ensure the first follow button in feed has data attribute */
-            .feed-follow-button {
-              position: relative;
-            }
-          ` : ''}
-        `}
-      </style>
     </>
   );
 };
 
 export default HomeFeed;
+
