@@ -290,23 +290,32 @@ export default function Profile() {
     }
   }, [isOwnProfile]);
 
-  // ADDED: Start profile-page tooltip sequence when on own profile page
+  // FIXED: Start profile-page tooltip sequence when on own profile page - IMPROVED LOGIC
   useEffect(() => {
     if (isOwnProfile && profile) {
-      // Check if profile-page sequence hasn't been completed yet
-      const hasSeenProfileTour = localStorage.getItem('writeframe_tooltip_progress');
-      if (hasSeenProfileTour) {
-        try {
-          const progress = JSON.parse(hasSeenProfileTour);
-          if (!progress['profile-page']?.completed) {
-            // Start sequence after a short delay
-            const timer = setTimeout(() => {
-              startSequence('profile-page');
-            }, 1500);
-            return () => clearTimeout(timer);
+      // Check if user has completed onboarding
+      const hasCompletedOnboarding = localStorage.getItem('writeframe_onboarding_complete');
+      
+      if (hasCompletedOnboarding) {
+        // Check tooltip progress
+        const tooltipProgress = localStorage.getItem('writeframe_tooltip_progress');
+        
+        if (tooltipProgress) {
+          try {
+            const progress = JSON.parse(tooltipProgress);
+            const bottomNavCompleted = progress['bottom-nav']?.completed;
+            const profilePageCompleted = progress['profile-page']?.completed;
+            
+            // Start profile tour if: bottom-nav is completed AND profile-page is not completed
+            if (bottomNavCompleted && !profilePageCompleted) {
+              const timer = setTimeout(() => {
+                startSequence('profile-page');
+              }, 1500);
+              return () => clearTimeout(timer);
+            }
+          } catch (error) {
+            console.error('Failed to parse tooltip progress:', error);
           }
-        } catch (error) {
-          console.error('Failed to parse tooltip progress:', error);
         }
       }
     }

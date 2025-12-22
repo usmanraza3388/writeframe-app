@@ -48,12 +48,33 @@ const GettingStartedModal: React.FC<GettingStartedModalProps> = ({
     }
   ];
 
+  // FIXED: Initialize tooltip progress when onboarding completes
+  const initializeTooltipProgress = () => {
+    const defaultProgress = {
+      'bottom-nav': { completed: false, lastStepCompleted: 0 },
+      'profile-page': { completed: false, lastStepCompleted: 0 },
+      'home-feed': { completed: false, lastStepCompleted: 0 }
+    };
+    
+    try {
+      localStorage.setItem('writeframe_tooltip_progress', JSON.stringify(defaultProgress));
+    } catch (error) {
+      console.error('Failed to initialize tooltip progress:', error);
+    }
+  };
+
   const handleNext = () => {
     if (currentStep < steps.length - 1) {
       setCurrentStep(currentStep + 1);
     } else {
       // Mark onboarding as complete in localStorage
       localStorage.setItem('writeframe_onboarding_complete', 'true');
+      
+      // FIXED: Initialize tooltip progress when onboarding completes
+      initializeTooltipProgress();
+      
+      // Remove legacy tooltip flag if it exists
+      localStorage.removeItem('writeframe_tooltip_seen');
       
       // Call the original onComplete
       onComplete();
@@ -64,6 +85,13 @@ const GettingStartedModal: React.FC<GettingStartedModalProps> = ({
   const handleSkip = () => {
     // Even if skipped, mark onboarding as complete
     localStorage.setItem('writeframe_onboarding_complete', 'true');
+    
+    // FIXED: Initialize tooltip progress when onboarding is skipped too
+    initializeTooltipProgress();
+    
+    // Remove legacy tooltip flag if it exists
+    localStorage.removeItem('writeframe_tooltip_seen');
+    
     onClose();
   };
 

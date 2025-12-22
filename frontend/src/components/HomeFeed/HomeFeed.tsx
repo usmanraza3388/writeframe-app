@@ -422,29 +422,36 @@ const HomeFeed: React.FC = () => {
       .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
   }, [scenes, monologues, repostedMonologues, characters, repostedCharacters, frames, repostedFrames]);
 
-  // ADDED: Start home-feed tooltip sequence after bottom-nav sequence is complete
+  // FIXED: Improved home-feed tooltip sequence triggering logic
   useEffect(() => {
-    // Check if home-feed sequence hasn't been completed yet
-    const hasSeenHomeFeedTour = localStorage.getItem('writeframe_tooltip_progress');
-    if (hasSeenHomeFeedTour) {
-      try {
-        const progress = JSON.parse(hasSeenHomeFeedTour);
-        const bottomNavCompleted = progress['bottom-nav']?.completed;
-        const homeFeedCompleted = progress['home-feed']?.completed;
-        
-        // Only start home-feed tour if bottom-nav is complete and home-feed isn't
-        if (bottomNavCompleted && !homeFeedCompleted) {
-          // Wait for content to load and then start sequence
-          const timer = setTimeout(() => {
-            if (mixedFeed.length > 0) {
-              startSequence('home-feed');
-            }
-          }, 2000); // Wait 2 seconds for content to render
+    // Check if user has completed onboarding
+    const hasCompletedOnboarding = localStorage.getItem('writeframe_onboarding_complete');
+    
+    if (hasCompletedOnboarding) {
+      // Check tooltip progress
+      const tooltipProgress = localStorage.getItem('writeframe_tooltip_progress');
+      
+      if (tooltipProgress) {
+        try {
+          const progress = JSON.parse(tooltipProgress);
+          const bottomNavCompleted = progress['bottom-nav']?.completed;
+          const homeFeedCompleted = progress['home-feed']?.completed;
           
-          return () => clearTimeout(timer);
+          // Only start home-feed tour if:
+          // 1. Bottom-nav is complete
+          // 2. Home-feed is not completed
+          // 3. There's content in the feed
+          if (bottomNavCompleted && !homeFeedCompleted && mixedFeed.length > 0) {
+            // Wait for content to load and then start sequence
+            const timer = setTimeout(() => {
+              startSequence('home-feed');
+            }, 2000); // Wait 2 seconds for content to render
+            
+            return () => clearTimeout(timer);
+          }
+        } catch (error) {
+          console.error('Failed to parse tooltip progress:', error);
         }
-      } catch (error) {
-        console.error('Failed to parse tooltip progress:', error);
       }
     }
   }, [mixedFeed.length, startSequence]);

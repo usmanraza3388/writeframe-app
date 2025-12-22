@@ -131,21 +131,66 @@ const getDefaultProgress = (): SequenceProgress => ({
   'home-feed': { completed: false, lastStepCompleted: 0 }
 });
 
+// FIXED: Validate and clean corrupted progress data
+const validateAndCleanProgress = (savedProgress: any): SequenceProgress => {
+  const defaultProgress = getDefaultProgress();
+  
+  if (!savedProgress || typeof savedProgress !== 'object') {
+    return defaultProgress;
+  }
+
+  const validatedProgress = { ...defaultProgress };
+  
+  // Validate each sequence
+  (Object.keys(defaultProgress) as TooltipSequence[]).forEach(sequence => {
+    const savedSequence = savedProgress[sequence];
+    
+    if (savedSequence && typeof savedSequence === 'object') {
+      // Validate lastStepCompleted is a number between 0 and total steps
+      const totalSteps = TOOLTIP_SEQUENCES.filter(s => s.sequence === sequence).length;
+      let lastStepCompleted = parseInt(savedSequence.lastStepCompleted);
+      
+      if (isNaN(lastStepCompleted) || lastStepCompleted < 0) {
+        lastStepCompleted = 0;
+      } else if (lastStepCompleted > totalSteps) {
+        lastStepCompleted = totalSteps;
+      }
+      
+      // Validate completed is boolean
+      const completed = !!savedSequence.completed;
+      
+      // Check if sequence is actually completed based on steps
+      const actuallyCompleted = completed || lastStepCompleted >= totalSteps;
+      
+      validatedProgress[sequence] = {
+        completed: actuallyCompleted,
+        lastStepCompleted: actuallyCompleted ? totalSteps : lastStepCompleted
+      };
+    }
+  });
+  
+  return validatedProgress;
+};
+
 export const useTooltipSequence = () => {
   const [progress, setProgress] = useState<SequenceProgress>(getDefaultProgress);
   const [activeSequence, setActiveSequence] = useState<TooltipSequence | null>(null);
   const [currentStep, setCurrentStep] = useState<TooltipStep | null>(null);
   const [isInitialized, setIsInitialized] = useState(false);
 
-  // Load progress from localStorage on mount
+  // FIXED: Load and validate progress from localStorage on mount
   useEffect(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
-        setProgress(JSON.parse(saved));
+        const parsed = JSON.parse(saved);
+        const validatedProgress = validateAndCleanProgress(parsed);
+        setProgress(validatedProgress);
       }
     } catch (error) {
       console.error('Failed to load tooltip progress:', error);
+      // Clear corrupted data
+      localStorage.removeItem(STORAGE_KEY);
     }
     setIsInitialized(true);
   }, []);
@@ -160,22 +205,31 @@ export const useTooltipSequence = () => {
     }
   }, [progress, isInitialized]);
 
-  // Start a sequence if it hasn't been completed
+  // FIXED: Start a sequence - always starts from step 1 if not completed
   const startSequence = useCallback((sequence: TooltipSequence) => {
-    if (progress[sequence].completed) {
+    const sequenceProgress = progress[sequence];
+    
+    if (sequenceProgress.completed) {
       return false; // Sequence already completed
     }
 
-    const nextStepNumber = progress[sequence].lastStepCompleted + 1;
+    // FIXED: Always start from step 1 when manually starting a sequence
+    // unless we're resuming a partially completed sequence
+    const startStep = sequenceProgress.lastStepCompleted === 0 ? 1 : sequenceProgress.lastStepCompleted + 1;
+    
     const step = TOOLTIP_SEQUENCES.find(
-      s => s.sequence === sequence && s.stepNumber === nextStepNumber
+      s => s.sequence === sequence && s.stepNumber === startStep
     );
 
     if (!step) {
-      // No more steps in this sequence
+      // No valid step found - mark as completed
+      const totalSteps = TOOLTIP_SEQUENCES.filter(s => s.sequence === sequence).length;
       setProgress(prev => ({
         ...prev,
-        [sequence]: { completed: true, lastStepCompleted: nextStepNumber - 1 }
+        [sequence]: { 
+          completed: true, 
+          lastStepCompleted: totalSteps 
+        }
       }));
       return false;
     }
@@ -185,17 +239,18 @@ export const useTooltipSequence = () => {
     return true;
   }, [progress]);
 
-  // Complete current step and move to next
+  // FIXED: Complete current step and move to next with validation
   const completeCurrentStep = useCallback(() => {
     if (!currentStep || !activeSequence) return;
 
     const nextStepNumber = currentStep.stepNumber + 1;
+    const totalSteps = TOOLTIP_SEQUENCES.filter(s => s.sequence === activeSequence).length;
     
     // Update progress for this sequence
     setProgress(prev => ({
       ...prev,
       [activeSequence]: { 
-        ...prev[activeSequence], 
+        completed: nextStepNumber > totalSteps,
         lastStepCompleted: currentStep.stepNumber 
       }
     }));
@@ -214,7 +269,7 @@ export const useTooltipSequence = () => {
         ...prev,
         [activeSequence]: { 
           completed: true, 
-          lastStepCompleted: nextStepNumber - 1 
+          lastStepCompleted: totalSteps 
         }
       }));
       setActiveSequence(null);
@@ -222,17 +277,17 @@ export const useTooltipSequence = () => {
     }
   }, [currentStep, activeSequence]);
 
-  // Skip the entire active sequence
+  // FIXED: Skip the entire active sequence - mark all steps as completed
   const skipSequence = useCallback(() => {
     if (!activeSequence) return;
+    
+    const totalSteps = TOOLTIP_SEQUENCES.filter(s => s.sequence === activeSequence).length;
     
     setProgress(prev => ({
       ...prev,
       [activeSequence]: { 
         completed: true, 
-        lastStepCompleted: TOOLTIP_SEQUENCES
-          .filter(s => s.sequence === activeSequence)
-          .reduce((max, s) => Math.max(max, s.stepNumber), 0)
+        lastStepCompleted: totalSteps 
       }
     }));
     
@@ -256,12 +311,24 @@ export const useTooltipSequence = () => {
     return activeSequence === sequence;
   }, [activeSequence]);
 
-  // Reset all progress (for testing/development)
+  // FIXED: Reset all progress and clear localStorage
   const resetAllProgress = useCallback(() => {
     setProgress(getDefaultProgress());
     setActiveSequence(null);
     setCurrentStep(null);
+    localStorage.removeItem(STORAGE_KEY);
   }, []);
+
+  // NEW: Get the current step number for display
+  const getCurrentStepNumber = useCallback((): number => {
+    return currentStep?.stepNumber || 0;
+  }, [currentStep]);
+
+  // NEW: Get total steps in current sequence
+  const getTotalStepsInCurrentSequence = useCallback((): number => {
+    if (!activeSequence) return 0;
+    return TOOLTIP_SEQUENCES.filter(s => s.sequence === activeSequence).length;
+  }, [activeSequence]);
 
   return {
     // State
@@ -279,6 +346,8 @@ export const useTooltipSequence = () => {
     shouldHighlightElement,
     getSequenceSteps,
     isSequenceActive,
+    getCurrentStepNumber, // NEW
+    getTotalStepsInCurrentSequence, // NEW
     
     // Utilities
     resetAllProgress

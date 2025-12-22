@@ -29,23 +29,43 @@ const BottomNav: React.FC = () => {
     }
   }, []);
 
-  // ADDED: Start bottom-nav tooltip sequence when on home-feed
+  // ADDED: Start bottom-nav tooltip sequence when on home-feed - FIXED LOGIC
   useEffect(() => {
     if (location.pathname === '/home-feed') {
-      // Check if bottom-nav sequence hasn't been completed yet
-      const hasSeenBottomNavTour = localStorage.getItem('writeframe_tooltip_progress');
-      if (hasSeenBottomNavTour) {
-        try {
-          const progress = JSON.parse(hasSeenBottomNavTour);
-          if (!progress['bottom-nav']?.completed) {
-            // Start sequence after a short delay
+      const hasCompletedOnboarding = localStorage.getItem('writeframe_onboarding_complete');
+      
+      if (hasCompletedOnboarding) {
+        // Check tooltip progress
+        const tooltipProgress = localStorage.getItem('writeframe_tooltip_progress');
+        
+        if (!tooltipProgress) {
+          // FIRST TIME: No progress exists, start the tour
+          const timer = setTimeout(() => {
+            startSequence('bottom-nav');
+          }, 1500);
+          return () => clearTimeout(timer);
+        } else {
+          // RESUME: Progress exists, check if bottom-nav is not completed
+          try {
+            const progress = JSON.parse(tooltipProgress);
+            const bottomNavProgress = progress['bottom-nav'];
+            
+            // Start if: no progress OR not completed
+            if (!bottomNavProgress || !bottomNavProgress.completed) {
+              const timer = setTimeout(() => {
+                startSequence('bottom-nav');
+              }, 1500);
+              return () => clearTimeout(timer);
+            }
+          } catch (error) {
+            console.error('Failed to parse tooltip progress:', error);
+            // If corrupted, clear and start fresh
+            localStorage.removeItem('writeframe_tooltip_progress');
             const timer = setTimeout(() => {
               startSequence('bottom-nav');
             }, 1500);
             return () => clearTimeout(timer);
           }
-        } catch (error) {
-          console.error('Failed to parse tooltip progress:', error);
         }
       }
     }
