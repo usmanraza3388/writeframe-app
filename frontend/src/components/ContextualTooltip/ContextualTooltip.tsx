@@ -1,13 +1,12 @@
 // src/components/ContextualTooltip/ContextualTooltip.tsx
 import React, { useEffect, useState, useRef } from 'react';
-import useTooltipSequence from '../../hooks/useTooltipSequence';
+import useTooltipSequence from '../../hooks/useTooltipSequence.ts';
 
 const ContextualTooltip: React.FC = () => {
   const { 
     currentStep, 
     completeCurrentStep, 
-    skipSequence,
-    shouldHighlightElement 
+    skipSequence, 
   } = useTooltipSequence();
   
   const [tooltipPosition, setTooltipPosition] = useState<{

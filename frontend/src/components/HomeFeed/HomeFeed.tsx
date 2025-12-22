@@ -168,33 +168,6 @@ const HomeFeed: React.FC = () => {
     };
   }, []);
 
-  // ADDED: Start home-feed tooltip sequence after bottom-nav sequence is complete
-  useEffect(() => {
-    // Check if home-feed sequence hasn't been completed yet
-    const hasSeenHomeFeedTour = localStorage.getItem('writeframe_tooltip_progress');
-    if (hasSeenHomeFeedTour) {
-      try {
-        const progress = JSON.parse(hasSeenHomeFeedTour);
-        const bottomNavCompleted = progress['bottom-nav']?.completed;
-        const homeFeedCompleted = progress['home-feed']?.completed;
-        
-        // Only start home-feed tour if bottom-nav is complete and home-feed isn't
-        if (bottomNavCompleted && !homeFeedCompleted) {
-          // Wait for content to load and then start sequence
-          const timer = setTimeout(() => {
-            if (mixedFeed.length > 0) {
-              startSequence('home-feed');
-            }
-          }, 2000); // Wait 2 seconds for content to render
-          
-          return () => clearTimeout(timer);
-        }
-      } catch (error) {
-        console.error('Failed to parse tooltip progress:', error);
-      }
-    }
-  }, [mixedFeed.length, startSequence]);
-
   // CLEANED: Auto-scroll without debug logs
   useEffect(() => {
     const handleHashScroll = () => {
@@ -448,6 +421,33 @@ const HomeFeed: React.FC = () => {
     return [...sceneItems, ...monologueItems, ...repostedMonologueItems, ...characterItems, ...repostedCharacterItems, ...frameItems, ...repostedFrameItems]
       .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
   }, [scenes, monologues, repostedMonologues, characters, repostedCharacters, frames, repostedFrames]);
+
+  // ADDED: Start home-feed tooltip sequence after bottom-nav sequence is complete
+  useEffect(() => {
+    // Check if home-feed sequence hasn't been completed yet
+    const hasSeenHomeFeedTour = localStorage.getItem('writeframe_tooltip_progress');
+    if (hasSeenHomeFeedTour) {
+      try {
+        const progress = JSON.parse(hasSeenHomeFeedTour);
+        const bottomNavCompleted = progress['bottom-nav']?.completed;
+        const homeFeedCompleted = progress['home-feed']?.completed;
+        
+        // Only start home-feed tour if bottom-nav is complete and home-feed isn't
+        if (bottomNavCompleted && !homeFeedCompleted) {
+          // Wait for content to load and then start sequence
+          const timer = setTimeout(() => {
+            if (mixedFeed.length > 0) {
+              startSequence('home-feed');
+            }
+          }, 2000); // Wait 2 seconds for content to render
+          
+          return () => clearTimeout(timer);
+        }
+      } catch (error) {
+        console.error('Failed to parse tooltip progress:', error);
+      }
+    }
+  }, [mixedFeed.length, startSequence]);
 
   // ADDED: Paginated feed
   const displayFeed = useMemo(() => mixedFeed.slice(0, visibleCount), [mixedFeed, visibleCount]);

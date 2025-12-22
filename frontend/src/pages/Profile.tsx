@@ -32,7 +32,7 @@ import FollowersModal from '../components/Follow/FollowersModal';
 // @ts-ignore
 import FollowingModal from '../components/Follow/FollowingModal';
 // ADDED: Import useTooltipSequence hook
-import { useTooltipSequence } from '../hooks/useTooltipSequence';
+import { useTooltipSequence } from '../hooks/useTooltipSequence.ts';
 
 // ADDED: Skeleton Loading Components
 const ProfileSkeleton: React.FC = () => (
