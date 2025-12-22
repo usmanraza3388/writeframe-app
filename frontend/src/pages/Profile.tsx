@@ -31,6 +31,8 @@ import GridItem from '../components/GridItem';
 import FollowersModal from '../components/Follow/FollowersModal';
 // @ts-ignore
 import FollowingModal from '../components/Follow/FollowingModal';
+// ADDED: Import useTooltipSequence hook
+import { useTooltipSequence } from '../hooks/useTooltipSequence';
 
 // ADDED: Skeleton Loading Components
 const ProfileSkeleton: React.FC = () => (
@@ -252,6 +254,9 @@ export default function Profile() {
   const { notifyEcho } = useNotifications();
   // ADDED: Use auth context for signOut
   const { signOut } = useAuth();
+  
+  // ADDED: Use tooltip sequence hook
+  const { startSequence, isSequenceActive } = useTooltipSequence();
 
   // FIXED: Move isOwnProfile declaration before any useEffects that use it
   const isOwnProfile = currentUser?.id === id;
@@ -284,6 +289,28 @@ export default function Profile() {
       localStorage.setItem('has_seen_avatar_tooltip', 'true');
     }
   }, [isOwnProfile]);
+
+  // ADDED: Start profile-page tooltip sequence when on own profile page
+  useEffect(() => {
+    if (isOwnProfile && profile) {
+      // Check if profile-page sequence hasn't been completed yet
+      const hasSeenProfileTour = localStorage.getItem('writeframe_tooltip_progress');
+      if (hasSeenProfileTour) {
+        try {
+          const progress = JSON.parse(hasSeenProfileTour);
+          if (!progress['profile-page']?.completed) {
+            // Start sequence after a short delay
+            const timer = setTimeout(() => {
+              startSequence('profile-page');
+            }, 1500);
+            return () => clearTimeout(timer);
+          }
+        } catch (error) {
+          console.error('Failed to parse tooltip progress:', error);
+        }
+      }
+    }
+  }, [isOwnProfile, profile, startSequence]);
 
   // ADDED: Reset pagination whenever activeTab changes
   useEffect(() => {
@@ -362,6 +389,9 @@ export default function Profile() {
       </div>
     );
   }
+
+  // ADDED: Check if profile tour is active
+  const isProfileTourActive = isSequenceActive('profile-page');
 
   // Navigation Menu Component - Moved inside main component to fix scope issues
   const NavigationMenu: React.FC = () => {
@@ -783,7 +813,12 @@ export default function Profile() {
       <div style={containerStyle}>
         {/* Header Section */}
         <div style={headerStyle}>
-          <div style={avatarContainerStyle} className="avatar-container">
+          {/* ADDED: data-tooltip attribute for avatar */}
+          <div 
+            style={avatarContainerStyle} 
+            className="avatar-container"
+            data-tooltip="profile-avatar"
+          >
             {displayAvatarUrl === '/placeholder-avatar.png' ? ( // FIXED: Removed && isOwnProfile
               <div style={emptyAvatarStyle}>
                 <div style={emptyAvatarIconStyle}>👤</div>
@@ -917,6 +952,7 @@ export default function Profile() {
           {isOwnProfile && (
             <button 
               onClick={() => setShowEditModal(true)}
+              data-tooltip="profile-edit" // ADDED: data-tooltip attribute
               style={editButtonStyle}
             >
               Edit Profile
@@ -969,7 +1005,11 @@ export default function Profile() {
             </div>
 
             {/* Row 2: Content Stats - All Content Types */}
-            <div style={statsContainerStyle}>
+            {/* ADDED: data-tooltip attribute for stats section */}
+            <div 
+              style={statsContainerStyle}
+              data-tooltip="profile-stats"
+            >
               {/* Scenes & Remakes Container */}
               <div style={combinedStatItemStyle}>
                 <div style={combinedStatValueStyle}>
@@ -1052,7 +1092,11 @@ export default function Profile() {
 
         {/* Tabs - Filtered by Creative Focus */}
         {availableTabs.length > 0 ? (
-          <div style={tabsContainerStyle}>
+          /* ADDED: data-tooltip attribute for tabs */
+          <div 
+            style={tabsContainerStyle}
+            data-tooltip="profile-tabs"
+          >
             {availableTabs.map((tab) => (
               <button
                 key={tab}
@@ -1111,6 +1155,17 @@ export default function Profile() {
 
       {/* ADDED: Bottom Navigation */}
       <BottomNav />
+      
+      <style>
+        {`
+          /* ADDED: Style for when profile tour is active */
+          ${isProfileTourActive ? `
+            .contextual-tooltip-overlay {
+              pointer-events: auto !important;
+            }
+          ` : ''}
+        `}
+      </style>
     </div>
   );
 }
@@ -1750,4 +1805,3 @@ const errorStyle: React.CSSProperties = {
   fontSize: '16px',
   fontFamily: "'Cormorant', serif",
 };
-

@@ -52,12 +52,18 @@ const GettingStartedModal: React.FC<GettingStartedModalProps> = ({
     if (currentStep < steps.length - 1) {
       setCurrentStep(currentStep + 1);
     } else {
+      // Mark onboarding as complete in localStorage
+      localStorage.setItem('writeframe_onboarding_complete', 'true');
+      
+      // Call the original onComplete
       onComplete();
       onClose();
     }
   };
 
   const handleSkip = () => {
+    // Even if skipped, mark onboarding as complete
+    localStorage.setItem('writeframe_onboarding_complete', 'true');
     onClose();
   };
 
@@ -293,4 +299,3 @@ const GettingStartedModal: React.FC<GettingStartedModalProps> = ({
 };
 
 export default GettingStartedModal;
-
