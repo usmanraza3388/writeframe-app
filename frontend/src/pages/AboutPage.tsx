@@ -416,7 +416,7 @@ const AboutPage: React.FC = () => {
             gap: '12px'
           }}>
             {[
-              { emoji: '✍️', title: 'Screen Writers', desc: 'Build your portfolio' },
+              { emoji: '✍️', title: 'Screenwriters', desc: 'Build your portfolio' },
               { emoji: '🎥', title: 'Filmmakers', desc: 'Find collaborators' },
               { emoji: '🎓', title: 'Students', desc: 'Practice the craft' },
               { emoji: '🎬', title: 'Cinephiles', desc: 'Explore creativity' }
