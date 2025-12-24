@@ -89,16 +89,46 @@ const AboutPage: React.FC = () => {
             margin: '0 0 12px 0',
             lineHeight: 1.3
           }}>
-            Where your cinematic ideas take shape
+            The New Home for Indie Cinematic Creators
           </h2>
           <p style={{
-            fontSize: '14px',
+            fontSize: '15px',
             lineHeight: 1.6,
             color: '#55524F',
-            margin: 0
+            margin: '0 0 16px 0'
           }}>
-            Where writers and storytellers begin crafting cinematic ideas
+            Where cinematic scenes, stories, and voices come alive. Built for the next wave of 
+            filmmakers, writers, and visual storytellers.
           </p>
+          
+          <div style={{
+            backgroundColor: 'rgba(212, 175, 55, 0.1)',
+            padding: '16px',
+            borderRadius: '8px',
+            marginTop: '16px'
+          }}>
+            <p style={{
+              fontSize: '14px',
+              fontWeight: '600',
+              color: '#1C1C1C',
+              margin: '0 0 8px 0'
+            }}>
+              A creative space to:
+            </p>
+            <ul style={{
+              margin: '0',
+              paddingLeft: '20px',
+              fontSize: '13px',
+              color: '#55524F',
+              lineHeight: 1.6
+            }}>
+              <li>Create and showcase cinematic scene cards</li>
+              <li>Design characters and craft monologues</li>
+              <li>Build cinematic mood boards</li>
+              <li>Build your creative identity and audience</li>
+              <li>Connect with other storytellers</li>
+            </ul>
+          </div>
         </div>
 
         {/* The Problem */}
@@ -133,7 +163,7 @@ const AboutPage: React.FC = () => {
           </div>
         </section>
 
-        {/* Our Vision */}
+        {/* The New Era of Independent Cinema */}
         <section style={{ marginBottom: '32px' }}>
           <h3 style={{
             fontSize: '14px',
@@ -143,34 +173,160 @@ const AboutPage: React.FC = () => {
             textTransform: 'uppercase',
             letterSpacing: '0.05em'
           }}>
-            Our Vision
+            The New Era of Independent Cinema
           </h3>
           <div style={{
             backgroundColor: '#FFFFFF',
-            padding: '20px',
+            padding: '24px',
             borderRadius: '12px',
-            border: '2px solid rgba(212, 175, 55, 0.15)'
+            border: '2px solid rgba(212, 175, 55, 0.15)',
+            position: 'relative'
           }}>
+            <div style={{
+              position: 'absolute',
+              top: '12px',
+              left: '12px',
+              fontSize: '32px',
+              opacity: 0.1
+            }}>
+              🎥
+            </div>
+            
             <p style={{
               fontFamily: 'Cormorant, serif',
               fontSize: '16px',
               lineHeight: 1.6,
               color: '#1C1C1C',
               margin: '0 0 16px 0',
-              fontStyle: 'italic'
+              position: 'relative',
+              zIndex: 1
             }}>
-              "writeFrame is the digital notebook for your cinematic ideas—where fragments become 
-              foundations, and viewers become creators."
+              writeFrame is not just another creative platform. It is the foundation of a new cinematic movement.
             </p>
+            
+            <div style={{ position: 'relative', zIndex: 1 }}>
+              <p style={{
+                fontSize: '14px',
+                lineHeight: 1.6,
+                color: '#55524F',
+                margin: '0 0 12px 0'
+              }}>
+                A world where stories do not need studios to exist. Where creators own their work, 
+                their audience, and their voice.
+              </p>
+              
+              <div style={{
+                backgroundColor: 'rgba(212, 175, 55, 0.05)',
+                padding: '16px',
+                borderRadius: '8px',
+                margin: '16px 0',
+                borderLeft: '3px solid rgba(212, 175, 55, 0.3)'
+              }}>
+                <p style={{
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  color: '#1C1C1C',
+                  margin: '0 0 8px 0'
+                }}>
+                  Your Creative IP, Protected
+                </p>
+                <p style={{
+                  fontSize: '13px',
+                  color: '#55524F',
+                  margin: 0,
+                  lineHeight: 1.5
+                }}>
+                  Every scene, character, and monologue you build belongs to you. Your creative IP is protected and credited.
+                </p>
+              </div>
+              
+              <p style={{
+                fontSize: '14px',
+                lineHeight: 1.6,
+                color: '#55524F',
+                margin: '16px 0 0 0',
+                fontStyle: 'italic'
+              }}>
+                This is how cinema evolves: frame by frame, creator by creator. This is only the beginning.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        {/* Be Part of the First 100 Creators */}
+        <section style={{ marginBottom: '32px' }}>
+          <div style={{
+            backgroundColor: '#1C1C1C',
+            color: '#FFFFFF',
+            padding: '24px 20px',
+            borderRadius: '12px',
+            textAlign: 'center',
+            position: 'relative',
+            overflow: 'hidden'
+          }}>
+            <div style={{
+              position: 'absolute',
+              top: '-20px',
+              right: '-20px',
+              width: '80px',
+              height: '80px',
+              backgroundColor: 'rgba(212, 175, 55, 0.2)',
+              borderRadius: '50%'
+            }}></div>
+            
+            <h3 style={{
+              fontFamily: 'Playfair Display, serif',
+              fontSize: '20px',
+              fontWeight: 'bold',
+              margin: '0 0 12px 0',
+              position: 'relative',
+              zIndex: 1
+            }}>
+              Be Part of the First 100 Creators
+            </h3>
             <p style={{
               fontSize: '14px',
-              lineHeight: 1.6,
-              color: '#55524F',
-              margin: 0
+              opacity: 0.9,
+              margin: '0 0 20px 0',
+              lineHeight: 1.5,
+              position: 'relative',
+              zIndex: 1
             }}>
-              We believe great films start small. Our platform is designed for those beginnings: 
-              the scene, the character, the visual moment. It's a public sketchpad that grows with you.
+              Join and help shape the future of cinematic storytelling.
             </p>
+            
+            <div style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '12px',
+              position: 'relative',
+              zIndex: 1
+            }}>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                justifyContent: 'center'
+              }}>
+                <span style={{ fontSize: '13px' }}>Lifetime early badge on profile</span>
+              </div>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                justifyContent: 'center'
+              }}>
+                <span style={{ fontSize: '13px' }}>Spotlight in our launch showcase</span>
+              </div>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                justifyContent: 'center'
+              }}>
+                <span style={{ fontSize: '13px' }}>Direct influence on features</span>
+              </div>
+            </div>
           </div>
         </section>
 
