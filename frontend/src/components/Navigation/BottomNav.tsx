@@ -304,22 +304,25 @@ const BottomNav: React.FC = () => {
       )}
 
       {/* Bottom Navigation Bar - UPDATED: Reduced height and centered */}
-      <nav style={{
-        position: 'fixed',
-        bottom: 0,
-        left: '50%',
-        transform: 'translateX(-50%)',
-        background: 'var(--background-primary)',
-        borderTop: '1px solid var(--border-color)',
-        padding: '8px 0 12px', // REDUCED: Less padding for smaller height
-        zIndex: 1000,
-        backdropFilter: 'blur(10px)',
-        width: '375px', // ADDED: Fixed width
-        maxWidth: '100vw', // ADDED: Responsive constraint
-        boxSizing: 'border-box', // ADDED: Proper box model
-        borderTopLeftRadius: '12px', // ADDED: Rounded corners
-        borderTopRightRadius: '12px' // ADDED: Rounded corners
-      }}>
+      <nav 
+        style={{
+          position: 'fixed',
+          bottom: 0,
+          left: '50%',
+          transform: 'translateX(-50%)',
+          background: 'var(--background-primary)',
+          borderTop: '1px solid var(--border-color)',
+          padding: '8px 0 12px', // REDUCED: Less padding for smaller height
+          zIndex: 1000,
+          backdropFilter: 'blur(10px)',
+          width: '375px', // ADDED: Fixed width
+          maxWidth: '100vw', // ADDED: Responsive constraint
+          boxSizing: 'border-box', // ADDED: Proper box model
+          borderTopLeftRadius: '12px', // ADDED: Rounded corners
+          borderTopRightRadius: '12px' // ADDED: Rounded corners
+        }}
+        className="bottom-nav" // ADDED: Tour identifier class
+      >
         <div style={{
           display: 'flex',
           justifyContent: 'space-around',
@@ -330,6 +333,7 @@ const BottomNav: React.FC = () => {
           {/* Home Button */}
           <button
             onClick={handleHomeClick}
+            data-tour="home-button" // ADDED: Tour identifier
             style={{
               background: 'none',
               border: 'none',
@@ -362,6 +366,7 @@ const BottomNav: React.FC = () => {
           {/* CHANGED: Messages Button to Whispers */}
           <button
             onClick={handleMessagesClick}
+            data-tour="whispers-button" // ADDED: Tour identifier
             style={{
               background: 'none',
               border: 'none',
@@ -394,6 +399,7 @@ const BottomNav: React.FC = () => {
           {/* Create Button */}
           <button
             onClick={() => handleCreateClick()}
+            data-tour="create-button" // ADDED: Tour identifier
             style={{
               background: 'none',
               border: 'none',
@@ -426,6 +432,7 @@ const BottomNav: React.FC = () => {
           {/* Profile Button - FIXED: Only highlight when viewing own profile */}
           <button
             onClick={handleProfileClick}
+            data-tour="profile-button" // ADDED: Tour identifier
             style={{
               background: 'none',
               border: 'none',
@@ -490,4 +497,3 @@ const BottomNav: React.FC = () => {
 };
 
 export default BottomNav;
-

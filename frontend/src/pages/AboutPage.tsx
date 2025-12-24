@@ -89,7 +89,7 @@ const AboutPage: React.FC = () => {
             margin: '0 0 12px 0',
             lineHeight: 1.3
           }}>
-            Where cinephiles become creators
+            Where your cinematic ideas take shape
           </h2>
           <p style={{
             fontSize: '14px',
@@ -97,7 +97,7 @@ const AboutPage: React.FC = () => {
             color: '#55524F',
             margin: 0
           }}>
-            The first step from watching films to making them.
+            Where writers and storytellers begin crafting cinematic ideas
           </p>
         </div>
 
