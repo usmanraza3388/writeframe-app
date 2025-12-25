@@ -165,18 +165,19 @@ const HomeFeed: React.FC = () => {
     };
   }, []);
 
-  // FIXED: Enhanced modal completion handler with 800ms delay
+  // FIXED: Modal completion handler - NO DELAY NEEDED (modal handles animation)
   const handleModalComplete = () => {
-    // First, mark onboarding as complete
+    console.log('🎯 Modal completion triggered - starting tour immediately');
+    
+    // Mark onboarding as complete
     handleComplete();
     
-    // Set localStorage for persistence
-    localStorage.setItem('writeframe_onboarding_complete', 'true');
+    // Clear any previous tour completion to ensure fresh start
+    localStorage.removeItem('writeframe_bottomnav_tour_completed');
     
-    // Wait 800ms for modal to fully disappear, then trigger tour via custom event
-    setTimeout(() => {
-      console.log('🚀 Dispatching tour-should-start event after 800ms delay');
-      window.dispatchEvent(new CustomEvent('tour-should-start'));
+    // IMPORTANT: The modal already animated out for 400ms
+    // So we can trigger the tour IMMEDIATELY
+    window.dispatchEvent(new CustomEvent('tour-should-start'));
   };
 
   // CLEANED: Auto-scroll without debug logs
@@ -661,11 +662,11 @@ const HomeFeed: React.FC = () => {
         <BottomNav />
       </div>
 
-      {/* ADDED: Getting Started Modal - FIXED: Uses new handler with 800ms delay */}
+      {/* ADDED: Getting Started Modal - UPDATED: Modal handles its own animation */}
       <GettingStartedModal
         isOpen={showOnboarding}
         onClose={handleClose}
-        onComplete={handleModalComplete}  // Now includes 800ms delay before tour
+        onComplete={handleModalComplete}  // No delay needed - modal animated out
       />
     </>
   );
