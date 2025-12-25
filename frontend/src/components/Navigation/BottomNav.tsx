@@ -2,7 +2,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-// ADDED: Import tour hook and tooltip
 import { useBottomNavTour } from '../../hooks/useBottomNavTour';
 import TourTooltip from '../Tour/TourTooltip';
 
@@ -13,13 +12,11 @@ const BottomNav: React.FC = () => {
   const [showCreationMenu, setShowCreationMenu] = React.useState(false);
   const [showCreateTooltip, setShowCreateTooltip] = useState(false);
   
-  // ADDED: Refs for tour target elements
   const homeButtonRef = useRef<HTMLButtonElement>(null);
   const whispersButtonRef = useRef<HTMLButtonElement>(null);
   const createButtonRef = useRef<HTMLButtonElement>(null);
   const profileButtonRef = useRef<HTMLButtonElement>(null);
   
-  // ADDED: Use the bottom nav tour hook (only needed variables)
   const {
     currentStep,
     isActive,
@@ -32,39 +29,35 @@ const BottomNav: React.FC = () => {
   } = useBottomNavTour();
 
   useEffect(() => {
-    // Check if user has completed onboarding but hasn't seen the tooltip
     const hasCompletedOnboarding = localStorage.getItem('writeframe_onboarding_complete');
     const hasSeenTooltip = localStorage.getItem('writeframe_tooltip_seen');
     
     if (hasCompletedOnboarding && !hasSeenTooltip) {
-      // Show tooltip after a short delay
       const timer = setTimeout(() => {
         setShowCreateTooltip(true);
-      }, 2000); // Show after 2 seconds on home feed
+      }, 2000);
       
       return () => clearTimeout(timer);
     }
   }, []);
 
-  // ADDED: Function to get current target element based on step
   const getCurrentTargetElement = () => {
     if (!isActive || currentStep < 0) return null;
     
     switch (currentStep) {
-      case 0: // home
+      case 0:
         return homeButtonRef.current;
-      case 1: // whispers
+      case 1:
         return whispersButtonRef.current;
-      case 2: // create
+      case 2:
         return createButtonRef.current;
-      case 3: // profile
+      case 3:
         return profileButtonRef.current;
       default:
         return null;
     }
   };
 
-  // ADDED: Override click handlers to work with tour
   const handleHomeClick = () => {
     if (location.pathname === '/home-feed') {
       window.location.reload();
@@ -73,18 +66,15 @@ const BottomNav: React.FC = () => {
     }
     setShowCreationMenu(false);
     
-    // If tour is active on this step, proceed to next
     if (isActive && currentStep === 0) {
       nextStep();
     }
   };
 
-  // ADDED: Handle Messages Click with tour integration
   const handleMessagesClick = () => {
     navigate('/inbox');
     setShowCreationMenu(false);
     
-    // If tour is active on this step, proceed to next
     if (isActive && currentStep === 1) {
       nextStep();
     }
@@ -101,14 +91,10 @@ const BottomNav: React.FC = () => {
       setShowCreateTooltip(false);
       localStorage.setItem('writeframe_tooltip_seen', 'true');
       
-      // If tour is active on create step, proceed to next
       if (isActive && currentStep === 2) {
-        // Auto-open creation menu for demonstration
         if (!showCreationMenu) {
           setShowCreationMenu(true);
-          // Keep tour active - user can close menu and continue
         } else {
-          // Menu was already open, proceed to next step
           nextStep();
         }
       }
@@ -121,18 +107,14 @@ const BottomNav: React.FC = () => {
     }
     setShowCreationMenu(false);
     
-    // If tour is active on this step, complete tour
     if (isActive && currentStep === 3) {
       completeTour();
     }
   };
 
   const isActivePath = (path: string) => location.pathname === path;
-
-  // FIXED: Only highlight profile when viewing own profile
   const isOwnProfileActive = location.pathname === `/profile/${user?.id}`;
 
-  // Content type icons for creation menu (unchanged)
   const HomeIcon = ({ active }: { active: boolean }) => (
     <svg width="24" height="24" viewBox="0 0 24 24" fill={active ? "var(--text-primary)" : "none"} stroke="currentColor" strokeWidth="2">
       <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
@@ -231,7 +213,6 @@ const BottomNav: React.FC = () => {
 
   return (
     <>
-      {/* Overlay for creation menu */}
       {showCreationMenu && (
         <div 
           style={{
@@ -248,7 +229,6 @@ const BottomNav: React.FC = () => {
         />
       )}
 
-      {/* ADDED: Tour Tooltip */}
       {isActive && currentStepData && (
         <TourTooltip
           targetElement={getCurrentTargetElement()}
@@ -263,7 +243,6 @@ const BottomNav: React.FC = () => {
         />
       )}
 
-      {/* Create Button Tooltip - Only for first-time users (if tour is not active) */}
       {showCreateTooltip && !isActive && (
         <div style={{
           position: 'fixed',
@@ -276,7 +255,7 @@ const BottomNav: React.FC = () => {
           borderRadius: '8px',
           fontSize: '14px',
           fontFamily: "'Cormorant', serif",
-          zIndex: 10002, // HIGHER than tour elements
+          zIndex: 10002,
           whiteSpace: 'nowrap',
           boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
           animation: 'fadeInUp 0.3s ease-out'
@@ -296,7 +275,6 @@ const BottomNav: React.FC = () => {
         </div>
       )}
 
-      {/* Creation Menu - LIST LAYOUT */}
       {showCreationMenu && (
         <div style={{
           position: 'fixed',
@@ -307,7 +285,7 @@ const BottomNav: React.FC = () => {
           borderRadius: '20px',
           padding: '20px',
           boxShadow: '0 -8px 32px rgba(0, 0, 0, 0.15)',
-          zIndex: 10001, // HIGHER than BottomNav but lower than tour
+          zIndex: 10001,
           border: '1px solid var(--border-color)',
           animation: 'slideUp 0.3s ease-out',
           width: '320px',
@@ -383,7 +361,6 @@ const BottomNav: React.FC = () => {
         </div>
       )}
 
-      {/* Bottom Navigation Bar - UPDATED: Higher z-index during tour */}
       <nav 
         style={{
           position: 'fixed',
@@ -393,7 +370,7 @@ const BottomNav: React.FC = () => {
           background: 'var(--background-primary)',
           borderTop: '1px solid var(--border-color)',
           padding: '8px 0 12px',
-          zIndex: isActive ? 10003 : 1000, // UPDATED: Even higher during tour
+          zIndex: isActive ? 10003 : 1000,
           backdropFilter: 'blur(10px)',
           width: '375px',
           maxWidth: '100vw',
@@ -410,7 +387,6 @@ const BottomNav: React.FC = () => {
           margin: '0 auto',
           padding: '0 20px'
         }}>
-          {/* Home Button */}
           <button
             ref={homeButtonRef}
             onClick={handleHomeClick}
@@ -429,7 +405,6 @@ const BottomNav: React.FC = () => {
               transition: 'all 0.2s ease',
               flex: 1,
               maxWidth: '70px',
-              // ADDED: Highlight style during tour
               ...(isActive && currentStep === 0 ? {
                 backgroundColor: 'var(--background-secondary)',
                 transform: 'scale(1.05)'
@@ -457,7 +432,6 @@ const BottomNav: React.FC = () => {
             </span>
           </button>
 
-          {/* Whispers Button */}
           <button
             ref={whispersButtonRef}
             onClick={handleMessagesClick}
@@ -476,7 +450,6 @@ const BottomNav: React.FC = () => {
               transition: 'all 0.2s ease',
               flex: 1,
               maxWidth: '70px',
-              // ADDED: Highlight style during tour
               ...(isActive && currentStep === 1 ? {
                 backgroundColor: 'var(--background-secondary)',
                 transform: 'scale(1.05)'
@@ -504,7 +477,6 @@ const BottomNav: React.FC = () => {
             </span>
           </button>
 
-          {/* Create Button */}
           <button
             ref={createButtonRef}
             onClick={() => handleCreateClick()}
@@ -523,7 +495,6 @@ const BottomNav: React.FC = () => {
               transition: 'all 0.2s ease',
               flex: 1,
               maxWidth: '70px',
-              // ADDED: Highlight style during tour
               ...(isActive && currentStep === 2 ? {
                 backgroundColor: 'var(--background-secondary)',
                 transform: 'scale(1.05)'
@@ -551,7 +522,6 @@ const BottomNav: React.FC = () => {
             </span>
           </button>
 
-          {/* Profile Button */}
           <button
             ref={profileButtonRef}
             onClick={handleProfileClick}
@@ -570,7 +540,6 @@ const BottomNav: React.FC = () => {
               transition: 'all 0.2s ease',
               flex: 1,
               maxWidth: '70px',
-              // ADDED: Highlight style during tour
               ...(isActive && currentStep === 3 ? {
                 backgroundColor: 'var(--background-secondary)',
                 transform: 'scale(1.05)'

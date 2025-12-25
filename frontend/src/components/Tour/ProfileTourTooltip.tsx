@@ -27,56 +27,73 @@ const ProfileTourTooltip: React.FC<ProfileTourTooltipProps> = ({
   const [position, setPosition] = useState({ 
     top: 0, 
     left: 0, 
-    arrowLeft: '50%' as string | number,
+    arrowLeft: '50%',
     arrowPosition: 'bottom' as 'top' | 'bottom'
   });
   const [isVisible, setIsVisible] = useState(false);
-  const [tooltipDimensions, setTooltipDimensions] = useState({ width: 280, height: 180 });
+  const [tooltipDimensions, setTooltipDimensions] = useState({ width: 320, height: 200 });
 
   useEffect(() => {
     if (!targetElement) return;
 
     const calculatePosition = () => {
-      const APP_WIDTH = 375;
-      const TOOLTIP_WIDTH = 280;
-      const TOOLTIP_HEIGHT = 180;
-      const SAFE_MARGIN = 20;
-      const ARROW_OFFSET = 14;
+      const TOOLTIP_WIDTH = 320;
+      const TOOLTIP_HEIGHT = 200;
+      const ARROW_SIZE = 10;
+      const VIEWPORT_PADDING = 20;
       
       const viewportWidth = window.innerWidth;
-      const viewportHeight = window.innerHeight; // RE-ADDED: Needed for vertical positioning
-      
-      // Calculate app boundaries (centered in viewport)
-      const appLeft = Math.max(0, (viewportWidth - APP_WIDTH) / 2);
-      const appRight = appLeft + APP_WIDTH;
+      const viewportHeight = window.innerHeight;
       
       // Get target element position
       const targetRect = targetElement.getBoundingClientRect();
       const targetCenterX = targetRect.left + (targetRect.width / 2);
       
-      // Determine tooltip position based on step
-      const isTopPosition = currentStep === 2 || currentStep === 3;
+      // Determine best tooltip position based on available space
+      const spaceAbove = targetRect.top - VIEWPORT_PADDING;
+      const spaceBelow = viewportHeight - targetRect.bottom - VIEWPORT_PADDING;
+      
+      // Check if we have more space above or below
+      const hasMoreSpaceBelow = spaceBelow >= TOOLTIP_HEIGHT || spaceBelow > spaceAbove;
+      const hasMoreSpaceAbove = spaceAbove >= TOOLTIP_HEIGHT || spaceAbove > spaceBelow;
       
       let tooltipTop: number;
       let arrowPosition: 'top' | 'bottom';
       
-      if (isTopPosition) {
-        // Position tooltip BELOW target (for stats and edit button)
-        tooltipTop = targetRect.bottom + 10;
+      // Special handling for profile header (step 0 - profile image)
+      if (currentStep === 0) {
+        // For profile image, always position BELOW with more spacing
+        tooltipTop = targetRect.bottom + 20;
         arrowPosition = 'top';
-      } else {
-        // Position tooltip ABOVE target (for header and tabs)
-        // FIX: Check if there's enough space above, if not, position below
-        const spaceAbove = targetRect.top;
-        const spaceBelow = viewportHeight - targetRect.bottom;
-        
-        if (spaceAbove >= TOOLTIP_HEIGHT + 20) {
-          // Enough space above - position above
+      } 
+      // For stats section (step 2)
+      else if (currentStep === 2) {
+        // Position ABOVE stats section
+        tooltipTop = targetRect.top - TOOLTIP_HEIGHT - 10;
+        arrowPosition = 'bottom';
+      }
+      // For edit button (step 3)
+      else if (currentStep === 3) {
+        // Position ABOVE edit button
+        tooltipTop = targetRect.top - TOOLTIP_HEIGHT - 10;
+        arrowPosition = 'bottom';
+      }
+      // For tabs (step 1) and general fallback
+      else {
+        if (hasMoreSpaceBelow) {
+          // Position below target
+          tooltipTop = targetRect.bottom + 10;
+          arrowPosition = 'top';
+        } else if (hasMoreSpaceAbove) {
+          // Position above target
           tooltipTop = targetRect.top - TOOLTIP_HEIGHT - 10;
           arrowPosition = 'bottom';
         } else {
-          // Not enough space above - position below
-          tooltipTop = targetRect.bottom + 10;
+          // Default to below if no space (with viewport constraints)
+          tooltipTop = Math.min(
+            targetRect.bottom + 10,
+            viewportHeight - TOOLTIP_HEIGHT - VIEWPORT_PADDING
+          );
           arrowPosition = 'top';
         }
       }
@@ -84,44 +101,39 @@ const ProfileTourTooltip: React.FC<ProfileTourTooltipProps> = ({
       // Center tooltip horizontally on target
       let tooltipLeft = targetCenterX - (TOOLTIP_WIDTH / 2);
       
-      // Clamp tooltip within app boundaries
-      const minLeft = appLeft + SAFE_MARGIN;
-      const maxLeft = appRight - TOOLTIP_WIDTH - SAFE_MARGIN;
+      // Clamp tooltip within viewport boundaries
+      const minLeft = VIEWPORT_PADDING;
+      const maxLeft = viewportWidth - TOOLTIP_WIDTH - VIEWPORT_PADDING;
       tooltipLeft = Math.max(minLeft, Math.min(tooltipLeft, maxLeft));
       
-      // FIX: Ensure tooltip doesn't go off screen vertically
-      if (tooltipTop < SAFE_MARGIN) {
-        tooltipTop = SAFE_MARGIN;
-        arrowPosition = 'bottom'; // If forced to top, arrow should point down
-      }
-      
-      if (tooltipTop + TOOLTIP_HEIGHT > viewportHeight - SAFE_MARGIN) {
-        tooltipTop = viewportHeight - TOOLTIP_HEIGHT - SAFE_MARGIN;
-        arrowPosition = 'top'; // If forced to bottom, arrow should point up
-      }
+      // Ensure tooltip doesn't go off screen vertically
+      tooltipTop = Math.max(
+        VIEWPORT_PADDING,
+        Math.min(tooltipTop, viewportHeight - TOOLTIP_HEIGHT - VIEWPORT_PADDING)
+      );
       
       // Calculate arrow position (points to target center)
-      const arrowRelativeToTooltip = targetCenterX - tooltipLeft;
+      let arrowRelativeToTooltip = targetCenterX - tooltipLeft;
       
       // Clamp arrow within tooltip bounds (with padding)
-      const arrowMin = ARROW_OFFSET + 10;
-      const arrowMax = TOOLTIP_WIDTH - ARROW_OFFSET - 10;
+      const arrowMin = ARROW_SIZE + 20; // Padding from edges
+      const arrowMax = TOOLTIP_WIDTH - ARROW_SIZE - 20;
       const clampedArrow = Math.max(arrowMin, Math.min(arrowRelativeToTooltip, arrowMax));
       
       setPosition({
         top: tooltipTop,
         left: tooltipLeft,
-        arrowLeft: clampedArrow,
+        arrowLeft: `${clampedArrow}px`, // FIX: Convert number to string
         arrowPosition
       });
       
       setTooltipDimensions({ width: TOOLTIP_WIDTH, height: TOOLTIP_HEIGHT });
-      
-      // Show with slight delay for smooth animation
-      setTimeout(() => setIsVisible(true), 50);
     };
 
     calculatePosition();
+    
+    // Show with slight delay for smooth animation
+    setTimeout(() => setIsVisible(true), 50);
     
     // Recalculate on resize and scroll
     window.addEventListener('resize', calculatePosition);
@@ -154,7 +166,7 @@ const ProfileTourTooltip: React.FC<ProfileTourTooltipProps> = ({
         }}
       />
 
-      {/* Highlight ring around target */}
+      {/* Highlight ring around target - IMPROVED POSITIONING */}
       <div
         style={{
           position: 'fixed',
@@ -192,19 +204,21 @@ const ProfileTourTooltip: React.FC<ProfileTourTooltipProps> = ({
           transition: 'opacity 0.3s ease, transform 0.3s ease'
         }}
       >
-        {/* Arrow pointing to target */}
+        {/* Arrow pointing to target - IMPROVED ARROW POSITIONING */}
         <div
           style={{
             position: 'absolute',
             [position.arrowPosition]: '-10px',
-            left: `${position.arrowLeft}px`,
+            left: position.arrowLeft, // FIX: Now using string with 'px'
             transform: 'translateX(-50%)',
             width: 0,
             height: 0,
             borderLeft: '10px solid transparent',
             borderRight: '10px solid transparent',
-            borderTop: position.arrowPosition === 'bottom' ? '10px solid #FFFFFF' : 'none',
-            borderBottom: position.arrowPosition === 'top' ? '10px solid #FFFFFF' : 'none'
+            ...(position.arrowPosition === 'bottom' 
+              ? { borderTop: '10px solid #FFFFFF' }
+              : { borderBottom: '10px solid #FFFFFF' }
+            )
           }}
         />
 
