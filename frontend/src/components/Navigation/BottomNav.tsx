@@ -1,6 +1,10 @@
-import React, { useState, useEffect } from 'react';
+// src/components/Navigation/BottomNav.tsx
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+// ADDED: Import tour hook and tooltip
+import { useBottomNavTour } from '../../hooks/useBottomNavTour';
+import TourTooltip from '../Tour/TourTooltip';
 
 const BottomNav: React.FC = () => {
   const navigate = useNavigate();
@@ -8,6 +12,27 @@ const BottomNav: React.FC = () => {
   const { user } = useAuth();
   const [showCreationMenu, setShowCreationMenu] = React.useState(false);
   const [showCreateTooltip, setShowCreateTooltip] = useState(false);
+  
+  // ADDED: Refs for tour target elements
+  const homeButtonRef = useRef<HTMLButtonElement>(null);
+  const whispersButtonRef = useRef<HTMLButtonElement>(null);
+  const createButtonRef = useRef<HTMLButtonElement>(null);
+  const profileButtonRef = useRef<HTMLButtonElement>(null);
+  
+  // ADDED: Use the bottom nav tour hook
+  const {
+    currentStep,
+    isActive,
+    steps,
+    currentStepData,
+    totalSteps,
+    nextStep,
+    prevStep,
+    skipTour,
+    completeTour,
+    startTour,
+    isTourCompleted
+  } = useBottomNavTour();
 
   useEffect(() => {
     // Check if user has completed onboarding but hasn't seen the tooltip
@@ -24,7 +49,101 @@ const BottomNav: React.FC = () => {
     }
   }, []);
 
-  // Icons with theme support
+  // ADDED: Function to get current target element based on step
+  const getCurrentTargetElement = () => {
+    if (!isActive || currentStep < 0) return null;
+    
+    switch (currentStep) {
+      case 0: // home
+        return homeButtonRef.current;
+      case 1: // whispers
+        return whispersButtonRef.current;
+      case 2: // create
+        return createButtonRef.current;
+      case 3: // profile
+        return profileButtonRef.current;
+      default:
+        return null;
+    }
+  };
+
+  // ADDED: Override click handlers to work with tour
+  const handleHomeClick = () => {
+    if (location.pathname === '/home-feed') {
+      window.location.reload();
+    } else {
+      navigate('/home-feed');
+    }
+    setShowCreationMenu(false);
+    
+    // If tour is active on this step, proceed to next
+    if (isActive && currentStep === 0) {
+      nextStep();
+    }
+  };
+
+  // ADDED: Handle Messages Click with tour integration
+  const handleMessagesClick = () => {
+    navigate('/inbox');
+    setShowCreationMenu(false);
+    
+    // If tour is active on this step, proceed to next
+    if (isActive && currentStep === 1) {
+      nextStep();
+    }
+  };
+
+  const handleCreateClick = (type?: 'scene' | 'monologue' | 'character' | 'frame') => {
+    if (type) {
+      setShowCreationMenu(false);
+      setShowCreateTooltip(false);
+      localStorage.setItem('writeframe_tooltip_seen', 'true');
+      navigate(`/compose-${type}`);
+    } else {
+      setShowCreationMenu(!showCreationMenu);
+      setShowCreateTooltip(false);
+      localStorage.setItem('writeframe_tooltip_seen', 'true');
+      
+      // If tour is active on create step, proceed to next
+      if (isActive && currentStep === 2) {
+        // Auto-open creation menu for demonstration
+        if (!showCreationMenu) {
+          setShowCreationMenu(true);
+          // Keep tour active - user can close menu and continue
+        } else {
+          // Menu was already open, proceed to next step
+          nextStep();
+        }
+      }
+    }
+  };
+
+  const handleProfileClick = () => {
+    if (user?.id) {
+      navigate(`/profile/${user.id}`);
+    }
+    setShowCreationMenu(false);
+    
+    // If tour is active on this step, complete tour
+    if (isActive && currentStep === 3) {
+      completeTour();
+    }
+  };
+
+  const isActivePath = (path: string) => location.pathname === path;
+
+  // FIXED: Only highlight profile when viewing own profile
+  const isOwnProfileActive = location.pathname === `/profile/${user?.id}`;
+
+  // ADDED: Handle overlay click during tour
+  const handleTourOverlayClick = () => {
+    // Allow clicking through overlay to proceed to next step
+    if (isActive) {
+      nextStep();
+    }
+  };
+
+  // Content type icons for creation menu (unchanged)
   const HomeIcon = ({ active }: { active: boolean }) => (
     <svg width="24" height="24" viewBox="0 0 24 24" fill={active ? "var(--text-primary)" : "none"} stroke="currentColor" strokeWidth="2">
       <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
@@ -32,7 +151,6 @@ const BottomNav: React.FC = () => {
     </svg>
   );
 
-  // ADDED: Messages Icon
   const MessagesIcon = ({ active }: { active: boolean }) => (
     <svg width="24" height="24" viewBox="0 0 24 24" fill={active ? "var(--text-primary)" : "none"} stroke="currentColor" strokeWidth="2">
       <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
@@ -57,7 +175,6 @@ const BottomNav: React.FC = () => {
     </svg>
   );
 
-  // Content type icons for creation menu
   const SceneIcon = () => (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
       <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
@@ -92,47 +209,6 @@ const BottomNav: React.FC = () => {
     </svg>
   );
 
-  const handleHomeClick = () => {
-    if (location.pathname === '/home-feed') {
-      window.location.reload();
-    } else {
-      navigate('/home-feed');
-    }
-    setShowCreationMenu(false);
-  };
-
-  // ADDED: Handle Messages Click
-  const handleMessagesClick = () => {
-    navigate('/inbox');
-    setShowCreationMenu(false);
-  };
-
-  const handleCreateClick = (type?: 'scene' | 'monologue' | 'character' | 'frame') => {
-    if (type) {
-      setShowCreationMenu(false);
-      setShowCreateTooltip(false);
-      localStorage.setItem('writeframe_tooltip_seen', 'true');
-      navigate(`/compose-${type}`);
-    } else {
-      setShowCreationMenu(!showCreationMenu);
-      setShowCreateTooltip(false);
-      localStorage.setItem('writeframe_tooltip_seen', 'true');
-    }
-  };
-
-  const handleProfileClick = () => {
-    if (user?.id) {
-      navigate(`/profile/${user.id}`);
-    }
-    setShowCreationMenu(false);
-  };
-
-  const isActive = (path: string) => location.pathname === path;
-
-  // FIXED: Only highlight profile when viewing own profile
-  const isOwnProfileActive = location.pathname === `/profile/${user?.id}`;
-
-  // Creation options data
   const creationOptions = [
     { 
       type: 'scene' as const, 
@@ -166,7 +242,7 @@ const BottomNav: React.FC = () => {
 
   return (
     <>
-      {/* Overlay */}
+      {/* Overlay for creation menu */}
       {showCreationMenu && (
         <div 
           style={{
@@ -183,8 +259,23 @@ const BottomNav: React.FC = () => {
         />
       )}
 
-      {/* Create Button Tooltip - Only for first-time users */}
-      {showCreateTooltip && (
+      {/* ADDED: Tour Tooltip */}
+      {isActive && currentStepData && (
+        <TourTooltip
+          targetElement={getCurrentTargetElement()}
+          title={currentStepData.title}
+          description={currentStepData.description}
+          currentStep={currentStep}
+          totalSteps={totalSteps}
+          onNext={nextStep}
+          onBack={prevStep}
+          onSkip={skipTour}
+          onComplete={completeTour}
+        />
+      )}
+
+      {/* Create Button Tooltip - Only for first-time users (if tour is not active) */}
+      {showCreateTooltip && !isActive && (
         <div style={{
           position: 'fixed',
           bottom: '80px',
@@ -303,7 +394,7 @@ const BottomNav: React.FC = () => {
         </div>
       )}
 
-      {/* Bottom Navigation Bar - UPDATED: Reduced height and centered */}
+      {/* Bottom Navigation Bar */}
       <nav 
         style={{
           position: 'fixed',
@@ -312,47 +403,61 @@ const BottomNav: React.FC = () => {
           transform: 'translateX(-50%)',
           background: 'var(--background-primary)',
           borderTop: '1px solid var(--border-color)',
-          padding: '8px 0 12px', // REDUCED: Less padding for smaller height
-          zIndex: 1000,
+          padding: '8px 0 12px',
+          zIndex: isActive ? 10001 : 1000, // ADDED: Higher z-index during tour
           backdropFilter: 'blur(10px)',
-          width: '375px', // ADDED: Fixed width
-          maxWidth: '100vw', // ADDED: Responsive constraint
-          boxSizing: 'border-box', // ADDED: Proper box model
-          borderTopLeftRadius: '12px', // ADDED: Rounded corners
-          borderTopRightRadius: '12px' // ADDED: Rounded corners
+          width: '375px',
+          maxWidth: '100vw',
+          boxSizing: 'border-box',
+          borderTopLeftRadius: '12px',
+          borderTopRightRadius: '12px'
         }}
-        className="bottom-nav" // ADDED: Tour identifier class
+        className="bottom-nav"
       >
         <div style={{
           display: 'flex',
           justifyContent: 'space-around',
           alignItems: 'center',
-          margin: '0 auto', // CHANGED: Remove maxWidth constraint
+          margin: '0 auto',
           padding: '0 20px'
         }}>
           {/* Home Button */}
           <button
+            ref={homeButtonRef}
             onClick={handleHomeClick}
-            data-tour="home-button" // ADDED: Tour identifier
+            data-tour="home-button"
             style={{
               background: 'none',
               border: 'none',
               cursor: 'pointer',
-              padding: '8px 12px', // REDUCED: Less padding
+              padding: '8px 12px',
               borderRadius: '12px',
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
-              gap: '4px', // REDUCED: Less gap
-              color: isActive('/home-feed') ? 'var(--text-primary)' : 'var(--text-gray)',
+              gap: '4px',
+              color: isActivePath('/home-feed') ? 'var(--text-primary)' : 'var(--text-gray)',
               transition: 'all 0.2s ease',
               flex: 1,
-              maxWidth: '70px'
+              maxWidth: '70px',
+              // ADDED: Highlight style during tour
+              ...(isActive && currentStep === 0 ? {
+                backgroundColor: 'var(--background-secondary)',
+                transform: 'scale(1.05)'
+              } : {})
             }}
-            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--background-secondary)'}
-            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+            onMouseEnter={(e) => {
+              if (!isActive || currentStep !== 0) {
+                e.currentTarget.style.backgroundColor = 'var(--background-secondary)';
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (!isActive || currentStep !== 0) {
+                e.currentTarget.style.backgroundColor = 'transparent';
+              }
+            }}
           >
-            <HomeIcon active={isActive('/home-feed')} />
+            <HomeIcon active={isActivePath('/home-feed')} />
             <span style={{
               fontSize: '11px',
               fontFamily: "'Cormorant', serif",
@@ -363,29 +468,43 @@ const BottomNav: React.FC = () => {
             </span>
           </button>
 
-          {/* CHANGED: Messages Button to Whispers */}
+          {/* Whispers Button */}
           <button
+            ref={whispersButtonRef}
             onClick={handleMessagesClick}
-            data-tour="whispers-button" // ADDED: Tour identifier
+            data-tour="whispers-button"
             style={{
               background: 'none',
               border: 'none',
               cursor: 'pointer',
-              padding: '8px 12px', // REDUCED: Less padding
+              padding: '8px 12px',
               borderRadius: '12px',
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
-              gap: '4px', // REDUCED: Less gap
-              color: isActive('/inbox') ? 'var(--text-primary)' : 'var(--text-gray)',
+              gap: '4px',
+              color: isActivePath('/inbox') ? 'var(--text-primary)' : 'var(--text-gray)',
               transition: 'all 0.2s ease',
               flex: 1,
-              maxWidth: '70px'
+              maxWidth: '70px',
+              // ADDED: Highlight style during tour
+              ...(isActive && currentStep === 1 ? {
+                backgroundColor: 'var(--background-secondary)',
+                transform: 'scale(1.05)'
+              } : {})
             }}
-            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--background-secondary)'}
-            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+            onMouseEnter={(e) => {
+              if (!isActive || currentStep !== 1) {
+                e.currentTarget.style.backgroundColor = 'var(--background-secondary)';
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (!isActive || currentStep !== 1) {
+                e.currentTarget.style.backgroundColor = 'transparent';
+              }
+            }}
           >
-            <MessagesIcon active={isActive('/inbox')} />
+            <MessagesIcon active={isActivePath('/inbox')} />
             <span style={{
               fontSize: '11px',
               fontFamily: "'Cormorant', serif",
@@ -398,25 +517,39 @@ const BottomNav: React.FC = () => {
 
           {/* Create Button */}
           <button
+            ref={createButtonRef}
             onClick={() => handleCreateClick()}
-            data-tour="create-button" // ADDED: Tour identifier
+            data-tour="create-button"
             style={{
               background: 'none',
               border: 'none',
               cursor: 'pointer',
-              padding: '8px 12px', // REDUCED: Less padding
+              padding: '8px 12px',
               borderRadius: '12px',
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
-              gap: '4px', // REDUCED: Less gap
+              gap: '4px',
               color: showCreationMenu ? 'var(--text-primary)' : 'var(--text-gray)',
               transition: 'all 0.2s ease',
               flex: 1,
-              maxWidth: '70px'
+              maxWidth: '70px',
+              // ADDED: Highlight style during tour
+              ...(isActive && currentStep === 2 ? {
+                backgroundColor: 'var(--background-secondary)',
+                transform: 'scale(1.05)'
+              } : {})
             }}
-            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--background-secondary)'}
-            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+            onMouseEnter={(e) => {
+              if (!isActive || currentStep !== 2) {
+                e.currentTarget.style.backgroundColor = 'var(--background-secondary)';
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (!isActive || currentStep !== 2) {
+                e.currentTarget.style.backgroundColor = 'transparent';
+              }
+            }}
           >
             <CreateIcon active={showCreationMenu} />
             <span style={{
@@ -429,27 +562,41 @@ const BottomNav: React.FC = () => {
             </span>
           </button>
 
-          {/* Profile Button - FIXED: Only highlight when viewing own profile */}
+          {/* Profile Button */}
           <button
+            ref={profileButtonRef}
             onClick={handleProfileClick}
-            data-tour="profile-button" // ADDED: Tour identifier
+            data-tour="profile-button"
             style={{
               background: 'none',
               border: 'none',
               cursor: 'pointer',
-              padding: '8px 12px', // REDUCED: Less padding
+              padding: '8px 12px',
               borderRadius: '12px',
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
-              gap: '4px', // REDUCED: Less gap
+              gap: '4px',
               color: isOwnProfileActive ? 'var(--text-primary)' : 'var(--text-gray)',
               transition: 'all 0.2s ease',
               flex: 1,
-              maxWidth: '70px'
+              maxWidth: '70px',
+              // ADDED: Highlight style during tour
+              ...(isActive && currentStep === 3 ? {
+                backgroundColor: 'var(--background-secondary)',
+                transform: 'scale(1.05)'
+              } : {})
             }}
-            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--background-secondary)'}
-            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+            onMouseEnter={(e) => {
+              if (!isActive || currentStep !== 3) {
+                e.currentTarget.style.backgroundColor = 'var(--background-secondary)';
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (!isActive || currentStep !== 3) {
+                e.currentTarget.style.backgroundColor = 'transparent';
+              }
+            }}
           >
             <ProfileIcon active={isOwnProfileActive} />
             <span style={{
