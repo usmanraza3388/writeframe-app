@@ -1,4 +1,4 @@
-// E:\Cineverse\frontend\src\components\HomeFeed\HomeFeed.tsx
+// src/components/HomeFeed/HomeFeed.tsx
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useFeed } from '../../hooks/useFeed';
@@ -124,6 +124,9 @@ const HomeFeed: React.FC = () => {
   // ADDED: Use onboarding hook
   const { showOnboarding, handleComplete, handleClose } = useOnboarding();
 
+  // ADDED: Tour trigger state
+  const [shouldTriggerTour, setShouldTriggerTour] = useState(false);
+
   // ADDED: Pagination state
   const [visibleCount, setVisibleCount] = useState(10);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
@@ -162,6 +165,37 @@ const HomeFeed: React.FC = () => {
       document.head.removeChild(style);
     };
   }, []);
+
+  // ADDED: Tour trigger effect - FIXED: This ensures tour starts after modal
+  useEffect(() => {
+    if (shouldTriggerTour) {
+      console.log('🚀 Triggering BottomNav tour...');
+      
+      // Set the key that tour hook looks for
+      localStorage.setItem('writeframe_onboarding_complete', 'true');
+      
+      // Ensure tour can run
+      localStorage.removeItem('writeframe_bottomnav_tour_completed');
+      
+      // Clear the trigger
+      setShouldTriggerTour(false);
+      
+      // Small delay to ensure BottomNav re-renders
+      setTimeout(() => {
+        // Force a storage event to trigger tour hook
+        window.dispatchEvent(new StorageEvent('storage', {
+          key: 'writeframe_onboarding_complete',
+          newValue: 'true'
+        }));
+      }, 100);
+    }
+  }, [shouldTriggerTour]);
+
+  // ADDED: Enhanced modal completion handler
+  const handleModalComplete = () => {
+    handleComplete();
+    setShouldTriggerTour(true); // This will trigger the tour
+  };
 
   // CLEANED: Auto-scroll without debug logs
   useEffect(() => {
@@ -645,15 +679,14 @@ const HomeFeed: React.FC = () => {
         <BottomNav />
       </div>
 
-      {/* ADDED: Getting Started Modal */}
+      {/* ADDED: Getting Started Modal - UPDATED: Uses new handler */}
       <GettingStartedModal
         isOpen={showOnboarding}
         onClose={handleClose}
-        onComplete={handleComplete}
+        onComplete={handleModalComplete}  // Changed to trigger tour
       />
     </>
   );
 };
 
 export default HomeFeed;
-
