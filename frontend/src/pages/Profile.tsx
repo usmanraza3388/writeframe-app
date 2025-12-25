@@ -247,8 +247,6 @@ export default function Profile() {
   // ADDED: Modal state
   const [showFollowersModal, setShowFollowersModal] = useState(false);
   const [showFollowingModal, setShowFollowingModal] = useState(false);
-  // ADDED: Tooltip state
-  const [showAvatarTooltip, setShowAvatarTooltip] = useState(false);
   
   // UPDATED: Added refresh to destructuring
   const { profile, stats, tabContent, isLoading, error, refresh } = useProfileData(id || '');
@@ -311,14 +309,7 @@ export default function Profile() {
     getCurrentUser();
   }, []);
 
-  // ADDED: Check if user is new and show tooltip
-  useEffect(() => {
-    const hasSeenTooltip = localStorage.getItem('has_seen_avatar_tooltip');
-    if (!hasSeenTooltip && isOwnProfile) {
-      setShowAvatarTooltip(true);
-      localStorage.setItem('has_seen_avatar_tooltip', 'true');
-    }
-  }, [isOwnProfile]);
+  // REMOVED: Avatar tooltip useEffect
 
   // ADDED: Auto-start profile tour for first-time users
   useEffect(() => {
@@ -886,20 +877,6 @@ export default function Profile() {
               </div>
             )}
           </div>
-
-          {/* ADDED: Avatar Tooltip for new users */}
-          {showAvatarTooltip && (
-            <div style={avatarTooltipStyle}>
-              <div style={tooltipArrowStyle}></div>
-              <p style={tooltipTextStyle}>Tap here to add your profile picture!</p>
-              <button 
-                onClick={() => setShowAvatarTooltip(false)}
-                style={tooltipCloseStyle}
-              >
-                ×
-              </button>
-            </div>
-          )}
           
           <div style={nameContainerStyle}>
             <h1 style={nameStyle}>{profile.full_name || 'Anonymous'}</h1>
@@ -1201,7 +1178,7 @@ export default function Profile() {
   );
 }
 
-// STYLES - ALL REMAIN EXACTLY THE SAME (keep all your existing styles)
+// STYLES - REMOVED: Avatar tooltip styles
 const pageContainerStyle: React.CSSProperties = {
   minHeight: '100vh',
   display: 'flex',
@@ -1495,51 +1472,6 @@ const emptyAvatarTextStyle: React.CSSProperties = {
   color: '#6B7280',
   fontFamily: "'Cormorant', serif",
   fontWeight: '500',
-};
-
-// ADDED: Tooltip styles
-const avatarTooltipStyle: React.CSSProperties = {
-  position: 'absolute',
-  top: '-80px',
-  left: '50%',
-  transform: 'translateX(-50%)',
-  backgroundColor: '#1A1A1A',
-  color: 'white',
-  padding: '12px 16px',
-  borderRadius: '8px',
-  fontSize: '14px',
-  fontFamily: "'Cormorant', serif",
-  zIndex: 1000,
-  minWidth: '200px',
-  textAlign: 'center',
-};
-
-const tooltipArrowStyle: React.CSSProperties = {
-  position: 'absolute',
-  bottom: '-8px',
-  left: '50%',
-  transform: 'translateX(-50%)',
-  width: 0,
-  height: 0,
-  borderLeft: '8px solid transparent',
-  borderRight: '8px solid transparent',
-  borderTop: '8px solid #1A1A1A',
-};
-
-const tooltipTextStyle: React.CSSProperties = {
-  margin: 0,
-  marginBottom: '8px',
-};
-
-const tooltipCloseStyle: React.CSSProperties = {
-  background: 'none',
-  border: 'none',
-  color: 'white',
-  fontSize: '18px',
-  cursor: 'pointer',
-  position: 'absolute',
-  top: '4px',
-  right: '8px',
 };
 
 const nameContainerStyle: React.CSSProperties = {

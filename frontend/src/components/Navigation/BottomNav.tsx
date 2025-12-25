@@ -1,5 +1,5 @@
 // src/components/Navigation/BottomNav.tsx
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useBottomNavTour } from '../../hooks/useBottomNavTour';
@@ -10,7 +10,6 @@ const BottomNav: React.FC = () => {
   const location = useLocation();
   const { user } = useAuth();
   const [showCreationMenu, setShowCreationMenu] = React.useState(false);
-  const [showCreateTooltip, setShowCreateTooltip] = useState(false);
   
   const homeButtonRef = useRef<HTMLButtonElement>(null);
   const whispersButtonRef = useRef<HTMLButtonElement>(null);
@@ -27,19 +26,6 @@ const BottomNav: React.FC = () => {
     skipTour,
     completeTour
   } = useBottomNavTour();
-
-  useEffect(() => {
-    const hasCompletedOnboarding = localStorage.getItem('writeframe_onboarding_complete');
-    const hasSeenTooltip = localStorage.getItem('writeframe_tooltip_seen');
-    
-    if (hasCompletedOnboarding && !hasSeenTooltip) {
-      const timer = setTimeout(() => {
-        setShowCreateTooltip(true);
-      }, 2000);
-      
-      return () => clearTimeout(timer);
-    }
-  }, []);
 
   const getCurrentTargetElement = () => {
     if (!isActive || currentStep < 0) return null;
@@ -83,13 +69,9 @@ const BottomNav: React.FC = () => {
   const handleCreateClick = (type?: 'scene' | 'monologue' | 'character' | 'frame') => {
     if (type) {
       setShowCreationMenu(false);
-      setShowCreateTooltip(false);
-      localStorage.setItem('writeframe_tooltip_seen', 'true');
       navigate(`/compose-${type}`);
     } else {
       setShowCreationMenu(!showCreationMenu);
-      setShowCreateTooltip(false);
-      localStorage.setItem('writeframe_tooltip_seen', 'true');
       
       if (isActive && currentStep === 2) {
         if (!showCreationMenu) {
@@ -241,38 +223,6 @@ const BottomNav: React.FC = () => {
           onSkip={skipTour}
           onComplete={completeTour}
         />
-      )}
-
-      {showCreateTooltip && !isActive && (
-        <div style={{
-          position: 'fixed',
-          bottom: '80px',
-          left: '53%',
-          transform: 'translateX(-50%)',
-          background: '#1A1A1A',
-          color: 'white',
-          padding: '12px 16px',
-          borderRadius: '8px',
-          fontSize: '14px',
-          fontFamily: "'Cormorant', serif",
-          zIndex: 10002,
-          whiteSpace: 'nowrap',
-          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
-          animation: 'fadeInUp 0.3s ease-out'
-        }}>
-          <div style={{
-            position: 'absolute',
-            bottom: '-8px',
-            left: '50%',
-            transform: 'translateX(-50%)',
-            width: 0,
-            height: 0,
-            borderLeft: '8px solid transparent',
-            borderRight: '8px solid transparent',
-            borderTop: '8px solid #1A1A1A'
-          }}></div>
-          Tap here to create content!
-        </div>
       )}
 
       {showCreationMenu && (

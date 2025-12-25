@@ -47,6 +47,10 @@ function AppContent() {
       localStorage.removeItem('writeframe_bottomnav_tour_completed');
       localStorage.removeItem('writeframe_onboarding_complete');
       
+      // REMOVED: Clean up old tooltip localStorage keys
+      localStorage.removeItem('writeframe_tooltip_seen');
+      localStorage.removeItem('has_seen_avatar_tooltip');
+      
       // Set a marker to prevent re-initialization
       localStorage.setItem('writeframe_app_initialized', 'true');
       
