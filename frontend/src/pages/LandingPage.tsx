@@ -93,7 +93,7 @@ const LandingPage: React.FC = () => {
               lineHeight: 1.4,
               textAlign: 'center'
             }}>
-              <strong>The portfolio builder for cinematic creators.</strong>
+              <strong>Build Your Cinematic Portfolio</strong>
             </p>
             <p style={{
               fontFamily: "'Cormorant', serif",
@@ -104,7 +104,7 @@ const LandingPage: React.FC = () => {
               textAlign: 'center',
               opacity: 0.9
             }}>
-              Share scenes, monologues, characters, and visual frames—no finished script required.
+              Share scenes, monologues, characters, and visual frames. No finished script is required.
             </p>
           </div>
         </div>
