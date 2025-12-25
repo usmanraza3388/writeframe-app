@@ -35,6 +35,25 @@ function AppContent() {
   const [session, setSession] = useState<any>(null);
   const [profile, setProfile] = useState<any>(null);
 
+  // 🎯 FIX: Initialize localStorage state to prevent tour conflicts
+  useEffect(() => {
+    // Only run once when app loads
+    const isFirstVisit = !localStorage.getItem('writeframe_app_initialized');
+    
+    if (isFirstVisit) {
+      console.log('🔄 Initializing app localStorage state...');
+      
+      // Clear any conflicting tour states
+      localStorage.removeItem('writeframe_bottomnav_tour_completed');
+      localStorage.removeItem('writeframe_onboarding_complete');
+      
+      // Set a marker to prevent re-initialization
+      localStorage.setItem('writeframe_app_initialized', 'true');
+      
+      console.log('✅ App localStorage initialized');
+    }
+  }, []);
+
   useEffect(() => {
     const init = async () => {
       const {
@@ -268,4 +287,3 @@ function App() {
 }
 
 export default App;
-

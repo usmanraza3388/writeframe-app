@@ -124,8 +124,7 @@ const HomeFeed: React.FC = () => {
   // ADDED: Use onboarding hook
   const { showOnboarding, handleComplete, handleClose } = useOnboarding();
 
-  // ADDED: Tour trigger state
-  const [shouldTriggerTour, setShouldTriggerTour] = useState(false);
+  // FIXED: Tour trigger state - REMOVED shouldTriggerTour as we're using event system
 
   // ADDED: Pagination state
   const [visibleCount, setVisibleCount] = useState(10);
@@ -166,35 +165,19 @@ const HomeFeed: React.FC = () => {
     };
   }, []);
 
-  // ADDED: Tour trigger effect - FIXED: This ensures tour starts after modal
-  useEffect(() => {
-    if (shouldTriggerTour) {
-      console.log('🚀 Triggering BottomNav tour...');
-      
-      // Set the key that tour hook looks for
-      localStorage.setItem('writeframe_onboarding_complete', 'true');
-      
-      // Ensure tour can run
-      localStorage.removeItem('writeframe_bottomnav_tour_completed');
-      
-      // Clear the trigger
-      setShouldTriggerTour(false);
-      
-      // Small delay to ensure BottomNav re-renders
-      setTimeout(() => {
-        // Force a storage event to trigger tour hook
-        window.dispatchEvent(new StorageEvent('storage', {
-          key: 'writeframe_onboarding_complete',
-          newValue: 'true'
-        }));
-      }, 100);
-    }
-  }, [shouldTriggerTour]);
-
-  // ADDED: Enhanced modal completion handler
+  // FIXED: Enhanced modal completion handler with 800ms delay
   const handleModalComplete = () => {
+    // First, mark onboarding as complete
     handleComplete();
-    setShouldTriggerTour(true); // This will trigger the tour
+    
+    // Set localStorage for persistence
+    localStorage.setItem('writeframe_onboarding_complete', 'true');
+    
+    // Wait 800ms for modal to fully disappear, then trigger tour via custom event
+    setTimeout(() => {
+      console.log('🚀 Dispatching tour-should-start event after 800ms delay');
+      window.dispatchEvent(new CustomEvent('tour-should-start'));
+    }, 800);
   };
 
   // CLEANED: Auto-scroll without debug logs
@@ -338,7 +321,7 @@ const HomeFeed: React.FC = () => {
         if (success) {
           // Successfully reposted
         }
-      } catch (error) {
+     } catch (error) {
         console.error('Error reposting frame:', error);
       }
     }
@@ -679,11 +662,11 @@ const HomeFeed: React.FC = () => {
         <BottomNav />
       </div>
 
-      {/* ADDED: Getting Started Modal - UPDATED: Uses new handler */}
+      {/* ADDED: Getting Started Modal - FIXED: Uses new handler with 800ms delay */}
       <GettingStartedModal
         isOpen={showOnboarding}
         onClose={handleClose}
-        onComplete={handleModalComplete}  // Changed to trigger tour
+        onComplete={handleModalComplete}  // Now includes 800ms delay before tour
       />
     </>
   );
