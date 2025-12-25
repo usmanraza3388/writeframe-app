@@ -13,7 +13,6 @@ import AuthCallback from "./pages/AuthCallback";
 import Welcome from "./pages/Welcome";
 import GenreSelection from "./pages/GenreSelection";
 import ExpressionSelection from "./pages/ExpressionSelection";
-// REMOVED: StudioReadyGuide import
 import Profile from "./pages/Profile";
 import Dashboard from "./pages/Dashboard";
 import Drafts from "./pages/Drafts";
@@ -35,23 +34,15 @@ function AppContent() {
   const [session, setSession] = useState<any>(null);
   const [profile, setProfile] = useState<any>(null);
 
-  // 🎯 FIX: Initialize localStorage state to prevent tour conflicts
   useEffect(() => {
-    // Only run once when app loads
     const isFirstVisit = !localStorage.getItem('writeframe_app_initialized');
     
     if (isFirstVisit) {
       console.log('🔄 Initializing app localStorage state...');
       
-      // Clear any conflicting tour states
       localStorage.removeItem('writeframe_bottomnav_tour_completed');
       localStorage.removeItem('writeframe_onboarding_complete');
       
-      // REMOVED: Clean up old tooltip localStorage keys
-      localStorage.removeItem('writeframe_tooltip_seen');
-      localStorage.removeItem('has_seen_avatar_tooltip');
-      
-      // Set a marker to prevent re-initialization
       localStorage.setItem('writeframe_app_initialized', 'true');
       
       console.log('✅ App localStorage initialized');
@@ -93,19 +84,15 @@ function AppContent() {
   return (
     <Router>
       <Routes>
-        {/* Temporary testing route - REMOVE BEFORE DEPLOYMENT */}
         <Route path="/test-scene-composer" element={<SceneComposer />} />
         <Route path="/test-monologue-composer" element={<MonologueComposer />} />
         <Route path="/test-home-feed" element={<HomeFeed />} />
         <Route path="/test-frame-composer" element={<FrameComposer />} />
 
-        {/* 👇 UPDATED: Landing Page as Root Route 👇 */}
         <Route path="/" element={<LandingPage />} />
 
-        {/* 👇 ADDED: About Page Route (Public) 👇 */}
         <Route path="/about" element={<AboutPage />} />
 
-        {/* 👇 UPDATED: Root route for logged-in users - REMOVED studio-ready redirect 👇 */}
         <Route
           path="/app"
           element={
@@ -116,53 +103,44 @@ function AppContent() {
             ) : !profile?.expression ? (
               <Navigate to="/expression-selection" replace />
             ) : (
-              // REMOVED studio-ready redirect - now goes directly to home-feed
               <Navigate to="/home-feed" replace />
             )
           }
         />
 
-        {/* 👇 UPDATED: Main Home Feed Route - NOW PUBLIC 👇 */}
         <Route path="/home-feed" element={<HomeFeed />} />
 
-        {/* NEW: Dashboard Route */}
         <Route
           path="/dashboard"
           element={session ? <Dashboard /> : <Navigate to="/signin" replace />}
         />
 
-        {/* NEW: Drafts Route */}
         <Route
           path="/drafts"
           element={session ? <Drafts /> : <Navigate to="/signin" replace />}
         />
 
-        {/* NEW: Settings Route */}
         <Route
           path="/settings"
           element={session ? <Settings /> : <Navigate to="/signin" replace />}
         />
 
-        {/* NEW: Inbox Route */}
         <Route
           path="/inbox"
           element={session ? <InboxPage /> : <Navigate to="/signin" replace />}
         />
 
-        {/* ADDED: Whisper Thread Route */}
         <Route
           path="/whisper-thread/:userId"
           element={session ? <WhisperThread /> : <Navigate to="/signin" replace />}
         />
 
-        {/* Auth Screens - REMOVED session checks to fix OAuth */}
         <Route path="/signup" element={<SignUp />} />
         <Route path="/signin" element={<SignIn />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/auth/callback" element={<AuthCallback />} />
 
-        {/* Onboarding Flow */}
         <Route
           path="/welcome"
           element={session ? <Welcome /> : <Navigate to="/signup" replace />}
@@ -175,47 +153,37 @@ function AppContent() {
           path="/expression-selection"
           element={session ? <ExpressionSelection /> : <Navigate to="/signup" replace />}
         />
-        
-        {/* REMOVED: Studio Ready Guide Route - No longer needed */}
-        {/* <Route path="/studio-ready" element={session ? <StudioReadyGuide /> : <Navigate to="/signin" replace />} /> */}
 
-        {/* Profile Route */}
         <Route
           path="/profile/:id"
           element={session ? <Profile /> : <Navigate to="/signin" replace />}
         />
 
-        {/* Scene Composer Route */}
         <Route
           path="/compose-scene"
           element={session ? <SceneComposer /> : <Navigate to="/signin" replace />}
         />
 
-        {/* Monologue Composer Route */}
         <Route
           path="/compose-monologue"
           element={session ? <MonologueComposer /> : <Navigate to="/signin" replace />}
         />
 
-        {/* Character Composer Route */}
         <Route
           path="/compose-character"
           element={session ? <CharacterComposer /> : <Navigate to="/signin" replace />}
         />
 
-        {/* Frame Composer Route */}
         <Route
           path="/compose-frame"
           element={session ? <FrameComposer /> : <Navigate to="/signin" replace />}
         />
 
-        {/* ADDED: Whisper Composer Route */}
         <Route
           path="/whisper/:userId"
           element={session ? <WhisperComposer /> : <Navigate to="/signin" replace />}
         />
 
-        {/* Fallback 404 */}
         <Route
           path="*"
           element={
