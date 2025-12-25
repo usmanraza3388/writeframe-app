@@ -13,6 +13,7 @@ const GettingStartedModal: React.FC<GettingStartedModalProps> = ({
   onComplete 
 }) => {
   const [currentStep, setCurrentStep] = useState(0);
+  const [isClosing, setIsClosing] = useState(false);
 
   const steps = [
     {
@@ -52,18 +53,35 @@ const GettingStartedModal: React.FC<GettingStartedModalProps> = ({
     if (currentStep < steps.length - 1) {
       setCurrentStep(currentStep + 1);
     } else {
+      // Start closing animation
+      setIsClosing(true);
+      
+      // Set localStorage immediately for persistence
       localStorage.setItem('writeframe_onboarding_complete', 'true');
-      onComplete();
-      onClose();
+      
+      // Wait for animation to complete (400ms), then trigger callbacks
+      setTimeout(() => {
+        onComplete(); // Trigger tour
+        onClose(); // Close modal
+      }, 400);
     }
   };
 
   const handleSkip = () => {
+    // Start closing animation
+    setIsClosing(true);
+    
+    // Set localStorage immediately
     localStorage.setItem('writeframe_onboarding_complete', 'true');
-    onClose();
+    
+    // Wait for animation to complete
+    setTimeout(() => {
+      onClose();
+    }, 400);
   };
 
-  if (!isOpen) return null;
+  // Don't render if not open and not animating out
+  if (!isOpen && !isClosing) return null;
 
   const step = steps[currentStep];
   const progress = ((currentStep + 1) / steps.length) * 100;
@@ -83,7 +101,10 @@ const GettingStartedModal: React.FC<GettingStartedModalProps> = ({
       justifyContent: 'center',
       zIndex: 10000,
       padding: '20px',
-      boxSizing: 'border-box'
+      boxSizing: 'border-box',
+      opacity: isClosing ? 0 : 1,
+      transition: 'opacity 0.4s ease-out',
+      pointerEvents: isClosing ? 'none' : 'auto'
     }}>
       <div style={{
         width: '100%',
@@ -93,7 +114,10 @@ const GettingStartedModal: React.FC<GettingStartedModalProps> = ({
         padding: '32px 24px',
         boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)',
         position: 'relative',
-        boxSizing: 'border-box'
+        boxSizing: 'border-box',
+        opacity: isClosing ? 0 : 1,
+        transform: isClosing ? 'translateY(20px) scale(0.95)' : 'translateY(0) scale(1)',
+        transition: 'opacity 0.4s ease-out, transform 0.4s ease-out'
       }}>
         {/* Progress Bar with Close Button Overlay */}
         <div style={{
@@ -115,7 +139,8 @@ const GettingStartedModal: React.FC<GettingStartedModalProps> = ({
               height: '100%',
               width: `${progress}%`,
               background: '#1A1A1A',
-              borderRadius: '2px'
+              borderRadius: '2px',
+              transition: 'width 0.3s ease'
             }} />
           </div>
 
@@ -138,8 +163,11 @@ const GettingStartedModal: React.FC<GettingStartedModalProps> = ({
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              zIndex: 1
+              zIndex: 1,
+              transition: 'color 0.2s ease'
             }}
+            onMouseEnter={(e) => e.currentTarget.style.color = '#6B7280'}
+            onMouseLeave={(e) => e.currentTarget.style.color = '#9CA3AF'}
           >
             ×
           </button>
@@ -195,7 +223,8 @@ const GettingStartedModal: React.FC<GettingStartedModalProps> = ({
                       fontSize: '15px',
                       color: '#4B5563',
                       borderBottom: index < step.details!.length - 1 ? '1px solid rgba(0, 0, 0, 0.08)' : 'none',
-                      boxSizing: 'border-box'
+                      boxSizing: 'border-box',
+                      transition: 'opacity 0.3s ease'
                     }}
                   >
                     <div style={{
@@ -241,7 +270,16 @@ const GettingStartedModal: React.FC<GettingStartedModalProps> = ({
               fontFamily: "'Cormorant', serif",
               fontWeight: 500,
               cursor: 'pointer',
-              boxSizing: 'border-box'
+              boxSizing: 'border-box',
+              transition: 'all 0.2s ease'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = '#F9FAFB';
+              e.currentTarget.style.borderColor = '#9CA3AF';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'transparent';
+              e.currentTarget.style.borderColor = '#D1D5DB';
             }}
           >
             Skip Tour
@@ -261,7 +299,16 @@ const GettingStartedModal: React.FC<GettingStartedModalProps> = ({
               fontFamily: "'Cormorant', serif",
               fontWeight: 600,
               cursor: 'pointer',
-              boxSizing: 'border-box'
+              boxSizing: 'border-box',
+              transition: 'all 0.2s ease'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = '#374151';
+              e.currentTarget.style.transform = 'translateY(-1px)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = '#1A1A1A';
+              e.currentTarget.style.transform = 'translateY(0)';
             }}
           >
             {step.buttonText}
@@ -284,7 +331,8 @@ const GettingStartedModal: React.FC<GettingStartedModalProps> = ({
                 height: '8px',
                 borderRadius: '50%',
                 background: index === currentStep ? '#1A1A1A' : '#E5E7EB',
-                boxSizing: 'border-box'
+                boxSizing: 'border-box',
+                transition: 'background-color 0.3s ease'
               }}
             />
           ))}
