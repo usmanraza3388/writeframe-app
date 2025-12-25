@@ -1,5 +1,5 @@
 // components/Tour/TourTooltip.tsx
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 
 interface TourTooltipProps {
   targetElement: HTMLElement | null;
@@ -24,28 +24,58 @@ const TourTooltip: React.FC<TourTooltipProps> = ({
   onSkip,
   onComplete
 }) => {
-  // Don't render if no target element
+  const [position, setPosition] = useState({ top: 0, left: 0, arrowPosition: 'bottom' as const });
+  const [isVisible, setIsVisible] = useState(false);
+
+  useEffect(() => {
+    if (!targetElement) return;
+
+    const calculatePosition = () => {
+      const rect = targetElement.getBoundingClientRect();
+      const appWidth = 375; // Your app's fixed width
+      const viewportWidth = window.innerWidth;
+      
+      // Calculate centered position within 375px container
+      const centerX = (viewportWidth - appWidth) / 2 + rect.left + (rect.width / 2);
+      
+      // Position tooltip ABOVE the button (not overlapping)
+      const tooltipTop = rect.top - 160; // Higher up to avoid BottomNav overlap
+      
+      // Ensure tooltip stays within bounds
+      const tooltipWidth = 280;
+      let tooltipLeft = centerX - (tooltipWidth / 2);
+      
+      // Clamp to screen edges
+      const minLeft = (viewportWidth - appWidth) / 2 + 20;
+      const maxLeft = minLeft + appWidth - tooltipWidth - 20;
+      
+      tooltipLeft = Math.max(minLeft, Math.min(tooltipLeft, maxLeft));
+
+      setPosition({
+        top: tooltipTop,
+        left: tooltipLeft,
+        arrowPosition: 'bottom'
+      });
+      
+      // Show with slight delay for smooth animation
+      setTimeout(() => setIsVisible(true), 50);
+    };
+
+    calculatePosition();
+    
+    // Recalculate on resize
+    window.addEventListener('resize', calculatePosition);
+    return () => window.removeEventListener('resize', calculatePosition);
+  }, [targetElement]);
+
   if (!targetElement) return null;
 
-  // Calculate position relative to target element
-  const getTooltipPosition = () => {
-    if (!targetElement) return { top: 0, left: 0 };
-    
-    const rect = targetElement.getBoundingClientRect();
-    
-    // Position above the button with some spacing
-    return {
-      top: rect.top - 10, // 10px above the element
-      left: rect.left + (rect.width / 2) // Center horizontally
-    };
-  };
-
-  const position = getTooltipPosition();
   const isLastStep = currentStep === totalSteps - 1;
+  const tooltipWidth = 280;
 
   return (
     <>
-      {/* Background overlay - dims everything except target */}
+      {/* Dark overlay - covers entire screen but allows clicks through */}
       <div 
         style={{
           position: 'fixed',
@@ -54,51 +84,54 @@ const TourTooltip: React.FC<TourTooltipProps> = ({
           right: 0,
           bottom: 0,
           backgroundColor: 'rgba(0, 0, 0, 0.6)',
-          zIndex: 9998,
-          pointerEvents: 'none' // Allows clicks through, but we'll handle this differently
+          zIndex: 9997,
+          pointerEvents: 'none' // IMPORTANT: Allows clicks to pass through
         }}
       />
-      
-      {/* Highlight ring around target element */}
+
+      {/* Highlight ring around target */}
       <div
         style={{
           position: 'fixed',
-          top: position.top - 8, // Extend beyond element
-          left: position.left - (targetElement.offsetWidth / 2) - 8,
+          top: position.top + 150, // Position below tooltip
+          left: position.left + (tooltipWidth / 2) - (targetElement.offsetWidth / 2) - 8,
           width: targetElement.offsetWidth + 16,
           height: targetElement.offsetHeight + 16,
           borderRadius: '16px',
           border: '3px solid #FFFFFF',
-          boxShadow: '0 0 0 9999px rgba(0, 0, 0, 0.6), 0 0 20px rgba(255, 255, 255, 0.5)',
+          boxShadow: '0 0 0 9999px rgba(0, 0, 0, 0.6)',
           zIndex: 9998,
           pointerEvents: 'none',
-          animation: 'pulse 2s infinite'
+          animation: 'pulse 2s infinite',
+          opacity: isVisible ? 1 : 0,
+          transition: 'opacity 0.3s ease'
         }}
       />
 
-      {/* Tooltip container - positioned above target */}
+      {/* Tooltip Container */}
       <div
         style={{
           position: 'fixed',
-          top: `${position.top - 130}px`, // Position above the highlight
+          top: `${position.top}px`,
           left: `${position.left}px`,
-          transform: 'translateX(-50%)',
+          width: `${tooltipWidth}px`,
           backgroundColor: '#FFFFFF',
           borderRadius: '16px',
           padding: '20px',
-          width: '280px',
-          maxWidth: 'calc(100vw - 40px)',
           boxShadow: '0 10px 40px rgba(0, 0, 0, 0.25)',
           zIndex: 9999,
           fontFamily: "'Cormorant', serif",
-          boxSizing: 'border-box'
+          boxSizing: 'border-box',
+          opacity: isVisible ? 1 : 0,
+          transform: isVisible ? 'translateY(0)' : 'translateY(10px)',
+          transition: 'opacity 0.3s ease, transform 0.3s ease'
         }}
       >
         {/* Arrow pointing down to target */}
         <div
           style={{
             position: 'absolute',
-            bottom: '-10px',
+            [position.arrowPosition]: '-10px',
             left: '50%',
             transform: 'translateX(-50%)',
             width: 0,
@@ -144,12 +177,7 @@ const TourTooltip: React.FC<TourTooltipProps> = ({
             marginBottom: '12px'
           }}
         >
-          <div
-            style={{
-              display: 'flex',
-              gap: '6px'
-            }}
-          >
+          <div style={{ display: 'flex', gap: '6px' }}>
             {Array.from({ length: totalSteps }).map((_, index) => (
               <div
                 key={index}
@@ -163,18 +191,12 @@ const TourTooltip: React.FC<TourTooltipProps> = ({
               />
             ))}
           </div>
-          <span
-            style={{
-              fontSize: '12px',
-              color: '#9CA3AF',
-              fontFamily: "'Cormorant', serif"
-            }}
-          >
+          <span style={{ fontSize: '12px', color: '#9CA3AF' }}>
             {currentStep + 1} of {totalSteps}
           </span>
         </div>
 
-        {/* Navigation buttons */}
+        {/* Navigation buttons - FIXED: Ensure they're visible */}
         <div
           style={{
             display: 'flex',
@@ -183,7 +205,6 @@ const TourTooltip: React.FC<TourTooltipProps> = ({
             gap: '12px'
           }}
         >
-          {/* Skip button - left aligned */}
           <button
             onClick={onSkip}
             style={{
@@ -194,13 +215,13 @@ const TourTooltip: React.FC<TourTooltipProps> = ({
               fontFamily: "'Cormorant', serif",
               cursor: 'pointer',
               padding: '6px 0',
-              fontWeight: 500
+              fontWeight: 500,
+              whiteSpace: 'nowrap'
             }}
           >
             Skip Tour
           </button>
 
-          {/* Navigation buttons - right aligned */}
           <div style={{ display: 'flex', gap: '8px' }}>
             {currentStep > 0 && (
               <button
@@ -215,7 +236,7 @@ const TourTooltip: React.FC<TourTooltipProps> = ({
                   fontFamily: "'Cormorant', serif",
                   fontWeight: 500,
                   cursor: 'pointer',
-                  minWidth: '70px'
+                  minWidth: '60px'
                 }}
               >
                 Back
@@ -233,7 +254,7 @@ const TourTooltip: React.FC<TourTooltipProps> = ({
                 fontFamily: "'Cormorant', serif",
                 fontWeight: 600,
                 cursor: 'pointer',
-                minWidth: '70px'
+                minWidth: '60px'
               }}
             >
               {isLastStep ? 'Got it!' : 'Next'}
@@ -242,7 +263,6 @@ const TourTooltip: React.FC<TourTooltipProps> = ({
         </div>
       </div>
 
-      {/* CSS for pulse animation */}
       <style>
         {`
           @keyframes pulse {

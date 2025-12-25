@@ -19,19 +19,16 @@ const BottomNav: React.FC = () => {
   const createButtonRef = useRef<HTMLButtonElement>(null);
   const profileButtonRef = useRef<HTMLButtonElement>(null);
   
-  // ADDED: Use the bottom nav tour hook
+  // ADDED: Use the bottom nav tour hook (only needed variables)
   const {
     currentStep,
     isActive,
-    steps,
     currentStepData,
     totalSteps,
     nextStep,
     prevStep,
     skipTour,
-    completeTour,
-    startTour,
-    isTourCompleted
+    completeTour
   } = useBottomNavTour();
 
   useEffect(() => {
@@ -134,14 +131,6 @@ const BottomNav: React.FC = () => {
 
   // FIXED: Only highlight profile when viewing own profile
   const isOwnProfileActive = location.pathname === `/profile/${user?.id}`;
-
-  // ADDED: Handle overlay click during tour
-  const handleTourOverlayClick = () => {
-    // Allow clicking through overlay to proceed to next step
-    if (isActive) {
-      nextStep();
-    }
-  };
 
   // Content type icons for creation menu (unchanged)
   const HomeIcon = ({ active }: { active: boolean }) => (
@@ -287,7 +276,7 @@ const BottomNav: React.FC = () => {
           borderRadius: '8px',
           fontSize: '14px',
           fontFamily: "'Cormorant', serif",
-          zIndex: 10000,
+          zIndex: 10002, // HIGHER than tour elements
           whiteSpace: 'nowrap',
           boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
           animation: 'fadeInUp 0.3s ease-out'
@@ -318,7 +307,7 @@ const BottomNav: React.FC = () => {
           borderRadius: '20px',
           padding: '20px',
           boxShadow: '0 -8px 32px rgba(0, 0, 0, 0.15)',
-          zIndex: 9999,
+          zIndex: 10001, // HIGHER than BottomNav but lower than tour
           border: '1px solid var(--border-color)',
           animation: 'slideUp 0.3s ease-out',
           width: '320px',
@@ -394,7 +383,7 @@ const BottomNav: React.FC = () => {
         </div>
       )}
 
-      {/* Bottom Navigation Bar */}
+      {/* Bottom Navigation Bar - UPDATED: Higher z-index during tour */}
       <nav 
         style={{
           position: 'fixed',
@@ -404,7 +393,7 @@ const BottomNav: React.FC = () => {
           background: 'var(--background-primary)',
           borderTop: '1px solid var(--border-color)',
           padding: '8px 0 12px',
-          zIndex: isActive ? 10001 : 1000, // ADDED: Higher z-index during tour
+          zIndex: isActive ? 10003 : 1000, // UPDATED: Even higher during tour
           backdropFilter: 'blur(10px)',
           width: '375px',
           maxWidth: '100vw',
