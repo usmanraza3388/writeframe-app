@@ -177,7 +177,7 @@ const HomeFeed: React.FC = () => {
     setTimeout(() => {
       console.log('🚀 Dispatching tour-should-start event after 800ms delay');
       window.dispatchEvent(new CustomEvent('tour-should-start'));
-    }, 800);
+    }, 1000);
   };
 
   // CLEANED: Auto-scroll without debug logs

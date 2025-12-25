@@ -81,7 +81,7 @@ const GettingStartedModal: React.FC<GettingStartedModalProps> = ({
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      zIndex: 9999,
+      zIndex: 10000,
       padding: '20px',
       boxSizing: 'border-box'
     }}>
