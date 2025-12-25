@@ -11,7 +11,7 @@ import { useProfileData } from '../hooks/useProfileData';
 // @ts-ignore
 import EditProfileModal from '../components/EditProfileModal';
 // @ts-ignore
-import CropModal from '../components/CropModal'; // ADDED: Import CropModal
+import CropModal from '../components/CropModal';
 // @ts-ignore
 import { supabase } from '../assets/lib/supabaseClient';
 // @ts-ignore
@@ -31,6 +31,11 @@ import GridItem from '../components/GridItem';
 import FollowersModal from '../components/Follow/FollowersModal';
 // @ts-ignore
 import FollowingModal from '../components/Follow/FollowingModal';
+// ADDED: Import Profile Tour Components
+// @ts-ignore
+import { useProfileTour } from '../hooks/useProfileTour';
+// @ts-ignore
+import ProfileTourTooltip from '../components/Tour/ProfileTourTooltip';
 
 // ADDED: Skeleton Loading Components
 const ProfileSkeleton: React.FC = () => (
@@ -233,8 +238,8 @@ export default function Profile() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('scenes');
   const [showEditModal, setShowEditModal] = useState(false);
-  const [showCropModal, setShowCropModal] = useState(false); // ADDED: Crop modal state
-  const [selectedImage, setSelectedImage] = useState<string | null>(null); // FIXED: Type for image URL
+  const [showCropModal, setShowCropModal] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [currentUser, setCurrentUser] = useState<any>(null);
   // ADDED: Pagination state
   const [visibleItems, setVisibleItems] = useState(8);
@@ -252,6 +257,36 @@ export default function Profile() {
   const { notifyEcho } = useNotifications();
   // ADDED: Use auth context for signOut
   const { signOut } = useAuth();
+  
+  // ADDED: Profile Tour Hook
+  const {
+    currentStep,
+    isActive,
+    currentStepData,
+    totalSteps,
+    nextStep,
+    prevStep,
+    skipTour,
+    completeTour,
+    hasTourRun
+  } = useProfileTour();
+  
+  // ADDED: Refs for tour targets
+  const profileHeaderRef = useRef<HTMLDivElement>(null);
+  const portfolioTabsRef = useRef<HTMLDivElement>(null);
+  const statsSectionRef = useRef<HTMLDivElement>(null);
+  const editProfileRef = useRef<HTMLButtonElement>(null);
+  
+  // Get current target element based on step
+  const getCurrentTargetElement = () => {
+    switch (currentStep) {
+      case 0: return profileHeaderRef.current;
+      case 1: return portfolioTabsRef.current;
+      case 2: return statsSectionRef.current;
+      case 3: return editProfileRef.current;
+      default: return null;
+    }
+  };
 
   // FIXED: Move isOwnProfile declaration before any useEffects that use it
   const isOwnProfile = currentUser?.id === id;
@@ -284,6 +319,28 @@ export default function Profile() {
       localStorage.setItem('has_seen_avatar_tooltip', 'true');
     }
   }, [isOwnProfile]);
+
+  // ADDED: Auto-start profile tour for first-time users
+  useEffect(() => {
+    if (!isOwnProfile) return; // Only for own profile
+    if (hasTourRun) return; // Already ran
+    if (!profile || isLoading) return; // Wait for profile to load
+    
+    // Check if user just completed onboarding
+    const onboardingComplete = localStorage.getItem('writeframe_onboarding_complete');
+    const bottomNavTourCompleted = localStorage.getItem('writeframe_bottomnav_tour_completed');
+    
+    // Start profile tour if onboarding is complete and bottomnav tour is done
+    if (onboardingComplete === 'true' && bottomNavTourCompleted === 'true') {
+      // Small delay to ensure page is fully loaded
+      const timer = setTimeout(() => {
+        console.log('🚀 Starting profile tour for first-time user');
+        window.dispatchEvent(new CustomEvent('profile-tour-should-start'));
+      }, 1500); // 1.5 second delay for page to settle
+      
+      return () => clearTimeout(timer);
+    }
+  }, [isOwnProfile, hasTourRun, profile, isLoading]);
 
   // ADDED: Reset pagination whenever activeTab changes
   useEffect(() => {
@@ -587,9 +644,9 @@ export default function Profile() {
         .from('profiles')
         .update({
           full_name: updatedData.full_name,
-          username: updatedData.username, // 👈 ADDED: Save username
+          username: updatedData.username,
           bio: updatedData.bio,
-          avatar_url: updatedData.avatar_url, // Keep for database sync
+          avatar_url: updatedData.avatar_url,
           genre_persona: updatedData.genre_persona,
           expression: updatedData.expression,
           updated_at: new Date().toISOString()
@@ -748,10 +805,10 @@ export default function Profile() {
         <div style={gridStyle}>
           {displayedContent.map((item: any) => (
             <GridItem 
-              key={generateUniqueKey(item)} // FIXED: Use new key generation without activeTab parameter
+              key={generateUniqueKey(item)}
               item={item} 
               type={activeTab}
-              onCardClick={handleCardClick} // ADDED: Pass click handler
+              onCardClick={handleCardClick}
             />
           ))}
         </div>
@@ -781,14 +838,18 @@ export default function Profile() {
   return (
     <div style={pageContainerStyle}>
       <div style={containerStyle}>
-        {/* Header Section */}
-        <div style={headerStyle}>
+        {/* Header Section - ADDED: data-tour attribute and ref */}
+        <div 
+          ref={profileHeaderRef}
+          data-tour="profile-header"
+          style={headerStyle}
+        >
           <div style={avatarContainerStyle} className="avatar-container">
-            {displayAvatarUrl === '/placeholder-avatar.png' ? ( // FIXED: Removed && isOwnProfile
+            {displayAvatarUrl === '/placeholder-avatar.png' ? (
               <div style={emptyAvatarStyle}>
                 <div style={emptyAvatarIconStyle}>👤</div>
                 <div style={emptyAvatarTextStyle}>
-                  {isOwnProfile ? 'Add Photo' : 'No Photo'}  {/* FIXED: Conditional text */}
+                  {isOwnProfile ? 'Add Photo' : 'No Photo'}
                 </div>
               </div>
             ) : (
@@ -916,6 +977,8 @@ export default function Profile() {
 
           {isOwnProfile && (
             <button 
+              ref={editProfileRef}
+              data-tour="edit-profile-button"
               onClick={() => setShowEditModal(true)}
               style={editButtonStyle}
             >
@@ -926,7 +989,11 @@ export default function Profile() {
 
         {/* Stats Section - Conditionally Rendered - UPDATED: Completely separate designs */}
         {shouldShowStats ? (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <div 
+            ref={statsSectionRef}
+            data-tour="stats-section"
+            style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}
+          >
             {/* Row 1: Minimal Social Buttons - Followers & Following */}
             <div style={socialButtonsContainerStyle}>
               <button 
@@ -1050,9 +1117,13 @@ export default function Profile() {
           <div style={dividerInnerStyle}></div>
         </div>
 
-        {/* Tabs - Filtered by Creative Focus */}
+        {/* Tabs - Filtered by Creative Focus - ADDED: data-tour attribute and ref */}
         {availableTabs.length > 0 ? (
-          <div style={tabsContainerStyle}>
+          <div 
+            ref={portfolioTabsRef}
+            data-tour="portfolio-tabs"
+            style={tabsContainerStyle}
+          >
             {availableTabs.map((tab) => (
               <button
                 key={tab}
@@ -1107,6 +1178,21 @@ export default function Profile() {
           onSave={handleSaveProfile}
           initial={profile}
         />
+        
+        {/* ADDED: Profile Tour Tooltip */}
+        {isActive && currentStepData && (
+          <ProfileTourTooltip
+            targetElement={getCurrentTargetElement()}
+            title={currentStepData.title}
+            description={currentStepData.description}
+            currentStep={currentStep}
+            totalSteps={totalSteps}
+            onNext={nextStep}
+            onBack={prevStep}
+            onSkip={skipTour}
+            onComplete={completeTour}
+          />
+        )}
       </div>
 
       {/* ADDED: Bottom Navigation */}
@@ -1123,7 +1209,7 @@ const pageContainerStyle: React.CSSProperties = {
   justifyContent: 'center',
   background: 'linear-gradient(135deg, #FFFFFF 0%, #FAF8F5 100%)',
   padding: '20px 0',
-  paddingBottom: '100px', // ADDED: Space for bottom navigation
+  paddingBottom: '100px',
 };
 
 const containerStyle: React.CSSProperties = {
@@ -1325,7 +1411,7 @@ const avatarContainerStyle: React.CSSProperties = {
   border: '3px solid #FFFFFF',
   boxShadow: '0 8px 32px rgba(0, 0, 0, 0.12)',
   position: 'relative',
-  cursor: 'pointer', // ADDED: Pointer cursor for better UX
+  cursor: 'pointer',
 };
 
 const avatarStyle: React.CSSProperties = {
@@ -1750,4 +1836,3 @@ const errorStyle: React.CSSProperties = {
   fontSize: '16px',
   fontFamily: "'Cormorant', serif",
 };
-
