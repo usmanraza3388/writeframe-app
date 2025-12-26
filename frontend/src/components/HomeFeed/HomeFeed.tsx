@@ -467,50 +467,11 @@ const HomeFeed: React.FC = () => {
     
     // CRITICAL: Only trigger if BottomNav tour done AND HomeFeed tour never run
     if (bottomnavTourCompleted === 'true' && !homefeedTourCompleted) {
-      // Wait for all tour elements to be ready
-      const checkElements = () => {
-        const selectors = [
-          '[data-tour="feed-header"]',
-          '[data-tour="feed-scene-card"]',
-          '[data-tour="feed-monologue-card"]',
-          '[data-tour="feed-character-card"]',
-          '[data-tour="feed-frame-card"]',
-          '[data-tour="card-actions-menu"]',
-          '[data-tour="feed-loading-area"]'
-        ];
-        
-        const allElementsExist = selectors.every(selector => {
-          const element = document.querySelector(selector);
-          if (!element) {
-            console.log(`❌ Tour element not found: ${selector}`);
-            return false;
-          }
-          return true;
-        });
-        
-        if (allElementsExist) {
-          console.log('✅ All tour elements found - starting tour...');
-          window.dispatchEvent(new CustomEvent('homefeed-tour-should-start'));
-        } else {
-          // Retry up to 5 times (2.5 seconds total)
-          const retryCount = parseInt(sessionStorage.getItem('homefeed_tour_retry') || '0');
-          if (retryCount < 5) {
-            sessionStorage.setItem('homefeed_tour_retry', (retryCount + 1).toString());
-            setTimeout(checkElements, 500);
-            console.log(`🔄 Retrying tour element check (${retryCount + 1}/5)...`);
-          } else {
-            console.log('❌ Tour elements not found after 5 retries - skipping tour');
-            sessionStorage.removeItem('homefeed_tour_retry');
-            localStorage.setItem('writeframe_homefeed_tour_completed', 'skipped');
-          }
-        }
-      };
-      
-      // Clear any previous retry count
-      sessionStorage.removeItem('homefeed_tour_retry');
-      
-      // Wait a bit for DOM to settle, then check
-      const timer = setTimeout(checkElements, 800);
+      // Small delay to ensure DOM is fully rendered
+      const timer = setTimeout(() => {
+        console.log('🚀 HomeFeed tour conditions met - triggering tour...');
+        window.dispatchEvent(new CustomEvent('homefeed-tour-should-start'));
+      }, 800);
       
       return () => clearTimeout(timer);
     }
@@ -615,6 +576,11 @@ const HomeFeed: React.FC = () => {
     );
   }
 
+  // Determine which step needs data-tour attribute
+  const shouldAddDataTour = (stepIndex: number) => {
+    return homeFeedTourActive && homeFeedTourStep === stepIndex;
+  };
+
   return (
     <>
       <div style={{
@@ -639,7 +605,7 @@ const HomeFeed: React.FC = () => {
               color: '#1C1C1C',
               margin: 0
             }}
-            data-tour="feed-header" // ALWAYS PRESENT
+            data-tour={shouldAddDataTour(0) ? "feed-header" : undefined}
           >
             writeFrame
           </h1>
@@ -657,7 +623,7 @@ const HomeFeed: React.FC = () => {
                 <div 
                   key={`scene-${item.data.id}`} 
                   id={`scene-${item.data.id}`}
-                  data-tour={index === 0 ? "feed-scene-card" : undefined} // Only first card
+                  data-tour={shouldAddDataTour(1) && index === 0 ? "feed-scene-card" : undefined}
                 >
                   <SceneCard 
                     scene={item.data}
@@ -671,7 +637,7 @@ const HomeFeed: React.FC = () => {
                 <div 
                   key={`monologue-${item.data.id}`} 
                   id={`monologue-${item.data.id}`}
-                  data-tour={index === 0 ? "feed-monologue-card" : undefined} // Only first card
+                  data-tour={shouldAddDataTour(2) && index === 0 ? "feed-monologue-card" : undefined}
                 >
                   <MonologueCard 
                     monologue={item.data}
@@ -695,7 +661,7 @@ const HomeFeed: React.FC = () => {
                 <div 
                   key={`character-${item.data.id}`} 
                   id={`character-${item.data.id}`}
-                  data-tour={index === 0 ? "feed-character-card" : undefined} // Only first card
+                  data-tour={shouldAddDataTour(3) && index === 0 ? "feed-character-card" : undefined}
                 >
                   <CharacterCard 
                     character={item.data}
@@ -719,7 +685,7 @@ const HomeFeed: React.FC = () => {
                 <div 
                   key={`frame-${item.data.id}`} 
                   id={`frame-${item.data.id}`}
-                  data-tour={index === 0 ? "feed-frame-card" : undefined} // Only first card
+                  data-tour={shouldAddDataTour(4) && index === 0 ? "feed-frame-card" : undefined}
                 >
                   <FrameCard 
                     frame={item.data}
@@ -756,7 +722,7 @@ const HomeFeed: React.FC = () => {
                 color: '#55524F',
                 fontSize: '14px'
               }}
-              data-tour="feed-loading-area" // ALWAYS PRESENT
+              data-tour={shouldAddDataTour(6) ? "feed-loading-area" : undefined}
             >
               — {mixedFeed.length > 50 ? "You've reached the end for now" : "That's all for now"} —
             </div>
