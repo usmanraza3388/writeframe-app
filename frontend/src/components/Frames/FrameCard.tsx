@@ -421,6 +421,7 @@ const FrameCard: React.FC<FrameCardProps> = React.memo(({
       {/* MINIMAL: Visual Frame Card Layout - FIXED: Changed height to minHeight and added flex layout */}
       <article 
         id={`card-frame-${frame.id}`} // ← ADDED: Unique ID for card capture
+        data-tour="frame-card" // ← ADDED: This is the HomeFeed tour attribute
         style={{
           width: 'calc(100% + 32px)',
           minHeight: '380px', // ← FIXED: Changed from height to minHeight
@@ -1218,58 +1219,58 @@ const FrameCard: React.FC<FrameCardProps> = React.memo(({
               borderRadius: '50%',
               cursor: 'pointer',
               display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              transition: 'all 0.2s ease'
-            }}
-            onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.2)'}
-            onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
-          >
-            ⬇
-          </button>
-          
-          {/* Optional: Share button */}
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              if (navigator.share) {
-                navigator.share({
-                  title: frame.mood_description || 'Cinematic image from writeFrame',
-                  text: 'Check out this cinematic image from writeFrame!',
-                  url: displayImages[currentImageIndex],
-                });
-              } else {
-                navigator.clipboard.writeText(displayImages[currentImageIndex]);
-                alert('Image link copied to clipboard!');
-              }
-            }}
-            style={{
-              position: 'absolute',
-              top: '20px',
-              right: '120px',
-              background: 'rgba(255,255,255,0.1)',
-              border: 'none',
-              color: 'white',
-              fontSize: '20px',
-              width: '40px',
-              height: '40px',
-              borderRadius: '50%',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              transition: 'all 0.2s ease'
-            }}
-            onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.2)'}
-            onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
-          >
-            ↗
-          </button>
-        </div>
-      )}
-    </>
-  );
-});
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  transition: 'all 0.2s ease'
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.2)'}
+                onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
+              >
+                ⬇
+              </button>
+              
+              {/* Optional: Share button */}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (navigator.share) {
+                    navigator.share({
+                      title: frame.mood_description || 'Cinematic image from writeFrame',
+                      text: 'Check out this cinematic image from writeFrame!',
+                      url: displayImages[currentImageIndex],
+                    });
+                  } else {
+                    navigator.clipboard.writeText(displayImages[currentImageIndex]);
+                    alert('Image link copied to clipboard!');
+                  }
+                }}
+                style={{
+                  position: 'absolute',
+                  top: '20px',
+                  right: '120px',
+                  background: 'rgba(255,255,255,0.1)',
+                  border: 'none',
+                  color: 'white',
+                  fontSize: '20px',
+                  width: '40px',
+                  height: '40px',
+                  borderRadius: '50%',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  transition: 'all 0.2s ease'
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.2)'}
+                onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
+              >
+                ↗
+              </button>
+            </div>
+          )}
+        </>
+      );
+    });
 
 FrameCard.displayName = 'FrameCard';
 

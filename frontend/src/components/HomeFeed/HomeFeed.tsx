@@ -1,5 +1,5 @@
 // src/components/HomeFeed/HomeFeed.tsx
-import React, { useState, useCallback, useMemo, useEffect } from 'react';
+import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useFeed } from '../../hooks/useFeed';
 import { useMonologue } from '../../hooks/useMonologue';
@@ -21,6 +21,10 @@ import { feedActions } from '../../utils/feedActions';
 // ADDED: Import GettingStartedModal and useOnboarding hook
 import GettingStartedModal from '../GettingStartedModal/GettingStartedModal';
 import { useOnboarding } from '../../hooks/useOnboarding';
+
+// ADDED: Import HomeFeed Tour Components
+import { useHomeFeedTour } from '../../hooks/useHomeFeedTour';
+import HomeFeedTourTooltip from '../Tour/HomeFeedTourTooltip';
 
 // ADDED: Skeleton Loading Components
 const CardSkeleton: React.FC = () => (
@@ -123,6 +127,39 @@ const HomeFeed: React.FC = () => {
 
   // ADDED: Use onboarding hook
   const { showOnboarding, handleComplete, handleClose } = useOnboarding();
+
+  // ADDED: HomeFeed Tour Hook
+  const {
+    currentStep,
+    isActive,
+    currentStepData,
+    totalSteps,
+    nextStep,
+    prevStep,
+    skipTour,
+    completeTour
+  } = useHomeFeedTour();
+
+  // ADDED: Refs for HomeFeed Tour targets
+  const feedHeaderRef = useRef<HTMLDivElement>(null);
+  const sceneCardRef = useRef<HTMLDivElement>(null);
+  const monologueCardRef = useRef<HTMLDivElement>(null);
+  const characterCardRef = useRef<HTMLDivElement>(null);
+  const frameCardRef = useRef<HTMLDivElement>(null);
+
+  // ADDED: Get current target element for tour
+  const getCurrentTargetElement = () => {
+    if (!isActive || currentStep < 0) return null;
+    
+    switch (currentStep) {
+      case 0: return feedHeaderRef.current;
+      case 1: return sceneCardRef.current;
+      case 2: return monologueCardRef.current;
+      case 3: return characterCardRef.current;
+      case 4: return frameCardRef.current;
+      default: return null;
+    }
+  };
 
   // FIXED: Tour trigger state - REMOVED shouldTriggerTour as we're using event system
 
@@ -544,11 +581,16 @@ const HomeFeed: React.FC = () => {
         paddingBottom: '100px',
         minHeight: '100vh'
       }}>
-        <div style={{
-          padding: '0 16px 16px 16px',
-          borderBottom: '1px solid #E5E5E5',
-          marginBottom: '16px'
-        }}>
+        {/* ADDED: Feed Header with tour ref */}
+        <div 
+          ref={feedHeaderRef}
+          data-tour="feed-header"
+          style={{
+            padding: '0 16px 16px 16px',
+            borderBottom: '1px solid #E5E5E5',
+            marginBottom: '16px'
+          }}
+        >
           <h1 style={{
             fontFamily: 'Playfair Display, serif',
             fontSize: '24px',
@@ -567,9 +609,20 @@ const HomeFeed: React.FC = () => {
           padding: '0 16px'
         }}>
           {displayFeed.map((item) => {
+            // ADDED: Determine if this item should have tour ref based on type and step
+            const isSceneStep = currentStep === 1 && item.type === 'scene';
+            const isMonologueStep = currentStep === 2 && item.type === 'monologue';
+            const isCharacterStep = currentStep === 3 && item.type === 'character';
+            const isFrameStep = currentStep === 4 && item.type === 'frame';
+            
             if (item.type === 'scene') {
               return (
-                <div key={`scene-${item.data.id}`} id={`scene-${item.data.id}`}>
+                <div 
+                  ref={isSceneStep ? sceneCardRef : undefined}
+                  data-tour={isSceneStep ? "scene-card" : undefined}
+                  key={`scene-${item.data.id}`} 
+                  id={`scene-${item.data.id}`}
+                >
                   <SceneCard 
                     scene={item.data}
                     currentUserId={currentUserId}
@@ -579,7 +632,12 @@ const HomeFeed: React.FC = () => {
               );
             } else if (item.type === 'monologue') {
               return (
-                <div key={`monologue-${item.data.id}`} id={`monologue-${item.data.id}`}>
+                <div 
+                  ref={isMonologueStep ? monologueCardRef : undefined}
+                  data-tour={isMonologueStep ? "monologue-card" : undefined}
+                  key={`monologue-${item.data.id}`} 
+                  id={`monologue-${item.data.id}`}
+                >
                   <MonologueCard 
                     monologue={item.data}
                     currentUserId={currentUserId}
@@ -599,7 +657,12 @@ const HomeFeed: React.FC = () => {
               );
             } else if (item.type === 'character') {
               return (
-                <div key={`character-${item.data.id}`} id={`character-${item.data.id}`}>
+                <div 
+                  ref={isCharacterStep ? characterCardRef : undefined}
+                  data-tour={isCharacterStep ? "character-card" : undefined}
+                  key={`character-${item.data.id}`} 
+                  id={`character-${item.data.id}`}
+                >
                   <CharacterCard 
                     character={item.data}
                     currentUserId={currentUserId}
@@ -619,7 +682,12 @@ const HomeFeed: React.FC = () => {
               );
             } else if (item.type === 'frame') {
               return (
-                <div key={`frame-${item.data.id}`} id={`frame-${item.data.id}`}>
+                <div 
+                  ref={isFrameStep ? frameCardRef : undefined}
+                  data-tour={isFrameStep ? "frame-card" : undefined}
+                  key={`frame-${item.data.id}`} 
+                  id={`frame-${item.data.id}`}
+                >
                   <FrameCard 
                     frame={item.data}
                     currentUserId={currentUserId}
@@ -668,6 +736,21 @@ const HomeFeed: React.FC = () => {
         onClose={handleClose}
         onComplete={handleModalComplete}  // No delay needed - modal animated out
       />
+
+      {/* ADDED: HomeFeed Tour Tooltip */}
+      {isActive && currentStepData && (
+        <HomeFeedTourTooltip
+          targetElement={getCurrentTargetElement()}
+          title={currentStepData.title}
+          description={currentStepData.description}
+          currentStep={currentStep}
+          totalSteps={totalSteps}
+          onNext={nextStep}
+          onBack={prevStep}
+          onSkip={skipTour}
+          onComplete={completeTour}
+        />
+      )}
     </>
   );
 };

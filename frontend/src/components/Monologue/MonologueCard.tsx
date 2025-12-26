@@ -418,9 +418,10 @@ const MonologueCard: React.FC<MonologueCardProps> = React.memo(({
         />
       )}
 
-      {/* MINIMAL: Monologue Card Layout */}
+      {/* MINIMAL: Monologue Card Layout - ADDED: data-tour attribute for HomeFeed tour */}
       <article 
         id={`card-monologue-${monologue.id}`} // ← ADDED: Unique ID for card capture
+        data-tour="monologue-card"
         style={{
           width: 'calc(100% + 32px)',
           minHeight: '168px',
