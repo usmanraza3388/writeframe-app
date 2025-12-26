@@ -14,6 +14,151 @@ export const useHomeFeedTour = () => {
     isTourActiveRef.current = isActive;
   }, [isActive]);
 
+  // HomeFeed tour step definitions - based on your HomeFeed.tsx structure
+  const steps = [
+    {
+      id: 'feed-welcome',
+      selector: '[data-tour="feed-header"]',
+      title: 'Welcome to Your Creative Feed',
+      description: 'This is your home feed where cinematic creations are shared and discovered.',
+      position: 'bottom' as 'top' | 'bottom'
+    },
+    {
+      id: 'scene-cards',
+      selector: '[data-tour="feed-scene-card"]',
+      title: 'Scene Cards',
+      description: 'Professional screenplay scenes with industry-standard formatting and narrative structure.',
+      position: 'bottom' as 'top' | 'bottom'
+    },
+    {
+      id: 'monologue-cards',
+      selector: '[data-tour="feed-monologue-card"]',
+      title: 'Monologue Cards',
+      description: 'Character voice development with emotional tone analysis and prose refinement.',
+      position: 'bottom' as 'top' | 'bottom'
+    },
+    {
+      id: 'character-cards',
+      selector: '[data-tour="feed-character-card"]',
+      title: 'Character Cards',
+      description: 'Persona building with visual reference galleries and backstory development.',
+      position: 'bottom' as 'top' | 'bottom'
+    },
+    {
+      id: 'frame-cards',
+      selector: '[data-tour="feed-frame-card"]',
+      title: 'Frame Cards',
+      description: 'Visual narrative curation with collage composition and mood board creation.',
+      position: 'bottom' as 'top' | 'bottom'
+    },
+    {
+      id: 'card-actions',
+      selector: '[data-tour="card-actions-menu"]',
+      title: 'Card Actions',
+      description: 'Edit, delete, or view original creations. Repost content you admire from other creators.',
+      position: 'top' as 'top' | 'bottom'
+    },
+    {
+      id: 'infinite-scroll',
+      selector: '[data-tour="feed-loading-area"]',
+      title: 'Discover More Content',
+      description: 'Scroll down to automatically load more content. Pull down to refresh with latest creations.',
+      position: 'top' as 'top' | 'bottom'
+    }
+  ];
+
+  // Helper function to find tour elements
+  const findStepElement = useCallback((stepIndex: number): HTMLElement | null => {
+    if (stepIndex < 0 || stepIndex >= steps.length) return null;
+    
+    const selector = steps[stepIndex].selector;
+    const element = document.querySelector(selector);
+    
+    if (!element) {
+      console.warn(`Tour element not found: ${selector} for step ${stepIndex}`);
+      return null;
+    }
+    
+    return element as HTMLElement;
+  }, [steps]);
+
+  // Skip and complete functions - defined first
+  const skipTour = useCallback(() => {
+    console.log('⏭️ Skipping homefeed tour');
+    setIsActive(false);
+    setCurrentStep(-1);
+    localStorage.setItem('writeframe_homefeed_tour_completed', 'true');
+  }, []);
+
+  const completeTour = useCallback(() => {
+    console.log('✅ HomeFeed tour completed');
+    setIsActive(false);
+    setCurrentStep(-1);
+    localStorage.setItem('writeframe_homefeed_tour_completed', 'true');
+  }, []);
+
+  // Step navigation with fallback for missing elements
+  const nextStep = useCallback(() => {
+    if (currentStep < steps.length - 1) {
+      // Try to find next element
+      const nextElement = findStepElement(currentStep + 1);
+      
+      if (nextElement) {
+        setCurrentStep(prev => {
+          const newStep = prev + 1;
+          console.log(`➡️ Moving to homefeed step ${newStep}`);
+          return newStep;
+        });
+      } else {
+        // Element not found - skip to next available step
+        console.log(`⏭️ Element for step ${currentStep + 1} not found, skipping...`);
+        
+        // Find next available step
+        for (let i = currentStep + 2; i < steps.length; i++) {
+          if (findStepElement(i)) {
+            setCurrentStep(i);
+            return;
+          }
+        }
+        
+        // If no more elements found, complete tour
+        console.log('✅ No more tour elements found, completing tour');
+        completeTour();
+      }
+    } else {
+      completeTour();
+    }
+  }, [currentStep, steps.length, findStepElement, completeTour]);
+
+  const prevStep = useCallback(() => {
+    if (currentStep > 0) {
+      // Try to find previous element
+      const prevElement = findStepElement(currentStep - 1);
+      
+      if (prevElement) {
+        setCurrentStep(prev => {
+          const newStep = prev - 1;
+          console.log(`⬅️ Moving back to homefeed step ${newStep}`);
+          return newStep;
+        });
+      } else {
+        // Element not found - go back to previous available step
+        console.log(`⏮️ Element for step ${currentStep - 1} not found, finding previous...`);
+        
+        for (let i = currentStep - 2; i >= 0; i--) {
+          if (findStepElement(i)) {
+            setCurrentStep(i);
+            return;
+          }
+        }
+        
+        // If no previous elements found, skip tour (can't go back)
+        console.log('⚠️ No previous tour elements found, skipping tour');
+        skipTour();
+      }
+    }
+  }, [currentStep, findStepElement, skipTour]);
+
   // Single effect for tour initialization and cleanup
   useEffect(() => {
     // Check if homefeed tour was already completed
@@ -69,43 +214,6 @@ export const useHomeFeedTour = () => {
     };
   }, [hasTourRun]);
 
-  // Step navigation
-  const nextStep = useCallback(() => {
-    if (currentStep < 6) { // 7 steps total (0-6)
-      setCurrentStep(prev => {
-        const newStep = prev + 1;
-        console.log(`➡️ Moving to homefeed step ${newStep}`);
-        return newStep;
-      });
-    } else {
-      completeTour();
-    }
-  }, [currentStep]);
-
-  const prevStep = useCallback(() => {
-    if (currentStep > 0) {
-      setCurrentStep(prev => {
-        const newStep = prev - 1;
-        console.log(`⬅️ Moving back to homefeed step ${newStep}`);
-        return newStep;
-      });
-    }
-  }, [currentStep]);
-
-  const skipTour = useCallback(() => {
-    console.log('⏭️ Skipping homefeed tour');
-    setIsActive(false);
-    setCurrentStep(-1);
-    localStorage.setItem('writeframe_homefeed_tour_completed', 'true');
-  }, []);
-
-  const completeTour = useCallback(() => {
-    console.log('✅ HomeFeed tour completed');
-    setIsActive(false);
-    setCurrentStep(-1);
-    localStorage.setItem('writeframe_homefeed_tour_completed', 'true');
-  }, []);
-
   // Manual tour restart function (for debugging/testing)
   const restartTour = useCallback(() => {
     localStorage.removeItem('writeframe_homefeed_tour_completed');
@@ -114,59 +222,6 @@ export const useHomeFeedTour = () => {
     setHasTourRun(false);
     console.log('🔄 HomeFeed tour manually restarted');
   }, []);
-
-  // HomeFeed tour step definitions - based on your HomeFeed.tsx structure
-  const steps = [
-    {
-      id: 'feed-welcome',
-      selector: '[data-tour="feed-header"]',
-      title: 'Welcome to Your Creative Feed',
-      description: 'This is your home feed where cinematic creations are shared and discovered.',
-      position: 'bottom' as 'top' | 'bottom'
-    },
-    {
-      id: 'scene-cards',
-      selector: '[data-tour="feed-scene-card"]',
-      title: 'Scene Cards',
-      description: 'Professional screenplay scenes with industry-standard formatting and narrative structure.',
-      position: 'bottom' as 'top' | 'bottom'
-    },
-    {
-      id: 'monologue-cards',
-      selector: '[data-tour="feed-monologue-card"]',
-      title: 'Monologue Cards',
-      description: 'Character voice development with emotional tone analysis and prose refinement.',
-      position: 'bottom' as 'top' | 'bottom'
-    },
-    {
-      id: 'character-cards',
-      selector: '[data-tour="feed-character-card"]',
-      title: 'Character Cards',
-      description: 'Persona building with visual reference galleries and backstory development.',
-      position: 'bottom' as 'top' | 'bottom'
-    },
-    {
-      id: 'frame-cards',
-      selector: '[data-tour="feed-frame-card"]',
-      title: 'Frame Cards',
-      description: 'Visual narrative curation with collage composition and mood board creation.',
-      position: 'bottom' as 'top' | 'bottom'
-    },
-    {
-      id: 'card-actions',
-      selector: '[data-tour="card-actions-menu"]',
-      title: 'Card Actions',
-      description: 'Edit, delete, or view original creations. Repost content you admire from other creators.',
-      position: 'top' as 'top' | 'bottom'
-    },
-    {
-      id: 'infinite-scroll',
-      selector: '[data-tour="feed-loading-area"]',
-      title: 'Discover More Content',
-      description: 'Scroll down to automatically load more content. Pull down to refresh with latest creations.',
-      position: 'top' as 'top' | 'bottom'
-    }
-  ];
 
   return {
     currentStep,
