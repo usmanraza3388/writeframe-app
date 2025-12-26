@@ -421,10 +421,9 @@ const CharacterCard: React.FC<CharacterCardProps> = React.memo(({
         />
       )}
 
-      {/* Character Profile Card Layout - ADDED: data-tour attribute for HomeFeed tour */}
+      {/* Character Profile Card Layout */}
       <article 
         id={`card-character-${character.id}`} // ← ADDED: Unique ID for card capture
-        data-tour="character-card"
         style={{
           width: 'calc(100% + 32px)',
           minHeight: mainImage ? '420px' : '350px',

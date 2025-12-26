@@ -40,11 +40,8 @@ function AppContent() {
     if (isFirstVisit) {
       console.log('🔄 Initializing app localStorage state...');
       
-      // Clear all tour completion states for first-time users
       localStorage.removeItem('writeframe_bottomnav_tour_completed');
       localStorage.removeItem('writeframe_onboarding_complete');
-      localStorage.removeItem('writeframe_homefeed_tour_completed'); // NEW: HomeFeed tour
-      localStorage.removeItem('writeframe_profile_tour_completed'); // NEW: Profile tour
       
       localStorage.setItem('writeframe_app_initialized', 'true');
       
@@ -262,3 +259,4 @@ function App() {
 }
 
 export default App;
+

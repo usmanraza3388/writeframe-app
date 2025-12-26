@@ -418,10 +418,9 @@ const MonologueCard: React.FC<MonologueCardProps> = React.memo(({
         />
       )}
 
-      {/* MINIMAL: Monologue Card Layout - ADDED: data-tour attribute for HomeFeed tour */}
+      {/* MINIMAL: Monologue Card Layout */}
       <article 
         id={`card-monologue-${monologue.id}`} // ← ADDED: Unique ID for card capture
-        data-tour="monologue-card"
         style={{
           width: 'calc(100% + 32px)',
           minHeight: '168px',
@@ -870,3 +869,4 @@ const MonologueCard: React.FC<MonologueCardProps> = React.memo(({
 MonologueCard.displayName = 'MonologueCard';
 
 export default MonologueCard;
+

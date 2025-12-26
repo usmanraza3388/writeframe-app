@@ -383,10 +383,9 @@ const SceneCard: React.FC<SceneCardProps> = React.memo(({ scene, currentUserId, 
         />
       )}
       
-      {/* NEUTRAL: Scene Card Layout - ADDED: data-tour attribute for HomeFeed tour */}
+      {/* NEUTRAL: Scene Card Layout */}
       <div 
         id={`card-scene-${scene.id}`}
-        data-tour="scene-card"
         style={{
           width: 'calc(100% + 32px)',
           minHeight: scene.image_path ? '420px' : '320px',
