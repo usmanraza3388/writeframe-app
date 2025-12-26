@@ -673,4 +673,3 @@ const HomeFeed: React.FC = () => {
 };
 
 export default HomeFeed;
-

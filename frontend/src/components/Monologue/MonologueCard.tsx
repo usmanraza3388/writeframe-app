@@ -869,4 +869,3 @@ const MonologueCard: React.FC<MonologueCardProps> = React.memo(({
 MonologueCard.displayName = 'MonologueCard';
 
 export default MonologueCard;
-
