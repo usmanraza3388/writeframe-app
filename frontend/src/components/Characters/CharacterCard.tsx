@@ -1,4 +1,3 @@
-here is the Character Card - update it on the same line and give me full file back:
 import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom'; // ADDED: Import useNavigate
 import type { CharacterCardProps } from '../../utils/character-types';
