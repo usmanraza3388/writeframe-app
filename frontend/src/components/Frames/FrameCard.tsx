@@ -561,6 +561,7 @@ const FrameCard: React.FC<FrameCardProps> = React.memo(({
               aria-label="More options"
               aria-expanded={showMenu}
               aria-haspopup="true"
+              data-tour="card-actions-menu" // ← ADDED: This is for HomeFeed tour step 5
               style={{
                 background: 'none',
                 border: 'none',

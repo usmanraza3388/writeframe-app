@@ -553,6 +553,7 @@ const SceneCard: React.FC<SceneCardProps> = React.memo(({ scene, currentUserId, 
               ref={menuButtonRef}
               onClick={toggleMenu}
               aria-label="More options"
+              data-tour="card-actions-menu" // ← ADDED: This is for HomeFeed tour step 5
               style={{
                 background: 'none',
                 border: 'none',

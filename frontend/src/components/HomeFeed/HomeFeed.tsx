@@ -22,6 +22,10 @@ import { feedActions } from '../../utils/feedActions';
 import GettingStartedModal from '../GettingStartedModal/GettingStartedModal';
 import { useOnboarding } from '../../hooks/useOnboarding';
 
+// ADDED: HomeFeed Tour imports
+import HomeFeedTourTooltip from '../Tour/HomeFeedTourTooltip';
+import { useHomeFeedTour } from '../../hooks/useHomeFeedTour';
+
 // ADDED: Skeleton Loading Components
 const CardSkeleton: React.FC = () => (
   <div style={{
@@ -123,6 +127,18 @@ const HomeFeed: React.FC = () => {
 
   // ADDED: Use onboarding hook
   const { showOnboarding, handleComplete, handleClose } = useOnboarding();
+
+  // ADDED: HomeFeed Tour hook - COMPLETELY ISOLATED STATE
+  const {
+    currentStep: homeFeedTourStep,
+    isActive: homeFeedTourActive,
+    currentStepData: homeFeedTourStepData,
+    totalSteps: homeFeedTourTotalSteps,
+    nextStep: homeFeedTourNext,
+    prevStep: homeFeedTourPrev,
+    skipTour: homeFeedTourSkip,
+    completeTour: homeFeedTourComplete
+  } = useHomeFeedTour();
 
   // FIXED: Tour trigger state - REMOVED shouldTriggerTour as we're using event system
 
@@ -434,6 +450,33 @@ const HomeFeed: React.FC = () => {
       .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
   }, [scenes, monologues, repostedMonologues, characters, repostedCharacters, frames, repostedFrames]);
 
+  // ADDED: HomeFeed Tour trigger - ISOLATED FROM OTHER TOURS
+  // MOVED HERE (after mixedFeed declaration to fix reference error)
+  useEffect(() => {
+    // Only trigger HomeFeed tour if ALL conditions are met:
+    // 1. User is authenticated
+    // 2. HomeFeed tour is NOT already active
+    // 3. Feed has loaded content
+    // 4. BottomNav tour is completed (prerequisite)
+    // 5. HomeFeed tour hasn't run before
+    
+    if (!user || homeFeedTourActive || mixedFeed.length === 0) return;
+    
+    const bottomnavTourCompleted = localStorage.getItem('writeframe_bottomnav_tour_completed');
+    const homefeedTourCompleted = localStorage.getItem('writeframe_homefeed_tour_completed');
+    
+    // CRITICAL: Only trigger if BottomNav tour done AND HomeFeed tour never run
+    if (bottomnavTourCompleted === 'true' && !homefeedTourCompleted) {
+      // Small delay to ensure DOM is fully rendered
+      const timer = setTimeout(() => {
+        console.log('🚀 HomeFeed tour conditions met - triggering tour...');
+        window.dispatchEvent(new CustomEvent('homefeed-tour-should-start'));
+      }, 800);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [user, homeFeedTourActive, mixedFeed.length]);
+
   // ADDED: Paginated feed
   const displayFeed = useMemo(() => mixedFeed.slice(0, visibleCount), [mixedFeed, visibleCount]);
 
@@ -533,6 +576,11 @@ const HomeFeed: React.FC = () => {
     );
   }
 
+  // Determine which step needs data-tour attribute
+  const shouldAddDataTour = (stepIndex: number) => {
+    return homeFeedTourActive && homeFeedTourStep === stepIndex;
+  };
+
   return (
     <>
       <div style={{
@@ -549,13 +597,16 @@ const HomeFeed: React.FC = () => {
           borderBottom: '1px solid #E5E5E5',
           marginBottom: '16px'
         }}>
-          <h1 style={{
-            fontFamily: 'Playfair Display, serif',
-            fontSize: '24px',
-            fontWeight: 'bold',
-            color: '#1C1C1C',
-            margin: 0
-          }}>
+          <h1 
+            style={{
+              fontFamily: 'Playfair Display, serif',
+              fontSize: '24px',
+              fontWeight: 'bold',
+              color: '#1C1C1C',
+              margin: 0
+            }}
+            data-tour={shouldAddDataTour(0) ? "feed-header" : undefined}
+          >
             writeFrame
           </h1>
         </div>
@@ -566,10 +617,14 @@ const HomeFeed: React.FC = () => {
           gap: '20px',
           padding: '0 16px'
         }}>
-          {displayFeed.map((item) => {
+          {displayFeed.map((item, index) => {
             if (item.type === 'scene') {
               return (
-                <div key={`scene-${item.data.id}`} id={`scene-${item.data.id}`}>
+                <div 
+                  key={`scene-${item.data.id}`} 
+                  id={`scene-${item.data.id}`}
+                  data-tour={shouldAddDataTour(1) && index === 0 ? "feed-scene-card" : undefined}
+                >
                   <SceneCard 
                     scene={item.data}
                     currentUserId={currentUserId}
@@ -579,7 +634,11 @@ const HomeFeed: React.FC = () => {
               );
             } else if (item.type === 'monologue') {
               return (
-                <div key={`monologue-${item.data.id}`} id={`monologue-${item.data.id}`}>
+                <div 
+                  key={`monologue-${item.data.id}`} 
+                  id={`monologue-${item.data.id}`}
+                  data-tour={shouldAddDataTour(2) && index === 0 ? "feed-monologue-card" : undefined}
+                >
                   <MonologueCard 
                     monologue={item.data}
                     currentUserId={currentUserId}
@@ -599,7 +658,11 @@ const HomeFeed: React.FC = () => {
               );
             } else if (item.type === 'character') {
               return (
-                <div key={`character-${item.data.id}`} id={`character-${item.data.id}`}>
+                <div 
+                  key={`character-${item.data.id}`} 
+                  id={`character-${item.data.id}`}
+                  data-tour={shouldAddDataTour(3) && index === 0 ? "feed-character-card" : undefined}
+                >
                   <CharacterCard 
                     character={item.data}
                     currentUserId={currentUserId}
@@ -619,7 +682,11 @@ const HomeFeed: React.FC = () => {
               );
             } else if (item.type === 'frame') {
               return (
-                <div key={`frame-${item.data.id}`} id={`frame-${item.data.id}`}>
+                <div 
+                  key={`frame-${item.data.id}`} 
+                  id={`frame-${item.data.id}`}
+                  data-tour={shouldAddDataTour(4) && index === 0 ? "feed-frame-card" : undefined}
+                >
                   <FrameCard 
                     frame={item.data}
                     currentUserId={currentUserId}
@@ -647,13 +714,16 @@ const HomeFeed: React.FC = () => {
 
           {/* ADDED: End of feed message with dynamic text */}
           {visibleCount >= mixedFeed.length && mixedFeed.length > 0 && (
-            <div style={{
-              padding: '20px 16px',
-              textAlign: 'center',
-              fontFamily: 'Playfair Display, serif',
-              color: '#55524F',
-              fontSize: '14px'
-            }}>
+            <div 
+              style={{
+                padding: '20px 16px',
+                textAlign: 'center',
+                fontFamily: 'Playfair Display, serif',
+                color: '#55524F',
+                fontSize: '14px'
+              }}
+              data-tour={shouldAddDataTour(6) ? "feed-loading-area" : undefined}
+            >
               — {mixedFeed.length > 50 ? "You've reached the end for now" : "That's all for now"} —
             </div>
           )}
@@ -668,9 +738,23 @@ const HomeFeed: React.FC = () => {
         onClose={handleClose}
         onComplete={handleModalComplete}  // No delay needed - modal animated out
       />
+
+      {/* ADDED: HomeFeed Tour Tooltip - COMPLETELY ISOLATED */}
+      {homeFeedTourActive && homeFeedTourStepData && (
+        <HomeFeedTourTooltip
+          targetElement={document.querySelector(homeFeedTourStepData.selector) as HTMLElement}
+          title={homeFeedTourStepData.title}
+          description={homeFeedTourStepData.description}
+          currentStep={homeFeedTourStep}
+          totalSteps={homeFeedTourTotalSteps}
+          onNext={homeFeedTourNext}
+          onBack={homeFeedTourPrev}
+          onSkip={homeFeedTourSkip}
+          onComplete={homeFeedTourComplete}
+        />
+      )}
     </>
   );
 };
 
 export default HomeFeed;
-

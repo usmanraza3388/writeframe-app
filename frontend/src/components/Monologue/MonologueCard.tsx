@@ -549,7 +549,7 @@ const MonologueCard: React.FC<MonologueCardProps> = React.memo(({
             </div>
           </div>
 
-          {/* Three Dots Menu */}
+          {/* Three Dots Menu - ADDED: data-tour attribute for HomeFeed tour */}
           <div style={{ position: 'relative' }} ref={menuContainerRef}>
             <button 
               ref={menuButtonRef}
@@ -557,6 +557,7 @@ const MonologueCard: React.FC<MonologueCardProps> = React.memo(({
               aria-label="More options"
               aria-expanded={showMenu}
               aria-haspopup="true"
+              data-tour="card-actions-menu" // ← ADDED: This is for HomeFeed tour step 5
               style={{
                 background: 'none',
                 border: 'none',
@@ -869,4 +870,3 @@ const MonologueCard: React.FC<MonologueCardProps> = React.memo(({
 MonologueCard.displayName = 'MonologueCard';
 
 export default MonologueCard;
-
