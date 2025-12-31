@@ -1,81 +1,62 @@
 import html2canvas from 'html2canvas';
 
-export interface CaptureOptions {
-  elementId: string;
-  fileName: string;
-  quality?: number;
-}
-
-export const captureCardAsImage = async ({
-  elementId,
-  fileName,
-  quality = 1
-}: CaptureOptions): Promise<boolean> => {
+export const captureCardAsImage = async (
+  element: HTMLElement,
+  fileName: string
+): Promise<boolean> => {
   try {
-    const element = document.getElementById(elementId);
+    // 1. TEMPORARILY modify the card for clean capture
+    const originalHTML = element.innerHTML;
     
-    if (!element) {
-      console.error(`Element with id "${elementId}" not found`);
-      return false;
+    // 2. Replace all text with plain text spans
+    const walker = document.createTreeWalker(
+      element,
+      NodeFilter.SHOW_TEXT,
+      null
+    );
+    
+    let node;
+    while (node = walker.nextNode()) {
+      if (node.textContent && node.textContent.trim()) {
+        const span = document.createElement('span');
+        span.textContent = node.textContent;
+        span.style.cssText = `
+          display: inline-block;
+          position: relative;
+          font-family: Arial, sans-serif;
+          white-space: pre-wrap;
+          margin: 0;
+          padding: 0;
+          line-height: 1.4;
+          letter-spacing: normal;
+        `;
+        node.parentNode?.replaceChild(span, node);
+      }
     }
-
-    // Wait for fonts to load
-    await document.fonts.ready;
-
-    // TypeScript workaround - cast to any to bypass type checking
-    const options = {
+    
+    // 3. Wait for reflow
+    element.offsetHeight;
+    await new Promise(r => setTimeout(r, 100));
+    
+    // 4. Capture with minimal options
+    const canvas = await html2canvas(element, {
       useCORS: true,
       backgroundColor: '#FAF8F2',
-      scale: 2,
-      logging: false,
-      foreignObjectRendering: false,
-      onclone: (_clonedDoc: Document, clonedElement: HTMLElement) => {
-        clonedElement.style.cssText = `
-          font-family: Arial, sans-serif !important;
-          text-rendering: optimizeSpeed !important;
-          -webkit-font-smoothing: none !important;
-          -moz-osx-font-smoothing: grayscale !important;
-        `;
-        
-        const allElements = clonedElement.querySelectorAll('*');
-        allElements.forEach((el: Element) => {
-          const htmlEl = el as HTMLElement;
-          htmlEl.style.transform = 'none';
-          htmlEl.style.filter = 'none';
-          htmlEl.style.mixBlendMode = 'normal';
-        });
-      }
-    };
-
-    // Use type assertion to bypass TypeScript errors
-    const canvas = await html2canvas(element, options as any);
-
-    const blob = await new Promise<Blob | null>((resolve) => {
-      canvas.toBlob(
-        (blob) => resolve(blob),
-        'image/png',
-        quality
-      );
+      scale: window.devicePixelRatio * 2
     });
-
-    if (!blob) {
-      throw new Error('Failed to create image blob');
-    }
-
-    const url = URL.createObjectURL(blob);
+    
+    // 5. Restore original HTML
+    element.innerHTML = originalHTML;
+    
+    // 6. Download
     const link = document.createElement('a');
-    link.href = url;
+    link.href = canvas.toDataURL('image/png');
     link.download = `${fileName}.png`;
-    
-    document.body.appendChild(link);
     link.click();
-    document.body.removeChild(link);
-    
-    URL.revokeObjectURL(url);
     
     return true;
   } catch (error) {
-    console.error('Error capturing card as image:', error);
+    console.error('Capture failed:', error);
     return false;
   }
 };
