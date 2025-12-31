@@ -61,16 +61,10 @@ export const captureCardAsImage = async ({
     // Force reflow
     element.offsetHeight;
 
-    // Capture with valid options only
+    // Capture with ONLY valid properties
     const canvas = await html2canvas(element, {
       useCORS: true,
-      logging: false,
-      width: element.offsetWidth,
-      height: element.offsetHeight,
-      x: 0,
-      y: 0,
-      scrollX: 0,
-      scrollY: 0
+      logging: false
     });
 
     // Restore original styles immediately
