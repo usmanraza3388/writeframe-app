@@ -474,18 +474,11 @@ const MonologueCard: React.FC<MonologueCardProps> = React.memo(({
           justifyContent: 'space-between',
           marginBottom: '16px'
         }}>
-          {/* FIXED: Single unified clickable area for profile */}
-          <div 
-            onClick={handleProfileClick}
-            style={{ 
-              display: 'flex', 
-              alignItems: 'flex-start', 
-              gap: '12px',
-              cursor: 'pointer' // Show it's clickable
-            }}
-          >
-            {/* Avatar section - NOT clickable individually */}
+          {/* User Info */}
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+            {/* FIXED: Avatar section using profiles.avatar_url - UPDATED: Now clickable */}
             <div 
+              onClick={handleProfileClick}
               role="img"
               aria-label={`${monologue.user_name}'s avatar`}
               style={{
@@ -498,8 +491,8 @@ const MonologueCard: React.FC<MonologueCardProps> = React.memo(({
                 justifyContent: 'center',
                 overflow: 'hidden',
                 flexShrink: 0,
-                border: '1.5px solid #E5E5E5'
-                // Removed cursor: 'pointer' from here
+                border: '1.5px solid #E5E5E5',
+                cursor: 'pointer' // ADDED: Show it's clickable
               }}
             >
               {monologue.profiles?.avatar_url ? (
@@ -524,12 +517,15 @@ const MonologueCard: React.FC<MonologueCardProps> = React.memo(({
               )}
             </div>
             
-            {/* Name and Genre - NOT clickable individually */}
-            <div style={{ 
-              display: 'flex', 
-              flexDirection: 'column'
-              // Removed cursor: 'pointer' from here
-            }}>
+            {/* Name and Genre - UPDATED: Now clickable */}
+            <div 
+              onClick={handleProfileClick}
+              style={{ 
+                display: 'flex', 
+                flexDirection: 'column',
+                cursor: 'pointer' // ADDED: Show it's clickable
+              }}
+            >
               <h3 style={{
                 fontFamily: 'Playfair Display, serif',
                 fontSize: '20px',
