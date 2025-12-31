@@ -677,7 +677,7 @@ const CharacterCard: React.FC<CharacterCardProps> = React.memo(({
             fontWeight: 600,
             color: '#000000',
             margin: '0 0 8px 0',
-            letterSpacing: '0.3px',
+            letterSpacing: '0.02em',
             borderBottom: '1px solid #E5E5E5',
             paddingBottom: '6px'
           }}>
