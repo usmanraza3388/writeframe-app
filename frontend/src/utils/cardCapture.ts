@@ -12,16 +12,17 @@ export const captureCardAsImage = async ({
   quality = 1
 }: CaptureOptions): Promise<boolean> => {
   try {
+    // STEP 1: Find and isolate the element
     const element = document.getElementById(elementId);
     if (!element) {
       console.error(`Element with id "${elementId}" not found`);
       return false;
     }
 
-    // Clone element but DON'T change fonts
+    // STEP 2: Create a clean clone of the element
     const clone = element.cloneNode(true) as HTMLElement;
     
-    // Apply minimal positioning only
+    // STEP 3: Apply positioning only - NO font changes
     clone.style.cssText = `
       position: fixed !important;
       top: 20px !important;
@@ -30,13 +31,17 @@ export const captureCardAsImage = async ({
       transform: none !important;
       opacity: 1 !important;
       visibility: visible !important;
+      background-color: #FAF8F2 !important;
       margin: 0 !important;
+      padding: 20px !important;
+      border-radius: 12px !important;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08) !important;
       width: ${element.clientWidth}px !important;
       height: ${element.clientHeight}px !important;
     `;
 
-    // Fix text merging WITHOUT changing fonts
-    const fixTextNodes = (node: HTMLElement) => {
+    // STEP 4: Replace text nodes with spans while preserving original fonts
+    const replaceTextWithSpans = (node: HTMLElement) => {
       const walker = document.createTreeWalker(
         node,
         NodeFilter.SHOW_TEXT,
@@ -51,55 +56,115 @@ export const captureCardAsImage = async ({
       
       nodes.forEach(textNode => {
         if (textNode.textContent && textNode.textContent.trim()) {
+          const parent = textNode.parentElement;
+          if (!parent) return;
+          
+          // Get original font styles
+          const originalStyle = window.getComputedStyle(parent);
+          
           const span = document.createElement('span');
           span.textContent = textNode.textContent;
-          // CRITICAL: Only fix layout, keep original font
-          span.style.cssText = `
-            display: inline-block !important;
-            position: relative !important;
-            white-space: pre-wrap !important;
-            word-break: break-word !important;
-            letter-spacing: normal !important;
-            margin: 0 !important;
-            padding: 0 !important;
-          `;
-          textNode.parentNode?.replaceChild(span, textNode);
+          
+          // Preserve original font styling
+          span.style.fontFamily = originalStyle.fontFamily;
+          span.style.fontSize = originalStyle.fontSize;
+          span.style.fontWeight = originalStyle.fontWeight;
+          span.style.fontStyle = originalStyle.fontStyle;
+          span.style.color = originalStyle.color;
+          span.style.lineHeight = originalStyle.lineHeight;
+          span.style.textAlign = originalStyle.textAlign;
+          span.style.textDecoration = originalStyle.textDecoration;
+          
+          // Add anti-merging properties
+          span.style.display = 'inline-block';
+          span.style.whiteSpace = 'pre-wrap';
+          span.style.wordBreak = 'break-word';
+          span.style.letterSpacing = 'normal';
+          span.style.margin = '0';
+          span.style.padding = '0';
+          
+          parent.replaceChild(span, textNode);
         }
       });
     };
 
-    fixTextNodes(clone);
+    replaceTextWithSpans(clone);
+
+    // STEP 5: Add clone to document
     document.body.appendChild(clone);
+    
+    // STEP 6: Wait for rendering
     clone.offsetHeight;
-    await new Promise(r => setTimeout(r, 100));
+    await new Promise(r => setTimeout(r, 300));
 
-    // Use type assertion for foreignObjectRendering
-    const options: any = {
+    // STEP 7: Capture with valid options
+    const canvas = await html2canvas(clone, {
       useCORS: true,
-      backgroundColor: '#FAF8F2',
-      scale: 2,
-      logging: false,
-      foreignObjectRendering: false // THIS FIXES MERGING
-    };
+      logging: false
+    });
 
-    const canvas = await html2canvas(clone, options);
+    // STEP 8: Remove clone
     document.body.removeChild(clone);
 
-    // Download
-    canvas.toBlob((blob) => {
-      if (!blob) return;
-      
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `${fileName}.png`;
-      link.click();
+    // STEP 9: Create canvas with background color
+    const finalCanvas = document.createElement('canvas');
+    finalCanvas.width = canvas.width;
+    finalCanvas.height = canvas.height;
+    const ctx = finalCanvas.getContext('2d');
+    
+    if (ctx) {
+      ctx.fillStyle = '#FAF8F2';
+      ctx.fillRect(0, 0, finalCanvas.width, finalCanvas.height);
+      ctx.drawImage(canvas, 0, 0);
+    }
+
+    // STEP 10: Convert to blob and download
+    const blob = await new Promise<Blob | null>((resolve) => {
+      finalCanvas.toBlob(
+        (blob) => resolve(blob),
+        'image/png',
+        quality
+      );
+    });
+
+    if (!blob) {
+      throw new Error('Failed to create image blob');
+    }
+
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${fileName}.png`;
+    link.style.cssText = `
+      position: fixed;
+      top: -100px;
+      left: -100px;
+      opacity: 0;
+      pointer-events: none;
+    `;
+    
+    document.body.appendChild(link);
+    link.click();
+    
+    setTimeout(() => {
+      document.body.removeChild(link);
       URL.revokeObjectURL(url);
-    }, 'image/png', quality);
+    }, 100);
 
     return true;
   } catch (error) {
     console.error('Capture failed:', error);
     return false;
   }
+};
+
+export const generateFileName = (
+  contentType: 'scene' | 'monologue' | 'character' | 'frame',
+  title: string,
+  creatorName: string
+): string => {
+  const sanitizedTitle = title.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase();
+  const sanitizedCreator = creatorName.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase();
+  
+  return `writeframe-${contentType}-${sanitizedTitle}-by-${sanitizedCreator}`;
 };
