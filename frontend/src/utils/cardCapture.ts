@@ -19,13 +19,37 @@ export const captureCardAsImage = async ({
       return false;
     }
 
-    // Capture the card as canvas - USE ONLY VALID OPTIONS
-    const canvas = await html2canvas(element, {
-      // Remove all problematic options, use minimal config
-      useCORS: true
-    });
+    // Wait for fonts to load
+    await document.fonts.ready;
 
-    // Convert canvas to blob
+    // TypeScript workaround - cast to any to bypass type checking
+    const options = {
+      useCORS: true,
+      backgroundColor: '#FAF8F2',
+      scale: 2,
+      logging: false,
+      foreignObjectRendering: false,
+      onclone: (_clonedDoc: Document, clonedElement: HTMLElement) => {
+        clonedElement.style.cssText = `
+          font-family: Arial, sans-serif !important;
+          text-rendering: optimizeSpeed !important;
+          -webkit-font-smoothing: none !important;
+          -moz-osx-font-smoothing: grayscale !important;
+        `;
+        
+        const allElements = clonedElement.querySelectorAll('*');
+        allElements.forEach((el: Element) => {
+          const htmlEl = el as HTMLElement;
+          htmlEl.style.transform = 'none';
+          htmlEl.style.filter = 'none';
+          htmlEl.style.mixBlendMode = 'normal';
+        });
+      }
+    };
+
+    // Use type assertion to bypass TypeScript errors
+    const canvas = await html2canvas(element, options as any);
+
     const blob = await new Promise<Blob | null>((resolve) => {
       canvas.toBlob(
         (blob) => resolve(blob),
@@ -38,18 +62,15 @@ export const captureCardAsImage = async ({
       throw new Error('Failed to create image blob');
     }
 
-    // Create download link
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
     link.download = `${fileName}.png`;
     
-    // Trigger download
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
     
-    // Clean up
     URL.revokeObjectURL(url);
     
     return true;
@@ -57,16 +78,4 @@ export const captureCardAsImage = async ({
     console.error('Error capturing card as image:', error);
     return false;
   }
-};
-
-// Helper function to generate filename based on content
-export const generateFileName = (
-  contentType: 'scene' | 'monologue' | 'character' | 'frame',
-  title: string,
-  creatorName: string
-): string => {
-  const sanitizedTitle = title.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase();
-  const sanitizedCreator = creatorName.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase();
-  
-  return `writeframe-${contentType}-${sanitizedTitle}-by-${sanitizedCreator}`;
 };
