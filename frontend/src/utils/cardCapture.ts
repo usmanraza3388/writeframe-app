@@ -18,111 +18,61 @@ export const captureCardAsImage = async ({
       return false;
     }
 
-    // Store original styles
-    const originalStyles = {
-      position: element.style.position,
-      top: element.style.top,
-      left: element.style.left,
-      zIndex: element.style.zIndex,
-      transform: element.style.transform,
-      margin: element.style.margin,
-      boxShadow: element.style.boxShadow,
-      visibility: element.style.visibility
+    // Wait for fonts
+    await document.fonts.ready;
+
+    // Type assertion to bypass TypeScript
+    const options: any = {
+      useCORS: true,
+      backgroundColor: '#FAF8F2',
+      scale: 2,
+      logging: false,
+      foreignObjectRendering: false, // THIS FIXES TEXT MERGING
+      onclone: (_clonedDoc: Document, clonedElement: HTMLElement) => {
+        // Set font properties safely
+        clonedElement.style.fontFamily = 'Arial, sans-serif';
+        clonedElement.style.cssText += 'text-rendering: optimizeSpeed;';
+        
+        // Remove transforms and filters
+        const allElements = clonedElement.querySelectorAll('*');
+        allElements.forEach((el: Element) => {
+          const htmlEl = el as HTMLElement;
+          htmlEl.style.transform = 'none';
+          htmlEl.style.filter = 'none';
+        });
+      }
     };
 
-    // Hide scrollbars and freeze
-    const originalBodyOverflow = document.body.style.overflow;
-    const originalHtmlOverflow = document.documentElement.style.overflow;
-    document.body.style.overflow = 'hidden';
-    document.documentElement.style.overflow = 'hidden';
-
-    // Position element for clean capture
-    const rect = element.getBoundingClientRect();
-    element.style.position = 'fixed';
-    element.style.top = `${rect.top}px`;
-    element.style.left = `${rect.left}px`;
-    element.style.zIndex = '99999';
-    element.style.transform = 'none';
-    element.style.margin = '0';
-    element.style.boxShadow = '0 1px 3px rgba(0,0,0,0.08)';
-    element.style.visibility = 'visible';
-
-    // Wait for fonts and images
-    await Promise.all([
-      document.fonts.ready,
-      ...Array.from(element.querySelectorAll('img'))
-        .filter(img => !img.complete)
-        .map(img => new Promise(resolve => {
-          img.onload = resolve;
-          img.onerror = resolve;
-        }))
-    ]);
-
-    // Force reflow
-    element.offsetHeight;
-
-    // Capture with ONLY valid properties
-    const canvas = await html2canvas(element, {
-      useCORS: true,
-      logging: false
-    });
-
-    // Restore original styles immediately
-    Object.assign(element.style, originalStyles);
-    document.body.style.overflow = originalBodyOverflow;
-    document.documentElement.style.overflow = originalHtmlOverflow;
-
-    // Create final canvas with proper background
-    const finalCanvas = document.createElement('canvas');
-    finalCanvas.width = canvas.width;
-    finalCanvas.height = canvas.height;
-    const ctx = finalCanvas.getContext('2d');
-    
-    if (ctx) {
-      // Match your card's exact background color
-      ctx.fillStyle = '#FAF8F2';
-      ctx.fillRect(0, 0, finalCanvas.width, finalCanvas.height);
-      ctx.drawImage(canvas, 0, 0);
-    }
+    // Capture
+    const canvas = await html2canvas(element, options);
 
     // Download
-    return new Promise((resolve) => {
-      finalCanvas.toBlob((blob) => {
-        if (!blob) {
-          resolve(false);
-          return;
-        }
-
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `${fileName}.png`;
-        link.style.cssText = `
-          position: fixed;
-          top: -100px;
-          left: -100px;
-          opacity: 0;
-          pointer-events: none;
-        `;
-        
-        document.body.appendChild(link);
-        link.click();
-        
-        setTimeout(() => {
-          document.body.removeChild(link);
-          URL.revokeObjectURL(url);
-          resolve(true);
-        }, 100);
-      }, 'image/png', quality);
+    const blob = await new Promise<Blob | null>((resolve) => {
+      canvas.toBlob(
+        (blob) => resolve(blob),
+        'image/png',
+        quality
+      );
     });
 
+    if (!blob) {
+      throw new Error('Failed to create image blob');
+    }
+
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${fileName}.png`;
+    
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    URL.revokeObjectURL(url);
+    
+    return true;
   } catch (error) {
     console.error('Error capturing card as image:', error);
-    
-    // Emergency cleanup
-    document.body.style.overflow = '';
-    document.documentElement.style.overflow = '';
-    
     return false;
   }
 };
