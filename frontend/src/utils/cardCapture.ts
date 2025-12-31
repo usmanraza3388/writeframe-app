@@ -19,18 +19,13 @@ export const captureCardAsImage = async ({
       return false;
     }
 
-    await document.fonts.ready;
+    // Capture the card as canvas - USE ONLY VALID OPTIONS
+    const canvas = await html2canvas(element, {
+      // Remove all problematic options, use minimal config
+      useCORS: true
+    });
 
-    // Use type assertion to bypass TypeScript errors
-    const options: any = {
-      useCORS: true,
-      backgroundColor: '#FAF8F2',
-      scale: 2,
-      letterRendering: true
-    };
-
-    const canvas = await html2canvas(element, options);
-
+    // Convert canvas to blob
     const blob = await new Promise<Blob | null>((resolve) => {
       canvas.toBlob(
         (blob) => resolve(blob),
@@ -43,15 +38,18 @@ export const captureCardAsImage = async ({
       throw new Error('Failed to create image blob');
     }
 
+    // Create download link
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
     link.download = `${fileName}.png`;
     
+    // Trigger download
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
     
+    // Clean up
     URL.revokeObjectURL(url);
     
     return true;
@@ -61,6 +59,7 @@ export const captureCardAsImage = async ({
   }
 };
 
+// Helper function to generate filename based on content
 export const generateFileName = (
   contentType: 'scene' | 'monologue' | 'character' | 'frame',
   title: string,
