@@ -19,35 +19,17 @@ export const captureCardAsImage = async ({
       return false;
     }
 
-    // Wait for fonts to load
     await document.fonts.ready;
 
-    // Clone and modify element before capture
-    const clone = element.cloneNode(true) as HTMLElement;
-    clone.style.position = 'fixed';
-    clone.style.left = '-9999px';
-    clone.style.top = '-9999px';
-    document.body.appendChild(clone);
-
-    // Apply text rendering fixes to all elements in clone
-    const allElements = clone.querySelectorAll('*');
-    allElements.forEach(el => {
-      if (el instanceof HTMLElement) {
-        el.style.textRendering = 'optimizeSpeed';
-        el.style.webkitFontSmoothing = 'none';
-        el.style.mozOsxFontSmoothing = 'grayscale';
-      }
-    });
-
-    // @ts-ignore - TypeScript definitions are wrong
-    const canvas = await html2canvas(clone, {
+    // Use type assertion to bypass TypeScript errors
+    const options: any = {
       useCORS: true,
       backgroundColor: '#FAF8F2',
       scale: 2,
       letterRendering: true
-    });
+    };
 
-    document.body.removeChild(clone);
+    const canvas = await html2canvas(element, options);
 
     const blob = await new Promise<Blob | null>((resolve) => {
       canvas.toBlob(
