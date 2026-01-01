@@ -680,7 +680,7 @@ const FrameCard: React.FC<FrameCardProps> = React.memo(({
             boxSizing: 'border-box' // ← FIXED: Include padding in width calculation
           }}>
             
-            {/* Pinned images with rotation - FIXED: Added slot labels */}
+            {/* Pinned images with rotation - FIXED: Added slot labels with better positioning */}
             {displayImages.map((image, index) => {
               const rotation = MOOD_BOARD_CONFIG.baseRotation + (index * 1.5);
               const left = index === 0 ? '5%' : 
@@ -691,6 +691,24 @@ const FrameCard: React.FC<FrameCardProps> = React.memo(({
                          index === 2 ? '50%' : '45%';
               const zIndex = 4 - index;
               const slotLabel = SLOT_LABELS[index] || `Image ${index + 1}`;
+              
+              // FIXED: Adjust label position based on slot to prevent overlap
+              let labelTop = '-28px'; // Default position
+              let labelLeft = '50%'; // Default center
+              
+              if (index === 0) { // Main - top left
+                labelTop = '-28px';
+                labelLeft = '50%';
+              } else if (index === 1) { // Support - top right
+                labelTop = '-28px';
+                labelLeft = '50%';
+              } else if (index === 2) { // Mood - bottom left
+                labelTop = '-28px';
+                labelLeft = '50%';
+              } else if (index === 3) { // Style - bottom right
+                labelTop = '-28px';
+                labelLeft = '50%';
+              }
               
               return (
                 <div key={index} style={{
@@ -731,23 +749,25 @@ const FrameCard: React.FC<FrameCardProps> = React.memo(({
                     }} />
                   </div>
                   
-                  {/* Slot label badge - ADDED to show semantic role */}
+                  {/* Slot label badge - FIXED: Better positioning to prevent overlap */}
                   <div style={{
                     position: 'absolute',
-                    top: '-24px',
-                    left: '50%',
+                    top: labelTop,
+                    left: labelLeft,
                     transform: 'translateX(-50%)',
-                    background: 'rgba(0, 0, 0, 0.7)',
+                    background: 'rgba(0, 0, 0, 0.85)',
                     color: 'white',
-                    padding: '2px 6px',
-                    borderRadius: '4px',
+                    padding: '3px 8px',
+                    borderRadius: '6px',
                     fontSize: '9px',
                     fontFamily: "'Inter', sans-serif",
-                    fontWeight: '500',
+                    fontWeight: '600',
                     whiteSpace: 'nowrap',
-                    zIndex: 6,
+                    zIndex: 10, // Higher z-index to ensure visibility
                     backdropFilter: 'blur(4px)',
-                    border: '1px solid rgba(255, 255, 255, 0.1)'
+                    border: '1px solid rgba(255, 255, 255, 0.15)',
+                    boxShadow: '0 2px 6px rgba(0,0,0,0.3)',
+                    pointerEvents: 'none' // Prevent label from blocking clicks
                   }}>
                     {slotLabel}
                   </div>
@@ -762,7 +782,8 @@ const FrameCard: React.FC<FrameCardProps> = React.memo(({
                       border: '1px solid #E0D6C2',
                       boxSizing: 'border-box', // ← FIXED: Include border in width calculation
                       cursor: 'pointer',
-                      transition: 'transform 0.2s ease'
+                      transition: 'transform 0.2s ease',
+                      zIndex: 1
                     }}
                     onClick={() => openGallery(index)}
                     onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.02)'}
@@ -863,7 +884,7 @@ const FrameCard: React.FC<FrameCardProps> = React.memo(({
             fontStyle: 'italic'
           }}>
             {displayImages.length > 0 
-              ? `${displayImages.length} visual inspiration${displayImages.length !== 1 ? 's' : ''} (${SLOT_LABELS.slice(0, displayImages.length).join(', ')})`
+              ? `${displayImages.length} visual inspiration${displayImages.length !== 1 ? 's' : ''}`
               : 'Empty mood board'}
           </div>
           
