@@ -680,7 +680,8 @@ const FrameCard: React.FC<FrameCardProps> = React.memo(({
             boxSizing: 'border-box' // ← FIXED: Include padding in width calculation
           }}>
             
-            {/* Pinned images with rotation - FIXED: Added slot labels with better positioning */}
+            {/* FIXED: Separate containers for labels and images to prevent overlap */}
+            {/* First render the images */}
             {displayImages.map((image, index) => {
               const rotation = MOOD_BOARD_CONFIG.baseRotation + (index * 1.5);
               const left = index === 0 ? '5%' : 
@@ -692,26 +693,8 @@ const FrameCard: React.FC<FrameCardProps> = React.memo(({
               const zIndex = 4 - index;
               const slotLabel = SLOT_LABELS[index] || `Image ${index + 1}`;
               
-              // FIXED: Adjust label position based on slot to prevent overlap
-              let labelTop = '-28px'; // Default position
-              let labelLeft = '50%'; // Default center
-              
-              if (index === 0) { // Main - top left
-                labelTop = '-28px';
-                labelLeft = '50%';
-              } else if (index === 1) { // Support - top right
-                labelTop = '-28px';
-                labelLeft = '50%';
-              } else if (index === 2) { // Mood - bottom left
-                labelTop = '-28px';
-                labelLeft = '50%';
-              } else if (index === 3) { // Style - bottom right
-                labelTop = '-28px';
-                labelLeft = '50%';
-              }
-              
               return (
-                <div key={index} style={{
+                <div key={`image-${index}`} style={{
                   position: 'absolute',
                   left: left,
                   top: top,
@@ -747,29 +730,6 @@ const FrameCard: React.FC<FrameCardProps> = React.memo(({
                       height: '8px',
                       background: MOOD_BOARD_CONFIG.pinColor
                     }} />
-                  </div>
-                  
-                  {/* Slot label badge - FIXED: Better positioning to prevent overlap */}
-                  <div style={{
-                    position: 'absolute',
-                    top: labelTop,
-                    left: labelLeft,
-                    transform: 'translateX(-50%)',
-                    background: 'rgba(0, 0, 0, 0.85)',
-                    color: 'white',
-                    padding: '3px 8px',
-                    borderRadius: '6px',
-                    fontSize: '9px',
-                    fontFamily: "'Inter', sans-serif",
-                    fontWeight: '600',
-                    whiteSpace: 'nowrap',
-                    zIndex: 10, // Higher z-index to ensure visibility
-                    backdropFilter: 'blur(4px)',
-                    border: '1px solid rgba(255, 255, 255, 0.15)',
-                    boxShadow: '0 2px 6px rgba(0,0,0,0.3)',
-                    pointerEvents: 'none' // Prevent label from blocking clicks
-                  }}>
-                    {slotLabel}
                   </div>
                   
                   {/* Image with polaroid-like border - NOW CLICKABLE */}
@@ -816,6 +776,70 @@ const FrameCard: React.FC<FrameCardProps> = React.memo(({
                       zIndex: -1
                     }} />
                   )}
+                </div>
+              );
+            })}
+
+            {/* FIXED: Separate labels positioned OUTSIDE the rotated containers */}
+            {displayImages.map((_, index) => {
+              const slotLabel = SLOT_LABELS[index] || `Image ${index + 1}`;
+              
+              // Calculate label positions based on slot index
+              let labelStyle: React.CSSProperties = {};
+              
+              if (index === 0) { // Main - top left
+                labelStyle = {
+                  position: 'absolute',
+                  top: '0%',
+                  left: '5%',
+                  transform: 'translateY(-100%)',
+                };
+              } else if (index === 1) { // Support - top right
+                labelStyle = {
+                  position: 'absolute',
+                  top: '0%',
+                  left: '55%',
+                  transform: 'translateY(-100%) translateX(-50%)',
+                };
+              } else if (index === 2) { // Mood - bottom left
+                labelStyle = {
+                  position: 'absolute',
+                  top: '50%',
+                  left: '25%',
+                  transform: 'translateY(20px) translateX(-50%)',
+                };
+              } else if (index === 3) { // Style - bottom right
+                labelStyle = {
+                  position: 'absolute',
+                  top: '45%',
+                  left: '65%',
+                  transform: 'translateY(20px) translateX(-50%)',
+                };
+              }
+              
+              return (
+                <div 
+                  key={`label-${index}`}
+                  style={{
+                    ...labelStyle,
+                    background: 'rgba(0, 0, 0, 0.9)',
+                    color: 'white',
+                    padding: '4px 10px',
+                    borderRadius: '8px',
+                    fontSize: '10px',
+                    fontFamily: "'Inter', sans-serif",
+                    fontWeight: '600',
+                    whiteSpace: 'nowrap',
+                    zIndex: 100, // VERY HIGH z-index to ensure visibility
+                    backdropFilter: 'blur(4px)',
+                    border: '1px solid rgba(255, 255, 255, 0.2)',
+                    boxShadow: '0 3px 8px rgba(0,0,0,0.4)',
+                    pointerEvents: 'none', // Prevent label from blocking clicks
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.5px'
+                  }}
+                >
+                  {slotLabel}
                 </div>
               );
             })}
