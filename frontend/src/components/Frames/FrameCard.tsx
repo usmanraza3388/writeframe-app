@@ -25,6 +25,9 @@ const MOOD_BOARD_CONFIG = {
   tapeColor: 'rgba(255,255,200,0.3)'
 };
 
+// ADDED: Slot labels to match FrameComposer
+const SLOT_LABELS = ['Main', 'Support', 'Mood', 'Style'];
+
 // ADDED: Relative time utility function
 const getRelativeTime = (dateString: string): string => {
   const date = new Date(dateString);
@@ -677,7 +680,7 @@ const FrameCard: React.FC<FrameCardProps> = React.memo(({
             boxSizing: 'border-box' // ← FIXED: Include padding in width calculation
           }}>
             
-            {/* Pinned images with rotation - FIXED: Adjusted positioning percentages */}
+            {/* Pinned images with rotation - FIXED: Added slot labels */}
             {displayImages.map((image, index) => {
               const rotation = MOOD_BOARD_CONFIG.baseRotation + (index * 1.5);
               const left = index === 0 ? '5%' : 
@@ -687,6 +690,7 @@ const FrameCard: React.FC<FrameCardProps> = React.memo(({
                          index === 1 ? '5%' : 
                          index === 2 ? '50%' : '45%';
               const zIndex = 4 - index;
+              const slotLabel = SLOT_LABELS[index] || `Image ${index + 1}`;
               
               return (
                 <div key={index} style={{
@@ -727,6 +731,27 @@ const FrameCard: React.FC<FrameCardProps> = React.memo(({
                     }} />
                   </div>
                   
+                  {/* Slot label badge - ADDED to show semantic role */}
+                  <div style={{
+                    position: 'absolute',
+                    top: '-24px',
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    background: 'rgba(0, 0, 0, 0.7)',
+                    color: 'white',
+                    padding: '2px 6px',
+                    borderRadius: '4px',
+                    fontSize: '9px',
+                    fontFamily: "'Inter', sans-serif",
+                    fontWeight: '500',
+                    whiteSpace: 'nowrap',
+                    zIndex: 6,
+                    backdropFilter: 'blur(4px)',
+                    border: '1px solid rgba(255, 255, 255, 0.1)'
+                  }}>
+                    {slotLabel}
+                  </div>
+                  
                   {/* Image with polaroid-like border - NOW CLICKABLE */}
                   <div 
                     style={{
@@ -745,7 +770,7 @@ const FrameCard: React.FC<FrameCardProps> = React.memo(({
                   >
                     <img 
                       src={image}
-                      alt={`Mood reference ${index + 1}`}
+                      alt={`${slotLabel} reference`} // UPDATED: Include slot label in alt text
                       style={{
                         width: '100%',
                         height: '100%',
@@ -828,7 +853,7 @@ const FrameCard: React.FC<FrameCardProps> = React.memo(({
             }} />
           </div>
           
-          {/* Mood board label */}
+          {/* Mood board label - UPDATED to show slot info */}
           <div style={{
             textAlign: 'center',
             marginTop: '12px',
@@ -838,7 +863,7 @@ const FrameCard: React.FC<FrameCardProps> = React.memo(({
             fontStyle: 'italic'
           }}>
             {displayImages.length > 0 
-              ? `${displayImages.length} visual inspiration${displayImages.length !== 1 ? 's' : ''}`
+              ? `${displayImages.length} visual inspiration${displayImages.length !== 1 ? 's' : ''} (${SLOT_LABELS.slice(0, displayImages.length).join(', ')})`
               : 'Empty mood board'}
           </div>
           
@@ -1140,7 +1165,7 @@ const FrameCard: React.FC<FrameCardProps> = React.memo(({
           <div style={{ position: 'relative' }}>
             <img 
               src={displayImages[currentImageIndex]}
-              alt={`Image ${currentImageIndex + 1} of ${displayImages.length}`}
+              alt={`${SLOT_LABELS[currentImageIndex] || 'Image'} ${currentImageIndex + 1} of ${displayImages.length}`}
               style={{
                 maxWidth: '85vw',
                 maxHeight: '85vh',
@@ -1151,7 +1176,7 @@ const FrameCard: React.FC<FrameCardProps> = React.memo(({
               onClick={(e) => e.stopPropagation()}
             />
             
-            {/* Image counter - only show if multiple images */}
+            {/* Image counter - UPDATED to show slot label */}
             {displayImages.length > 1 && (
               <div style={{
                 position: 'absolute',
@@ -1163,9 +1188,16 @@ const FrameCard: React.FC<FrameCardProps> = React.memo(({
                 padding: '8px 16px',
                 borderRadius: '20px',
                 fontSize: '14px',
-                fontFamily: "'Cormorant', serif"
+                fontFamily: "'Cormorant', serif",
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: '2px'
               }}>
-                {currentImageIndex + 1} / {displayImages.length}
+                <div>{currentImageIndex + 1} / {displayImages.length}</div>
+                <div style={{ fontSize: '11px', opacity: 0.8 }}>
+                  {SLOT_LABELS[currentImageIndex]}
+                </div>
               </div>
             )}
           </div>
@@ -1202,7 +1234,7 @@ const FrameCard: React.FC<FrameCardProps> = React.memo(({
               e.stopPropagation();
               const link = document.createElement('a');
               link.href = displayImages[currentImageIndex];
-              link.download = `writeframe-image-${currentImageIndex + 1}.jpg`;
+              link.download = `writeframe-${SLOT_LABELS[currentImageIndex].toLowerCase()}-image.jpg`;
               link.click();
             }}
             style={{
@@ -1234,8 +1266,8 @@ const FrameCard: React.FC<FrameCardProps> = React.memo(({
               e.stopPropagation();
               if (navigator.share) {
                 navigator.share({
-                  title: frame.mood_description || 'Cinematic image from writeFrame',
-                  text: 'Check out this cinematic image from writeFrame!',
+                  title: `${frame.mood_description || 'Cinematic image'} - ${SLOT_LABELS[currentImageIndex]} reference`,
+                  text: `Check out this ${SLOT_LABELS[currentImageIndex].toLowerCase()} reference from writeFrame!`,
                   url: displayImages[currentImageIndex],
                 });
               } else {
