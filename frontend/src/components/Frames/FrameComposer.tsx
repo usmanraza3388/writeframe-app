@@ -5,6 +5,16 @@ import { supabase } from '../../assets/lib/supabaseClient';
 import { promptsData } from '../../data/promptsData';
 import InspirationBottomSheet from '../InspirationBottomSheet/InspirationBottomSheet';
 
+// Slot configuration
+const SLOT_CONFIG = [
+  { label: 'Main', width: 152, height: 133 },
+  { label: 'Support', width: 152, height: 99 },
+  { label: 'Mood', width: 152, height: 70 },
+  { label: 'Style', width: 152, height: 106 }
+] as const;
+
+type ImageSlot = string | null;
+
 const FrameComposer: React.FC = () => {
   const [searchParams] = useSearchParams();
   const frameId = searchParams.get('id');
@@ -13,7 +23,8 @@ const FrameComposer: React.FC = () => {
   
   const returnPath = location.state?.from || '/home-feed';
   
-  const [imageUrls, setImageUrls] = useState<string[]>([]);
+  // CHANGED: Use slot-based array with 4 fixed slots
+  const [imageSlots, setImageSlots] = useState<ImageSlot[]>([null, null, null, null]);
   const [moodDescription, setMoodDescription] = useState('');
   const { createFrame, isLoading, error } = useFrameComposer();
   const [showPublishOption, setShowPublishOption] = useState<boolean>(false);
@@ -27,7 +38,10 @@ const FrameComposer: React.FC = () => {
   
   const [isInspirationOpen, setIsInspirationOpen] = useState<boolean>(false);
   
+  // CHANGED: Single file input for all slots
   const fileInputRef = useRef<HTMLInputElement>(null);
+  // NEW: Track which slot is currently being targeted for upload
+  const [targetSlotIndex, setTargetSlotIndex] = useState<number | null>(null);
 
   const handlePromptSelect = (prompt: any) => {
     if (prompt.mood) {
@@ -52,7 +66,14 @@ const FrameComposer: React.FC = () => {
         if (error) throw error;
         if (frame) {
           if (frame.image_urls && frame.image_urls.length > 0) {
-            setImageUrls(frame.image_urls);
+            // CHANGED: Map image_urls to our slot structure
+            const slots: ImageSlot[] = [null, null, null, null];
+            frame.image_urls.forEach((url: string, index: number) => {
+              if (index < 4) slots[index] = url;
+            });
+            setImageSlots(slots);
+          } else {
+            setImageSlots([null, null, null, null]);
           }
           setMoodDescription(frame.mood_description || '');
           setIsEditing(true);
@@ -72,16 +93,20 @@ const FrameComposer: React.FC = () => {
   // Smart button logic - show publish option when content is substantial (CREATE MODE ONLY)
   useEffect(() => {
     if (!isEditing) {
+      // CHANGED: Check if any slot has content instead of array length
       const hasSubstantialContent = 
-        imageUrls.length > 0 && 
+        imageSlots.some(slot => slot !== null) && 
         moodDescription.length > 5;
       
       setShowPublishOption(hasSubstantialContent);
     }
-  }, [imageUrls, moodDescription, isEditing]);
+  }, [imageSlots, moodDescription, isEditing]);
+
+  // CHANGED: Count of filled slots
+  const filledSlotCount = imageSlots.filter(slot => slot !== null).length;
 
   const handleBack = () => {
-    const hasContent = imageUrls.length > 0 || moodDescription !== '';
+    const hasContent = imageSlots.some(slot => slot !== null) || moodDescription !== '';
     
     if (hasContent) {
       const confirmLeave = window.confirm('Are you sure you want to leave? Your changes will not be saved.');
@@ -101,59 +126,58 @@ const FrameComposer: React.FC = () => {
     </svg>
   );
 
-  const positionLabels = ['Main', 'Support', 'Mood', 'Style'];
-
-  const handleAddImage = (imageUrl: string) => {
-    if (imageUrls.length < 4) {
-      setImageUrls([...imageUrls, imageUrl]);
-    }
-  };
-
-  const handleRemoveImage = (index: number) => {
-    setImageUrls(imageUrls.filter((_, i) => i !== index));
-  };
-
-  const handleFileSelect = () => {
+  // CHANGED: Handle slot-specific file selection
+  const handleSlotSelect = (slotIndex: number) => {
+    setTargetSlotIndex(slotIndex);
     fileInputRef.current?.click();
   };
 
+  // CHANGED: Handle file upload to specific slot
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     
-    const availableSlots = 4 - imageUrls.length;
-    const filesToProcess = files.slice(0, availableSlots);
+    if (files.length === 0 || targetSlotIndex === null) return;
+
+    const file = files[0];
     
-    if (filesToProcess.length === 0) {
-      alert('No available slots for new images');
+    if (!file.type.startsWith('image/')) {
+      alert('Please select an image file');
       return;
     }
 
-    filesToProcess.forEach((file) => {
-      if (!file.type.startsWith('image/')) {
-        alert('Please select image files only');
-        return;
-      }
-
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const imageUrl = event.target?.result as string;
-        handleAddImage(imageUrl);
-      };
-      reader.readAsDataURL(file);
-    });
-
-    if (files.length > availableSlots) {
-      alert(`Added ${filesToProcess.length} images. ${files.length - availableSlots} files skipped (maximum 4 images).`);
-    }
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const imageUrl = event.target?.result as string;
+      
+      // Update the specific slot
+      const newSlots = [...imageSlots];
+      newSlots[targetSlotIndex] = imageUrl;
+      setImageSlots(newSlots);
+      
+      // Reset target slot
+      setTargetSlotIndex(null);
+    };
+    reader.readAsDataURL(file);
     
+    // Reset file input
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
   };
 
+  // CHANGED: Remove image from specific slot
+  const handleRemoveImage = (slotIndex: number) => {
+    const newSlots = [...imageSlots];
+    newSlots[slotIndex] = null;
+    setImageSlots(newSlots);
+  };
+
   // UPDATED: Handle submit with separate loading states
   const handleSubmit = async (publish: boolean = false) => {
-    if (imageUrls.length === 0) {
+    // CHANGED: Filter out null slots and check if any images exist
+    const validImageUrls = imageSlots.filter((slot): slot is string => slot !== null);
+    
+    if (validImageUrls.length === 0) {
       alert('Please add at least one image');
       return;
     }
@@ -174,7 +198,7 @@ const FrameComposer: React.FC = () => {
       
       // CREATE MODE
       const frameData = {
-        image_urls: imageUrls,
+        image_urls: validImageUrls, // CHANGED: Use filtered array
         mood_description: moodDescription,
         title: undefined,
         status: publish ? 'published' as const : 'draft' as const,
@@ -183,7 +207,8 @@ const FrameComposer: React.FC = () => {
       const result = await createFrame(frameData);
       
       if (result) {
-        setImageUrls([]);
+        // CHANGED: Reset all slots to null
+        setImageSlots([null, null, null, null]);
         setMoodDescription('');
         setShowPublishOption(false);
         alert(publish ? 'Collage published successfully!' : 'Collage saved as draft!');
@@ -204,10 +229,13 @@ const FrameComposer: React.FC = () => {
     if (!frameId) return;
     
     try {
+      // CHANGED: Filter out null slots for update
+      const validImageUrls = imageSlots.filter((slot): slot is string => slot !== null);
+      
       const { error } = await supabase
         .from('frames')
         .update({
-          image_urls: imageUrls,
+          image_urls: validImageUrls,
           mood_description: moodDescription,
           status: originalStatus,
           updated_at: new Date().toISOString()
@@ -303,54 +331,64 @@ const FrameComposer: React.FC = () => {
     transition: 'all 0.3s ease'
   };
 
-  const placeholderStyles = [
-    { width: 152, height: 133 },
-    { width: 152, height: 99 },
-    { width: 152, height: 70 },
-    { width: 152, height: 106 }
-  ];
-
-  const renderImagePlaceholder = (position: number) => {
-    const hasImage = imageUrls[position];
+  // CHANGED: Render individual slot
+  const renderImageSlot = (slotIndex: number) => {
+    const slotConfig = SLOT_CONFIG[slotIndex];
+    const hasImage = imageSlots[slotIndex] !== null;
     
     return (
-      <div style={{ position: 'relative' }}>
-        {!hasImage && (
-          <div style={{
-            position: 'absolute',
-            top: -20,
-            left: 0,
-            fontSize: 11,
-            color: '#55524F',
-            background: '#FAF8F2',
-            padding: '2px 6px',
-            borderRadius: 4,
-            border: '1px solid rgba(0,0,0,0.1)',
-            fontFamily: "'Inter', sans-serif",
-            fontWeight: 500,
-            zIndex: 2
-          }}>
-            {positionLabels[position]}
-          </div>
-        )}
+      <div key={slotIndex} style={{ position: 'relative' }}>
+        {/* Slot label - always visible */}
+        <div style={{
+          position: 'absolute',
+          top: -20,
+          left: 0,
+          fontSize: 11,
+          color: hasImage ? '#55524F' : '#9CA3AF',
+          background: '#FAF8F2',
+          padding: '2px 6px',
+          borderRadius: 4,
+          border: '1px solid rgba(0,0,0,0.1)',
+          fontFamily: "'Inter', sans-serif",
+          fontWeight: hasImage ? 500 : 400,
+          zIndex: 2
+        }}>
+          {slotConfig.label}
+          {hasImage && <span style={{ marginLeft: 4, fontSize: 9 }}>✓</span>}
+        </div>
         
+        {/* Slot container - clickable when empty */}
         <div
+          onClick={!hasImage ? () => handleSlotSelect(slotIndex) : undefined}
           style={{
-            width: placeholderStyles[position].width,
-            height: placeholderStyles[position].height,
-            border: hasImage ? '2px solid rgba(0,0,0,0.12)' : '2px dashed rgba(0,0,0,0.12)',
+            width: slotConfig.width,
+            height: slotConfig.height,
+            border: hasImage ? '2px solid rgba(0,0,0,0.12)' : '2px dashed rgba(0,0,0,0.2)',
             borderRadius: 12,
             background: hasImage ? 'transparent' : '#FAF8F2',
             position: 'relative',
             overflow: 'hidden',
-            transition: 'all 0.2s ease'
+            transition: 'all 0.2s ease',
+            cursor: !hasImage ? 'pointer' : 'default'
+          }}
+          onMouseEnter={(e) => {
+            if (!hasImage) {
+              e.currentTarget.style.background = '#F0EDE4';
+              e.currentTarget.style.borderColor = 'rgba(0,0,0,0.3)';
+            }
+          }}
+          onMouseLeave={(e) => {
+            if (!hasImage) {
+              e.currentTarget.style.background = '#FAF8F2';
+              e.currentTarget.style.borderColor = 'rgba(0,0,0,0.2)';
+            }
           }}
         >
           {hasImage ? (
             <>
               <img 
-                src={imageUrls[position]} 
-                alt={`Reference ${position + 1}`}
+                src={imageSlots[slotIndex]!} 
+                alt={`${slotConfig.label} reference`}
                 style={{
                   width: '100%',
                   height: '100%',
@@ -359,7 +397,10 @@ const FrameComposer: React.FC = () => {
               />
               <button
                 type="button"
-                onClick={() => handleRemoveImage(position)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleRemoveImage(slotIndex);
+                }}
                 style={{
                   position: 'absolute',
                   top: -8,
@@ -386,16 +427,33 @@ const FrameComposer: React.FC = () => {
               width: '100%',
               height: '100%',
               display: 'flex',
+              flexDirection: 'column',
               alignItems: 'center',
               justifyContent: 'center',
-              opacity: 0.5
+              gap: 8
             }}>
               <div style={{
-                width: 24,
-                height: 24,
-                background: 'rgba(0,0,0,0.1)',
-                borderRadius: 4
-              }} />
+                width: 32,
+                height: 32,
+                background: 'rgba(0,0,0,0.05)',
+                borderRadius: 6,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: 18,
+                color: '#9CA3AF'
+              }}>
+                +
+              </div>
+              <div style={{
+                fontSize: 10,
+                color: '#9CA3AF',
+                fontFamily: "'Inter', sans-serif",
+                textAlign: 'center',
+                padding: '0 8px'
+              }}>
+                Click to add {slotConfig.label.toLowerCase()} image
+              </div>
             </div>
           )}
         </div>
@@ -467,12 +525,12 @@ const FrameComposer: React.FC = () => {
           <BackArrowIcon />
         </button>
 
+        {/* CHANGED: Single file input for all slots */}
         <input
           type="file"
           ref={fileInputRef}
           onChange={handleFileChange}
           accept="image/*"
-          multiple
           style={{ display: 'none' }}
         />
         
@@ -533,41 +591,27 @@ const FrameComposer: React.FC = () => {
               marginBottom: 8,
               lineHeight: '15px'
             }}>
-              Visual References {imageUrls.length > 0 && `(${imageUrls.length}/4)`}
+              Visual References {filledSlotCount > 0 && `(${filledSlotCount}/4)`}
             </label>
             
-            <button
-              type="button"
-              onClick={handleFileSelect}
-              disabled={imageUrls.length >= 4}
-              style={{
-                width: '100%',
-                padding: '16px',
-                borderRadius: 20,
-                background: imageUrls.length >= 4 ? '#F0EDE4' : '#FAF8F2',
-                border: '2px solid #000000',
-                color: '#000000',
-                cursor: imageUrls.length >= 4 ? 'not-allowed' : 'pointer',
-                fontSize: 24,
-                fontFamily: "'Cormorant', serif",
-                fontWeight: 600,
+            <div style={{ 
+              marginBottom: 16,
+              padding: '12px',
+              background: '#FAF8F2',
+              borderRadius: '12px',
+              border: '1px solid rgba(0,0,0,0.08)'
+            }}>
+              <p style={{
+                fontSize: 12,
+                color: '#6B7280',
+                fontFamily: "'Inter', sans-serif",
+                margin: '0 0 12px 0',
                 textAlign: 'center',
-                letterSpacing: '10%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 8,
-                marginBottom: 16,
-                opacity: imageUrls.length >= 4 ? 0.6 : 1
-              }}
-              onMouseOver={(e) => imageUrls.length < 4 && (e.currentTarget.style.background = '#F0EDE4')}
-              onMouseOut={(e) => imageUrls.length < 4 && (e.currentTarget.style.background = '#FAF8F2')}
-            >
-              <span>+</span>
-              <span style={{ fontSize: 15 }}>
-                {imageUrls.length >= 4 ? 'Collage Full' : 'Add Image'}
-              </span>
-            </button>
+                lineHeight: 1.4
+              }}>
+                Click on any slot to add an image. Each slot has a specific role in your collage.
+              </p>
+            </div>
             
             <div style={{ 
               display: 'grid', 
@@ -581,8 +625,8 @@ const FrameComposer: React.FC = () => {
                 flexDirection: 'column', 
                 gap: 12 
               }}>
-                {renderImagePlaceholder(0)}
-                {renderImagePlaceholder(2)}
+                {renderImageSlot(0)}
+                {renderImageSlot(2)}
               </div>
 
               <div style={{ 
@@ -590,8 +634,8 @@ const FrameComposer: React.FC = () => {
                 flexDirection: 'column', 
                 gap: 12 
               }}>
-                {renderImagePlaceholder(1)}
-                {renderImagePlaceholder(3)}
+                {renderImageSlot(1)}
+                {renderImageSlot(3)}
               </div>
             </div>
           </div>
@@ -649,14 +693,14 @@ const FrameComposer: React.FC = () => {
               <button
                 type="button"
                 onClick={() => handleSubmit(false)}
-                disabled={isLoading || imageUrls.length === 0}
+                disabled={isLoading || filledSlotCount === 0}
                 style={{
                   ...updateButtonStyle,
-                  opacity: isLoading || imageUrls.length === 0 ? 0.7 : 1,
-                  cursor: isLoading || imageUrls.length === 0 ? 'not-allowed' : 'pointer'
+                  opacity: isLoading || filledSlotCount === 0 ? 0.7 : 1,
+                  cursor: isLoading || filledSlotCount === 0 ? 'not-allowed' : 'pointer'
                 }}
-                onMouseOver={(e) => !isLoading && imageUrls.length > 0 && (e.currentTarget.style.background = '#2A2A2A')}
-                onMouseOut={(e) => !isLoading && imageUrls.length > 0 && (e.currentTarget.style.background = '#1A1A1A')}
+                onMouseOver={(e) => !isLoading && filledSlotCount > 0 && (e.currentTarget.style.background = '#2A2A2A')}
+                onMouseOut={(e) => !isLoading && filledSlotCount > 0 && (e.currentTarget.style.background = '#1A1A1A')}
               >
                 {isLoading ? 'Updating...' : 'Update'}
               </button>
@@ -665,14 +709,14 @@ const FrameComposer: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => handleSubmit(false)}
-                  disabled={isSavingDraft || isPublishing || imageUrls.length === 0}
+                  disabled={isSavingDraft || isPublishing || filledSlotCount === 0}
                   style={{
                     ...draftButtonStyle,
-                    opacity: (isSavingDraft || isPublishing || imageUrls.length === 0) ? 0.7 : 1,
-                    cursor: (isSavingDraft || isPublishing || imageUrls.length === 0) ? 'not-allowed' : 'pointer'
+                    opacity: (isSavingDraft || isPublishing || filledSlotCount === 0) ? 0.7 : 1,
+                    cursor: (isSavingDraft || isPublishing || filledSlotCount === 0) ? 'not-allowed' : 'pointer'
                   }}
-                  onMouseOver={(e) => !isSavingDraft && !isPublishing && imageUrls.length > 0 && (e.currentTarget.style.background = '#F0EDE4')}
-                  onMouseOut={(e) => !isSavingDraft && !isPublishing && imageUrls.length > 0 && (e.currentTarget.style.background = '#FAF8F2')}
+                  onMouseOver={(e) => !isSavingDraft && !isPublishing && filledSlotCount > 0 && (e.currentTarget.style.background = '#F0EDE4')}
+                  onMouseOut={(e) => !isSavingDraft && !isPublishing && filledSlotCount > 0 && (e.currentTarget.style.background = '#FAF8F2')}
                 >
                   {isSavingDraft ? 'Saving...' : 'Save Draft'}
                 </button>
@@ -681,14 +725,14 @@ const FrameComposer: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => handleSubmit(true)}
-                    disabled={isPublishing || isSavingDraft || imageUrls.length === 0}
+                    disabled={isPublishing || isSavingDraft || filledSlotCount === 0}
                     style={{
                       ...publishButtonStyle,
-                      opacity: (isPublishing || isSavingDraft || imageUrls.length === 0) ? 0.7 : 1,
-                      cursor: (isPublishing || isSavingDraft || imageUrls.length === 0) ? 'not-allowed' : 'pointer'
+                      opacity: (isPublishing || isSavingDraft || filledSlotCount === 0) ? 0.7 : 1,
+                      cursor: (isPublishing || isSavingDraft || filledSlotCount === 0) ? 'not-allowed' : 'pointer'
                     }}
-                    onMouseOver={(e) => !isPublishing && !isSavingDraft && imageUrls.length > 0 && (e.currentTarget.style.background = '#2A2A2A')}
-                    onMouseOut={(e) => !isPublishing && !isSavingDraft && imageUrls.length > 0 && (e.currentTarget.style.background = '#1A1A1A')}
+                    onMouseOver={(e) => !isPublishing && !isSavingDraft && filledSlotCount > 0 && (e.currentTarget.style.background = '#2A2A2A')}
+                    onMouseOut={(e) => !isPublishing && !isSavingDraft && filledSlotCount > 0 && (e.currentTarget.style.background = '#1A1A1A')}
                   >
                     {isPublishing ? 'Publishing...' : 'Publish'}
                   </button>
