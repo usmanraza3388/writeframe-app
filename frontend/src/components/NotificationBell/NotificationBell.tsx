@@ -36,8 +36,8 @@ const NotificationBell: React.FC<{ profileId?: string }> = ({ profileId }) => {
     
     switch (notification.type) {
       case 'echo':
-        const echoMatch = message.match(/^(.*?) echoed your profile$/);
-        if (echoMatch) return { name: echoMatch[1], suffix: ' echoed your profile' };
+        const echoMatch = message.match(/^(.*?) started following you$/);
+        if (echoMatch) return { name: echoMatch[1], suffix: ' started following you' };
         break;
         
       case 'remake':

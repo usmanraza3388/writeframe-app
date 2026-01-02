@@ -110,7 +110,7 @@ export const useNotifications = () => {
       userId,
       'echo',
       'New Echo',
-      `${echoerName} echoed your profile`,
+      `${echoerName} started following you`,
       echoerId
     );
 
