@@ -1,6 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../assets/lib/supabaseClient';
-import { useNotifications } from './useNotifications'; // ADD THIS IMPORT
 
 // UPDATED: Added repost content types
 interface LikeItemParams {
@@ -10,7 +9,6 @@ interface LikeItemParams {
 
 export const useLikeItem = () => {
   const queryClient = useQueryClient();
-  const { sendNotification } = useNotifications(); // ADD THIS HOOK
 
   return useMutation({
     mutationFn: async ({ content_type, content_id }: LikeItemParams) => {
@@ -62,33 +60,6 @@ export const useLikeItem = () => {
           id: content_id,
           column_name: 'like_count'
         });
-
-        // ADDED: Send notification for new likes (not unlikes)
-        try {
-          // Get content owner and title for notification
-          const { data: contentData } = await supabase
-            .from(mainTable)
-            .select('user_id, title')
-            .eq('id', content_id)
-            .single();
-
-          if (contentData) {
-            // Don't send notification if user is liking their own content
-            if (contentData.user_id !== user.id) {
-              await sendNotification({
-                type: 'like',
-                userId: contentData.user_id, // Content owner
-                likerId: user.id, // Current user who liked
-                contentId: content_id,
-                contentTitle: contentData.title || 'Untitled',
-                contentType: isRepost ? 'repost' : (baseType as 'scene' | 'monologue' | 'character' | 'frame')
-              });
-            }
-          }
-        } catch (notificationError) {
-          console.error('Failed to send like notification:', notificationError);
-          // Don't fail the like operation if notification fails
-        }
       }
     },
     onSuccess: (_, variables) => {

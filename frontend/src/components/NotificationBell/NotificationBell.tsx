@@ -46,24 +46,13 @@ const NotificationBell: React.FC<{ profileId?: string }> = ({ profileId }) => {
         break;
         
       case 'comment':
-        const commentMatch = message.match(/^(.*?) commented on your (scene|frame|character|monologue|repost) "(.*)"$/);
-        if (commentMatch) return { 
-          name: commentMatch[1], 
-          suffix: ` commented on your ${commentMatch[2]} "${commentMatch[3]}"` 
-        };
+        const commentMatch = message.match(/^(.*?) commented on your scene "(.*)"$/);
+        if (commentMatch) return { name: commentMatch[1], suffix: ` commented on your scene "${commentMatch[2]}"` };
         break;
         
       case 'follow':
         const followMatch = message.match(/^(.*?) started following you$/);
         if (followMatch) return { name: followMatch[1], suffix: ' started following you' };
-        break;
-        
-      case 'like':
-        const likeMatch = message.match(/^(.*?) liked your (scene|frame|character|monologue|repost) "(.*)"$/);
-        if (likeMatch) return { 
-          name: likeMatch[1], 
-          suffix: ` liked your ${likeMatch[2]} "${likeMatch[3]}"` 
-        };
         break;
         
       case 'whisper':
@@ -184,8 +173,6 @@ const NotificationBell: React.FC<{ profileId?: string }> = ({ profileId }) => {
         return '🎬';
       case 'comment':
         return '💬';
-      case 'like':
-        return '❤️';
       case 'follow':
         return '👤';
       default:

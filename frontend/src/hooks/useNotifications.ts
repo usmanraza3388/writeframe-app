@@ -3,7 +3,7 @@ import { useCallback } from 'react';
 import { supabase } from '../assets/lib/supabaseClient';
 
 // Notification types
-export type NotificationType = 'echo' | 'remake' | 'comment' | 'follow' | 'whisper' | 'like';
+export type NotificationType = 'echo' | 'remake' | 'comment' | 'follow' | 'whisper';
 
 // Notification payload interfaces - REMOVED name fields
 export interface EchoNotification {
@@ -24,18 +24,8 @@ export interface CommentNotification {
   type: 'comment';
   userId: string;
   commenterId: string;
-  contentId: string;
-  contentTitle: string;
-  contentType: 'scene' | 'frame' | 'character' | 'monologue' | 'repost';
-}
-
-export interface LikeNotification {
-  type: 'like';
-  userId: string;
-  likerId: string;
-  contentId: string;
-  contentTitle: string;
-  contentType: 'scene' | 'frame' | 'character' | 'monologue' | 'repost';
+  sceneId: string;
+  sceneTitle: string;
 }
 
 export interface PromptEmailNotification {
@@ -51,7 +41,7 @@ export interface WhisperNotification {
   messagePreview: string;
 }
 
-export type NotificationData = EchoNotification | RemakeNotification | CommentNotification | LikeNotification | PromptEmailNotification | WhisperNotification;
+export type NotificationData = EchoNotification | RemakeNotification | CommentNotification | PromptEmailNotification | WhisperNotification;
 
 // Enhanced notification service with database integration
 export const useNotifications = () => {
@@ -192,74 +182,6 @@ export const useNotifications = () => {
     return dbSuccess;
   }, [saveNotificationToDB, getProfileName]);
 
-  // Notify about comments
-  const notifyComment = useCallback(async (
-    userId: string, 
-    commenterId: string, 
-    contentId: string,
-    contentTitle: string,
-    contentType: string
-  ) => {
-    const commenterName = await getProfileName(commenterId);
-    
-    console.log(`📢 COMMENT NOTIFICATION: ${commenterName} commented on your ${contentType} "${contentTitle}"`);
-    
-    const dbSuccess = await saveNotificationToDB(
-      userId,
-      'comment',
-      'New Comment',
-      `${commenterName} commented on your ${contentType} "${contentTitle}"`,
-      commenterId
-    );
-
-    if (!dbSuccess) {
-      console.log('📊 Comment notification fallback:', { 
-        userId, 
-        commenterName, 
-        commenterId, 
-        contentId, 
-        contentTitle,
-        contentType 
-      });
-    }
-    
-    return dbSuccess;
-  }, [saveNotificationToDB, getProfileName]);
-
-  // Notify about likes
-  const notifyLike = useCallback(async (
-    userId: string, 
-    likerId: string, 
-    contentId: string,
-    contentTitle: string,
-    contentType: string
-  ) => {
-    const likerName = await getProfileName(likerId);
-    
-    console.log(`📢 LIKE NOTIFICATION: ${likerName} liked your ${contentType} "${contentTitle}"`);
-    
-    const dbSuccess = await saveNotificationToDB(
-      userId,
-      'like',
-      'New Like',
-      `${likerName} liked your ${contentType} "${contentTitle}"`,
-      likerId
-    );
-
-    if (!dbSuccess) {
-      console.log('📊 Like notification fallback:', { 
-        userId, 
-        likerName, 
-        likerId, 
-        contentId, 
-        contentTitle,
-        contentType 
-      });
-    }
-    
-    return dbSuccess;
-  }, [saveNotificationToDB, getProfileName]);
-
   // Send prompt emails - STUB FOR NOW (MVP)
   const sendPromptEmail = useCallback((userEmail: string, prompt: string) => {
     console.log(`📧 PROMPT EMAIL: Would send to ${userEmail}`);
@@ -333,31 +255,13 @@ export const useNotifications = () => {
     }
   }, []);
 
-  // Generic notification sender
+  // Generic notification sender - UPDATED: Remove name parameters
   const sendNotification = useCallback(async (data: NotificationData) => {
     switch (data.type) {
       case 'echo':
         return await notifyEcho(data.userId, data.echoerId);
       case 'remake':
         return await notifyRemake(data.userId, data.remakerId, data.sceneId, data.sceneTitle);
-      case 'comment':
-        const commentData = data as CommentNotification;
-        return await notifyComment(
-          commentData.userId, 
-          commentData.commenterId, 
-          commentData.contentId,
-          commentData.contentTitle,
-          commentData.contentType
-        );
-      case 'like':
-        const likeData = data as LikeNotification;
-        return await notifyLike(
-          likeData.userId,
-          likeData.likerId,
-          likeData.contentId,
-          likeData.contentTitle,
-          likeData.contentType
-        );
       case 'whisper':
         return await notifyWhisper(data.userId, data.senderId, data.messagePreview);
       case 'prompt_email':
@@ -366,14 +270,12 @@ export const useNotifications = () => {
         console.warn('Unknown notification type:', data);
         return false;
     }
-  }, [notifyEcho, notifyRemake, notifyComment, notifyLike, notifyWhisper, sendPromptEmail]);
+  }, [notifyEcho, notifyRemake, notifyWhisper, sendPromptEmail]);
 
   return {
     notifyEcho,
     notifyRemake,
     notifyWhisper,
-    notifyComment,
-    notifyLike,
     sendPromptEmail,
     sendNotification,
     getUserNotifications,
