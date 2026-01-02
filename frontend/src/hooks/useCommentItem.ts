@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../assets/lib/supabaseClient';
+import { useNotifications } from './useNotifications'; // ADD THIS IMPORT
 
 // UPDATED: Added repost content types
 interface CommentItemParams {
@@ -10,6 +11,7 @@ interface CommentItemParams {
 
 export const useCommentItem = () => {
   const queryClient = useQueryClient();
+  const { sendNotification } = useNotifications(); // ADD THIS HOOK
 
   return useMutation({
     mutationFn: async ({ content_type, content_id, content }: CommentItemParams) => {
@@ -39,6 +41,33 @@ export const useCommentItem = () => {
         id: content_id,
         column_name: 'comment_count'
       });
+
+      // ADDED: Send notification for comments
+      try {
+        // Get content owner and title for notification
+        const { data: contentData } = await supabase
+          .from(mainTable)
+          .select('user_id, title')
+          .eq('id', content_id)
+          .single();
+
+        if (contentData) {
+          // Don't send notification if user is commenting on their own content
+          if (contentData.user_id !== user.id) {
+            await sendNotification({
+              type: 'comment',
+              userId: contentData.user_id, // Content owner
+              commenterId: user.id, // Current user who commented
+              contentId: content_id,
+              contentTitle: contentData.title || 'Untitled',
+              contentType: isRepost ? 'repost' : (baseType as 'scene' | 'monologue' | 'character' | 'frame')
+            });
+          }
+        }
+      } catch (notificationError) {
+        console.error('Failed to send comment notification:', notificationError);
+        // Don't fail the comment operation if notification fails
+      }
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['comments', variables.content_type, variables.content_id] });
