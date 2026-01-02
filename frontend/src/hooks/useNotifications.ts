@@ -109,7 +109,7 @@ export const useNotifications = () => {
     const dbSuccess = await saveNotificationToDB(
       userId,
       'echo',
-      'New Echo',
+      'New Follower',
       `${echoerName} started following you`,
       echoerId
     );
