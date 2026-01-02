@@ -30,7 +30,7 @@ const NotificationBell: React.FC<{ profileId?: string }> = ({ profileId }) => {
     }
   };
 
-  // ADDED: Helper function to extract clickable name from message
+  // UPDATED: Helper function to extract clickable name from message
   const getClickableMessage = (notification: any) => {
     const message = notification.message;
     
@@ -46,8 +46,21 @@ const NotificationBell: React.FC<{ profileId?: string }> = ({ profileId }) => {
         break;
         
       case 'comment':
-        const commentMatch = message.match(/^(.*?) commented on your scene "(.*)"$/);
-        if (commentMatch) return { name: commentMatch[1], suffix: ` commented on your scene "${commentMatch[2]}"` };
+        // UPDATED: Handle generic comment format for all content types
+        const commentMatch = message.match(/^(.*?) commented on your (.*?): "(.*)"$/);
+        if (commentMatch) return { 
+          name: commentMatch[1], 
+          suffix: ` commented on your ${commentMatch[2]}: "${commentMatch[3]}"` 
+        };
+        break;
+        
+      case 'like':
+        // NEW: Handle like notification format
+        const likeMatch = message.match(/^(.*?) liked your (.*?): "(.*)"$/);
+        if (likeMatch) return { 
+          name: likeMatch[1], 
+          suffix: ` liked your ${likeMatch[2]}: "${likeMatch[3]}"` 
+        };
         break;
         
       case 'follow':
@@ -165,6 +178,7 @@ const NotificationBell: React.FC<{ profileId?: string }> = ({ profileId }) => {
     return date.toLocaleDateString();
   };
 
+  // UPDATED: Added icon for like notifications
   const getNotificationIcon = (type: string) => {
     switch (type) {
       case 'echo':
@@ -173,8 +187,12 @@ const NotificationBell: React.FC<{ profileId?: string }> = ({ profileId }) => {
         return '🎬';
       case 'comment':
         return '💬';
+      case 'like':
+        return '❤️'; // NEW: Added heart icon for likes
       case 'follow':
         return '👤';
+      case 'whisper':
+        return '💭';
       default:
         return '🔔';
     }

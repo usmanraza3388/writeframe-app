@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../assets/lib/supabaseClient';
+import { useNotifications } from './useNotifications'; // ADDED: Import useNotifications
 
 // UPDATED: Added repost content types
 interface CommentItemParams {
@@ -10,6 +11,7 @@ interface CommentItemParams {
 
 export const useCommentItem = () => {
   const queryClient = useQueryClient();
+  const { notifyComment } = useNotifications(); // ADDED: Get notifyComment function
 
   return useMutation({
     mutationFn: async ({ content_type, content_id, content }: CommentItemParams) => {
@@ -39,6 +41,19 @@ export const useCommentItem = () => {
         id: content_id,
         column_name: 'comment_count'
       });
+
+      // ADDED: Trigger comment notification (fire-and-forget)
+      // Using setTimeout to ensure it runs after mutation completes
+      // and doesn't block or interfere with the mutation flow
+      if (notifyComment) {
+        setTimeout(() => {
+          notifyComment(user.id, content_type, content_id)
+            .catch(err => {
+              // Log error but don't throw - notification failure shouldn't break comment functionality
+              console.error('Failed to send comment notification:', err);
+            });
+        }, 0);
+      }
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['comments', variables.content_type, variables.content_id] });
