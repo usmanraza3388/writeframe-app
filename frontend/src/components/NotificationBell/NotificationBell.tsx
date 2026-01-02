@@ -46,8 +46,8 @@ const NotificationBell: React.FC<{ profileId?: string }> = ({ profileId }) => {
         break;
         
       case 'comment':
-        // UPDATED: Handle generic comment format for all content types
-        const commentMatch = message.match(/^(.*?) commented on your (.*?): "(.*)"$/);
+        // FIXED: Handle both "commented on your character:" and "commented on your repost:"
+        const commentMatch = message.match(/^(.*?) commented on your (repost|scene|character|frame|monologue):\s*"(.*)"$/);
         if (commentMatch) return { 
           name: commentMatch[1], 
           suffix: ` commented on your ${commentMatch[2]}: "${commentMatch[3]}"` 
@@ -55,8 +55,8 @@ const NotificationBell: React.FC<{ profileId?: string }> = ({ profileId }) => {
         break;
         
       case 'like':
-        // NEW: Handle like notification format
-        const likeMatch = message.match(/^(.*?) liked your (.*?): "(.*)"$/);
+        // FIXED: Handle both "liked your character:" and "liked your repost:"
+        const likeMatch = message.match(/^(.*?) liked your (repost|scene|character|frame|monologue):\s*"(.*)"$/);
         if (likeMatch) return { 
           name: likeMatch[1], 
           suffix: ` liked your ${likeMatch[2]}: "${likeMatch[3]}"` 
