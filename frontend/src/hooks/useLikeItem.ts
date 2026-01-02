@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../assets/lib/supabaseClient';
+import { useNotifications } from './useNotifications'; // ADD THIS IMPORT
 
 // UPDATED: Added repost content types
 interface LikeItemParams {
@@ -9,6 +10,7 @@ interface LikeItemParams {
 
 export const useLikeItem = () => {
   const queryClient = useQueryClient();
+  const { notifyLike } = useNotifications(); // ADD THIS LINE
 
   return useMutation({
     mutationFn: async ({ content_type, content_id }: LikeItemParams) => {
@@ -60,6 +62,17 @@ export const useLikeItem = () => {
           id: content_id,
           column_name: 'like_count'
         });
+
+        // ADD NOTIFICATION TRIGGER HERE
+        if (notifyLike) {
+          // Fire-and-forget approach
+          setTimeout(() => {
+            notifyLike(user.id, content_type, content_id)
+              .catch(err => {
+                console.error('Failed to send like notification:', err);
+              });
+          }, 0);
+        }
       }
     },
     onSuccess: (_, variables) => {
