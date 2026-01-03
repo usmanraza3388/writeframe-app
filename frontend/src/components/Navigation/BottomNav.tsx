@@ -3,6 +3,7 @@ import React, { useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useBottomNavTour } from '../../hooks/useBottomNavTour';
+import { useUnreadWhispersCount } from '../../hooks/useUnreadWhispersCount'; // NEW IMPORT
 import TourTooltip from '../Tour/TourTooltip';
 
 const BottomNav: React.FC = () => {
@@ -26,6 +27,9 @@ const BottomNav: React.FC = () => {
     skipTour,
     completeTour
   } = useBottomNavTour();
+
+  // NEW: Get unread whispers count
+  const { count: unreadWhispersCount } = useUnreadWhispersCount();
 
   const getCurrentTargetElement = () => {
     if (!isActive || currentStep < 0) return null;
@@ -400,6 +404,7 @@ const BottomNav: React.FC = () => {
               transition: 'all 0.2s ease',
               flex: 1,
               maxWidth: '70px',
+              position: 'relative', // NEW: For badge positioning
               ...(isActive && currentStep === 1 ? {
                 backgroundColor: 'var(--background-secondary)',
                 transform: 'scale(1.05)'
@@ -417,6 +422,31 @@ const BottomNav: React.FC = () => {
             }}
           >
             <MessagesIcon active={isActivePath('/inbox')} />
+            
+            {/* NEW: Unread whispers badge */}
+            {unreadWhispersCount > 0 && (
+              <div style={{
+                position: 'absolute',
+                top: '2px',
+                right: '10px',
+                backgroundColor: '#FF4444',
+                color: 'white',
+                borderRadius: '50%',
+                width: '18px',
+                height: '18px',
+                fontSize: '10px',
+                fontWeight: 'bold',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                border: '2px solid var(--background-primary)',
+                zIndex: 1001, // Above nav but below tour
+                pointerEvents: 'none' // Don't interfere with button clicks
+              }}>
+                {unreadWhispersCount > 9 ? '9+' : unreadWhispersCount}
+              </div>
+            )}
+            
             <span style={{
               fontSize: '11px',
               fontFamily: "'Cormorant', serif",
