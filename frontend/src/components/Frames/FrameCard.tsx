@@ -163,7 +163,7 @@ const FrameCard: React.FC<FrameCardProps> = React.memo(({
   // Memoized menu options (same as SceneCard)
   const menuOptions = useMemo(() => 
     isOwner 
-      ? ['Edit', 'Delete', 'Save', 'Copy Link', 'Report']
+      ? ['Edit', 'Delete']
       : ['Save', 'Copy Link', 'Report'],
     [isOwner]
   );

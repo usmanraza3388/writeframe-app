@@ -219,7 +219,7 @@ const MonologueCard: React.FC<MonologueCardProps> = React.memo(({
   // Memoized menu options
   const menuOptions = useMemo(() => 
     isOwner 
-      ? ['Edit', 'Delete', 'Save', 'Copy Link', 'Report']
+      ? ['Edit', 'Delete']
       : ['Save', 'Copy Link', 'Report'],
     [isOwner]
   );

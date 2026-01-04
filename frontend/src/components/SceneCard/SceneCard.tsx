@@ -186,7 +186,7 @@ const SceneCard: React.FC<SceneCardProps> = React.memo(({ scene, currentUserId, 
   const hasOriginalSceneData = isRemakeScene && scene.original_scene_data;
 
   const menuOptions = isOwner 
-    ? ['Edit', 'Delete', 'Save', 'Copy Link', 'Report']
+    ? ['Edit', 'Delete']
     : ['Save', 'Copy Link', 'Report'];
 
   // ADDED: Image URL helper function
