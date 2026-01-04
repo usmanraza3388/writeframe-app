@@ -8,12 +8,23 @@ interface RemakeEditorProps {
   onCancel: () => void;
 }
 
+// ADDED: Same image URL helper function from SceneCard
+const getImageUrl = (imagePath: string) => {
+  if (!imagePath) return '';
+  // Check if it's already a full URL
+  if (imagePath.startsWith('http')) return imagePath;
+  return `https://ycrvsbtqmjksdbyrefek.supabase.co/storage/v1/object/public/scene-images/${imagePath}`;
+};
+
 const RemakeEditor: React.FC<RemakeEditorProps> = ({
   originalScene,
   onPost,
   onCancel
 }) => {
   const [contextText, setContextText] = useState('');
+  
+  // ADDED: Get the full image URL for display
+  const imageUrl = originalScene.image_path ? getImageUrl(originalScene.image_path) : '';
 
   const handlePost = () => {
     if (contextText.trim()) {
@@ -82,25 +93,51 @@ const RemakeEditor: React.FC<RemakeEditorProps> = ({
           }}>
             {originalScene.title}
           </div>
-          {originalScene.image_path && (
+          
+          {/* FIXED: Use the full image URL */}
+          {imageUrl && (
             <div style={{
               width: '100%',
               height: '120px',
               borderRadius: '8px',
               overflow: 'hidden',
-              marginBottom: '8px'
+              marginBottom: '8px',
+              position: 'relative'
             }}>
               <img 
-                src={originalScene.image_path} 
+                src={imageUrl} 
                 alt="Original scene"
                 style={{
                   width: '100%',
                   height: '100%',
                   objectFit: 'cover'
                 }}
+                onError={(e) => {
+                  // Fallback if image fails to load
+                  console.error('Failed to load image:', imageUrl);
+                  e.currentTarget.style.display = 'none';
+                }}
               />
+              {/* ADDED: Loading state */}
+              <div style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                backgroundColor: '#FAF8F2',
+                color: '#55524F',
+                fontFamily: 'Playfair Display, serif',
+                fontSize: '14px'
+              }}>
+                Loading image...
+              </div>
             </div>
           )}
+          
           <div style={{
             fontFamily: 'Playfair Display, serif',
             fontSize: '14px',
