@@ -1,4 +1,4 @@
-// RemakeEditor.tsx - FIXED VERSION
+// RemakeEditor.tsx - FIXED VERSION (without warning)
 import React, { useState, useEffect } from 'react';
 import type { Scene } from '../../utils/scenes';
 
@@ -180,7 +180,7 @@ const RemakeEditor: React.FC<RemakeEditorProps> = ({
                   setImageLoaded(true);
                   setImageError(false);
                 }}
-                onError={(e) => {
+                onError={() => {
                   console.error('Failed to load image in RemakeEditor:', {
                     url: imageUrl,
                     imagePath: originalScene.image_path,
