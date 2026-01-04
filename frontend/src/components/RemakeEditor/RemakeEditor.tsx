@@ -1,4 +1,4 @@
-// RemakeEditor.tsx - FIXED VERSION (without warning)
+// RemakeEditor.tsx - WITH crossOrigin FIX FOR MOBILE
 import React, { useState, useEffect } from 'react';
 import type { Scene } from '../../utils/scenes';
 
@@ -167,9 +167,11 @@ const RemakeEditor: React.FC<RemakeEditorProps> = ({
                 </div>
               )}
               
+              {/* FIXED: Added crossOrigin="anonymous" for mobile CORS issues */}
               <img 
                 src={imageUrl} 
                 alt="Original scene"
+                crossOrigin="anonymous"
                 style={{
                   width: '100%',
                   height: '100%',
@@ -184,7 +186,9 @@ const RemakeEditor: React.FC<RemakeEditorProps> = ({
                   console.error('Failed to load image in RemakeEditor:', {
                     url: imageUrl,
                     imagePath: originalScene.image_path,
-                    sceneId: originalScene.id
+                    sceneId: originalScene.id,
+                    userAgent: navigator.userAgent,
+                    isMobile: /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent)
                   });
                   setImageError(true);
                   setImageLoaded(false);
