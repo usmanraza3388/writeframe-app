@@ -1,5 +1,5 @@
-// RemakeEditor.tsx
-import React, { useState } from 'react';
+// RemakeEditor.tsx - FIXED VERSION
+import React, { useState, useEffect } from 'react';
 import type { Scene } from '../../utils/scenes';
 
 interface RemakeEditorProps {
@@ -8,11 +8,15 @@ interface RemakeEditorProps {
   onCancel: () => void;
 }
 
-// ADDED: Same image URL helper function from SceneCard
-const getImageUrl = (imagePath: string) => {
+// FIXED: Match SceneCard's exact getImageUrl function
+const getImageUrl = (imagePath: string | undefined | null): string => {
   if (!imagePath) return '';
+  
   // Check if it's already a full URL
   if (imagePath.startsWith('http')) return imagePath;
+  
+  // FIXED: Use the EXACT same URL construction as SceneCard
+  // This matches SceneCard.tsx line 87-92
   return `https://ycrvsbtqmjksdbyrefek.supabase.co/storage/v1/object/public/scene-images/${imagePath}`;
 };
 
@@ -22,9 +26,17 @@ const RemakeEditor: React.FC<RemakeEditorProps> = ({
   onCancel
 }) => {
   const [contextText, setContextText] = useState('');
+  const [imageError, setImageError] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState(false);
   
-  // ADDED: Get the full image URL for display
+  // FIXED: Get image URL using the same function as SceneCard
   const imageUrl = originalScene.image_path ? getImageUrl(originalScene.image_path) : '';
+
+  // Reset image states when URL changes
+  useEffect(() => {
+    setImageError(false);
+    setImageLoaded(false);
+  }, [imageUrl]);
 
   const handlePost = () => {
     if (contextText.trim()) {
@@ -47,10 +59,13 @@ const RemakeEditor: React.FC<RemakeEditorProps> = ({
     }}>
       <div style={{
         width: '375px',
+        maxWidth: '90vw',
         backgroundColor: '#FAF8F2',
         borderRadius: '12px',
         padding: '20px',
-        boxSizing: 'border-box'
+        boxSizing: 'border-box',
+        maxHeight: '90vh',
+        overflow: 'auto'
       }}>
         {/* Header */}
         <div style={{
@@ -94,47 +109,104 @@ const RemakeEditor: React.FC<RemakeEditorProps> = ({
             {originalScene.title}
           </div>
           
-          {/* FIXED: Use the full image URL */}
-          {imageUrl && (
+          {/* Image with proper loading states */}
+          {imageUrl ? (
             <div style={{
               width: '100%',
               height: '120px',
               borderRadius: '8px',
               overflow: 'hidden',
               marginBottom: '8px',
-              position: 'relative'
+              position: 'relative',
+              backgroundColor: '#FAF8F2'
             }}>
+              {!imageLoaded && !imageError && (
+                <div style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: '#55524F',
+                  fontFamily: 'Playfair Display, serif',
+                  fontSize: '14px'
+                }}>
+                  Loading image...
+                </div>
+              )}
+              
+              {imageError && (
+                <div style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  backgroundColor: '#FAF8F2',
+                  color: '#55524F',
+                  fontFamily: 'Playfair Display, serif',
+                  fontSize: '14px',
+                  flexDirection: 'column',
+                  gap: '8px'
+                }}>
+                  <div>Image not available</div>
+                  <div style={{
+                    fontSize: '12px',
+                    color: '#999',
+                    textAlign: 'center',
+                    padding: '0 10px'
+                  }}>
+                    Original scene visual could not be loaded
+                  </div>
+                </div>
+              )}
+              
               <img 
                 src={imageUrl} 
                 alt="Original scene"
                 style={{
                   width: '100%',
                   height: '100%',
-                  objectFit: 'cover'
+                  objectFit: 'cover',
+                  display: imageLoaded && !imageError ? 'block' : 'none'
+                }}
+                onLoad={() => {
+                  setImageLoaded(true);
+                  setImageError(false);
                 }}
                 onError={(e) => {
-                  // Fallback if image fails to load
-                  console.error('Failed to load image:', imageUrl);
-                  e.currentTarget.style.display = 'none';
+                  console.error('Failed to load image in RemakeEditor:', {
+                    url: imageUrl,
+                    imagePath: originalScene.image_path,
+                    sceneId: originalScene.id
+                  });
+                  setImageError(true);
+                  setImageLoaded(false);
                 }}
               />
-              {/* ADDED: Loading state */}
-              <div style={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                backgroundColor: '#FAF8F2',
-                color: '#55524F',
-                fontFamily: 'Playfair Display, serif',
-                fontSize: '14px'
-              }}>
-                Loading image...
-              </div>
+            </div>
+          ) : (
+            <div style={{
+              width: '100%',
+              height: '120px',
+              borderRadius: '8px',
+              marginBottom: '8px',
+              backgroundColor: '#FAF8F2',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: '#55524F',
+              fontFamily: 'Playfair Display, serif',
+              fontSize: '14px',
+              border: '1px dashed #E5E5E5'
+            }}>
+              No image available
             </div>
           )}
           
@@ -142,9 +214,11 @@ const RemakeEditor: React.FC<RemakeEditorProps> = ({
             fontFamily: 'Playfair Display, serif',
             fontSize: '14px',
             color: '#55524F',
-            lineHeight: '1.4'
+            lineHeight: '1.4',
+            whiteSpace: 'pre-wrap',
+            wordBreak: 'break-word'
           }}>
-            {originalScene.description}
+            {originalScene.description || 'No description provided'}
           </div>
         </div>
 
@@ -184,8 +258,11 @@ const RemakeEditor: React.FC<RemakeEditorProps> = ({
               color: '#000000',
               fontFamily: 'Arial, sans-serif',
               fontSize: '14px',
-              cursor: 'pointer'
+              cursor: 'pointer',
+              transition: 'all 0.2s ease'
             }}
+            onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#f5f5f5'}
+            onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'white'}
           >
             Cancel
           </button>
@@ -201,7 +278,18 @@ const RemakeEditor: React.FC<RemakeEditorProps> = ({
               color: 'white',
               fontFamily: 'Arial, sans-serif',
               fontSize: '14px',
-              cursor: contextText.trim() ? 'pointer' : 'not-allowed'
+              cursor: contextText.trim() ? 'pointer' : 'not-allowed',
+              transition: 'all 0.2s ease'
+            }}
+            onMouseOver={(e) => {
+              if (contextText.trim()) {
+                e.currentTarget.style.backgroundColor = '#333333';
+              }
+            }}
+            onMouseOut={(e) => {
+              if (contextText.trim()) {
+                e.currentTarget.style.backgroundColor = '#1C1C1C';
+              }
             }}
           >
             Post
