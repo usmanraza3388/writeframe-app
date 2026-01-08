@@ -101,7 +101,7 @@ const CatalystCard: React.FC<CatalystCardProps> = ({ onSelect, onDismiss }) => {
 
         {/* Three Catalyst Options */}
         <div style={optionsContainerStyle}>
-          {catalystOptions.map((option, index) => (
+          {catalystOptions.map((option) => (
             <button
               key={option.type}
               onClick={() => handleOptionClick(option.type, option.prompt)}
