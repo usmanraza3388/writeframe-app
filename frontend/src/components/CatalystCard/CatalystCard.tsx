@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 interface CatalystCardProps {
@@ -8,6 +8,36 @@ interface CatalystCardProps {
 
 const CatalystCard: React.FC<CatalystCardProps> = ({ onSelect, onDismiss }) => {
   const navigate = useNavigate();
+
+  // Add CSS styles for animations
+  useEffect(() => {
+    const catalystStyles = `
+      @keyframes fadeInUp {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @keyframes pulse {
+        0% { opacity: 0.5; }
+        50% { opacity: 1; }
+        100% { opacity: 0.5; }
+      }
+    `;
+
+    const style = document.createElement('style');
+    style.textContent = catalystStyles;
+    document.head.appendChild(style);
+
+    return () => {
+      document.head.removeChild(style);
+    };
+  }, []);
 
   const catalystOptions = [
     {
@@ -416,30 +446,5 @@ const hexToRgb = (hex: string): string => {
   const b = parseInt(hex.slice(5, 7), 16);
   return `${r}, ${g}, ${b}`;
 };
-
-// Add CSS animations
-const catalystStyles = `
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes pulse {
-  0% { opacity: 0.5; }
-  50% { opacity: 1; }
-  100% { opacity: 0.5; }
-}
-
-/* Inject styles */
-const style = document.createElement('style');
-style.textContent = catalystStyles;
-document.head.appendChild(style);
-`;
 
 export default CatalystCard;
