@@ -45,6 +45,15 @@ export default function CharacterComposer() {
   
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // ADDED: CatalystCard prompt handling
+  const prompt = searchParams.get('prompt');
+  useEffect(() => {
+    if (prompt) {
+      updateField('tagline', decodeURIComponent(prompt));
+      localStorage.setItem('user_has_created', 'true');
+    }
+  }, [prompt]);
+
   // ADD: Handle prompt selection
   const handlePromptSelect = (prompt: any) => {
     if (prompt.name) {

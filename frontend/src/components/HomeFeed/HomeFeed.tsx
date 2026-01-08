@@ -22,6 +22,9 @@ import { feedActions } from '../../utils/feedActions';
 import GettingStartedModal from '../GettingStartedModal/GettingStartedModal';
 import { useOnboarding } from '../../hooks/useOnboarding';
 
+// ADDED: Import CatalystCard
+import CatalystCard from '../CatalystCard/CatalystCard';
+
 // ADDED: Skeleton Loading Components
 const CardSkeleton: React.FC = () => (
   <div style={{
@@ -100,6 +103,17 @@ const skeletonStyles = `
   50% { opacity: 0.5; }
   100% { opacity: 1; }
 }
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
 `;
 
 type FeedItem = 
@@ -129,6 +143,9 @@ const HomeFeed: React.FC = () => {
   // ADDED: Pagination state
   const [visibleCount, setVisibleCount] = useState(10);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
+
+  // ADDED: Catalyst Card state
+  const [showCatalystCard, setShowCatalystCard] = useState(false);
 
   // ADDED: Infinite scroll handler
   const handleScroll = useCallback(() => {
@@ -164,6 +181,48 @@ const HomeFeed: React.FC = () => {
       document.head.removeChild(style);
     };
   }, []);
+
+  // ADDED: Catalyst Card timing logic
+  useEffect(() => {
+    // Don't show if user has already created something
+    const hasCreated = localStorage.getItem('user_has_created') === 'true';
+    if (hasCreated) return;
+    
+    // Don't show if already shown before
+    const alreadyShown = localStorage.getItem('catalyst_card_shown') === 'true';
+    if (alreadyShown) return;
+    
+    // Wait for tour to complete
+    const tourCompleted = localStorage.getItem('writeframe_bottomnav_tour_completed') === 'true';
+    if (!tourCompleted) return;
+    
+    // After tour, wait for user to scroll a bit
+    const handleScrollForCatalyst = () => {
+      // Wait for user to scroll past 3-4 items (approx 600px)
+      if (window.scrollY > 600 && !showCatalystCard) {
+        // Small delay for smoothness
+        setTimeout(() => {
+          setShowCatalystCard(true);
+        }, 300);
+        window.removeEventListener('scroll', handleScrollForCatalyst);
+      }
+    };
+    
+    // Add scroll listener
+    window.addEventListener('scroll', handleScrollForCatalyst);
+    
+    // Also show after 60 seconds of being on page (if user doesn't scroll much)
+    const autoShowTimer = setTimeout(() => {
+      if (!showCatalystCard && document.documentElement.scrollHeight > window.innerHeight * 2) {
+        setShowCatalystCard(true);
+      }
+    }, 60000);
+    
+    return () => {
+      window.removeEventListener('scroll', handleScrollForCatalyst);
+      clearTimeout(autoShowTimer);
+    };
+  }, [showCatalystCard]);
 
   // FIXED: Modal completion handler - NO DELAY NEEDED (modal handles animation)
   const handleModalComplete = () => {
@@ -385,6 +444,22 @@ const HomeFeed: React.FC = () => {
         }, 2000);
       }
     }
+  }, []);
+
+  // ADDED: Handle Catalyst Card selection
+  const handleCatalystSelect = useCallback((type: 'scene' | 'character' | 'monologue' | 'frame', prompt: string) => {
+    // Mark as shown
+    localStorage.setItem('catalyst_card_shown', 'true');
+    setShowCatalystCard(false);
+    
+    // Navigate to appropriate composer with prompt
+    navigate(`/compose-${type}?prompt=${encodeURIComponent(prompt)}`);
+  }, [navigate]);
+
+  // ADDED: Handle Catalyst Card dismiss
+  const handleCatalystDismiss = useCallback(() => {
+    localStorage.setItem('catalyst_card_shown', 'true');
+    setShowCatalystCard(false);
   }, []);
 
   const mixedFeed: FeedItem[] = useMemo(() => {
@@ -656,6 +731,14 @@ const HomeFeed: React.FC = () => {
             }}>
               — {mixedFeed.length > 50 ? "You've reached the end for now" : "That's all for now"} —
             </div>
+          )}
+
+          {/* ADDED: Catalyst Card */}
+          {showCatalystCard && (
+            <CatalystCard 
+              onSelect={handleCatalystSelect}
+              onDismiss={handleCatalystDismiss}
+            />
           )}
         </div>
 

@@ -43,6 +43,15 @@ const FrameComposer: React.FC = () => {
   // NEW: Track which slot is currently being targeted for upload
   const [targetSlotIndex, setTargetSlotIndex] = useState<number | null>(null);
 
+  // ADDED: CatalystCard prompt handling
+  const prompt = searchParams.get('prompt');
+  useEffect(() => {
+    if (prompt) {
+      setMoodDescription(decodeURIComponent(prompt));
+      localStorage.setItem('user_has_created', 'true');
+    }
+  }, [prompt]);
+
   const handlePromptSelect = (prompt: any) => {
     if (prompt.mood) {
       setMoodDescription(prompt.mood);

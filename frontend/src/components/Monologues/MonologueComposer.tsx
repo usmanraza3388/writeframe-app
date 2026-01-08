@@ -28,6 +28,15 @@ export const MonologueComposer: React.FC = () => {
   
   const { createMonologue, isLoading, error } = useMonologueComposer();
 
+  // ADDED: CatalystCard prompt handling
+  const prompt = searchParams.get('prompt');
+  useEffect(() => {
+    if (prompt) {
+      setTitle(decodeURIComponent(prompt));
+      localStorage.setItem('user_has_created', 'true');
+    }
+  }, [prompt]);
+
   const handlePromptSelect = (prompt: any) => {
     if (prompt.title) {
       setTitle(prompt.title);

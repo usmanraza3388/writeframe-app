@@ -94,6 +94,15 @@ export const SceneComposer: React.FC = () => {
   const { createScene, loading, error } = useSceneComposer();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // ADDED: CatalystCard prompt handling
+  const prompt = searchParams.get('prompt');
+  useEffect(() => {
+    if (prompt) {
+      setContent(decodeURIComponent(prompt));
+      localStorage.setItem('user_has_created', 'true');
+    }
+  }, [prompt]);
+
   const handlePromptSelect = (prompt: any) => {
     if (prompt.title) {
       setTitle(prompt.title);
