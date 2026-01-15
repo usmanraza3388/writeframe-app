@@ -1,3 +1,4 @@
+here is the useNotification.ts - update it and give me full file back and resolve these issues:
 // src/hooks/useNotifications.ts
 import { useCallback } from 'react';
 import { supabase } from '../assets/lib/supabaseClient';
@@ -183,7 +184,7 @@ export const useNotifications = () => {
     type: NotificationType,
     title: string,
     message: string,
-    relatedEntityId?: string  // This should ALWAYS be the actor's user ID (commenter, liker, follower, etc.)
+    relatedEntityId?: string
   ) => {
     try {
       const { data, error } = await supabase
@@ -216,13 +217,13 @@ export const useNotifications = () => {
     
     console.log(`📢 ECHO NOTIFICATION: ${echoerName} echoed user ${userId}`);
     
-    // Save to database - related_entity_id is the echoerId (follower's ID)
+    // Save to database
     const dbSuccess = await saveNotificationToDB(
       userId,
       'echo',
       'New Follower',
       `${echoerName} started following you`,
-      echoerId  // CORRECT: This is the actor's user ID
+      echoerId
     );
 
     // Fallback to console if DB fails
@@ -244,13 +245,13 @@ export const useNotifications = () => {
     
     console.log(`📢 REMAKE NOTIFICATION: ${remakerName} remaked your scene "${sceneTitle}"`);
     
-    // Save to database - related_entity_id is the remakerId (person who remade)
+    // Save to database
     const dbSuccess = await saveNotificationToDB(
       userId,
       'remake',
       'Scene Remade',
       `${remakerName} remade your scene "${sceneTitle}"`,
-      remakerId  // FIXED: Changed from sceneId to remakerId
+      sceneId
     );
 
     // Fallback to console if DB fails
@@ -292,13 +293,13 @@ export const useNotifications = () => {
 
       console.log(`💬 COMMENT NOTIFICATION: ${commenterName} commented on ${ownerId}'s ${contentType}`);
 
-      // Save to database - related_entity_id is the commenterId (person who commented)
+      // Save to database
       const dbSuccess = await saveNotificationToDB(
         ownerId,
         'comment',
         'New Comment',
         `${commenterName} commented on your ${contentTypeDisplay}: "${contentName}"`,
-        commenterId  // FIXED: Changed from contentId to commenterId
+        contentId
       );
 
       if (!dbSuccess) {
@@ -345,13 +346,13 @@ export const useNotifications = () => {
 
       console.log(`❤️ LIKE NOTIFICATION: ${likerName} liked ${ownerId}'s ${contentType}`);
 
-      // Save to database - related_entity_id is the likerId (person who liked)
+      // Save to database
       const dbSuccess = await saveNotificationToDB(
         ownerId,
         'like',
         'New Like',
         `${likerName} liked your ${contentTypeDisplay}: "${contentName}"`,
-        likerId  // FIXED: Changed from contentId to likerId
+        contentId
       );
 
       if (!dbSuccess) {
@@ -377,13 +378,13 @@ export const useNotifications = () => {
     
     console.log(`📢 WHISPER NOTIFICATION: ${senderName} sent a whisper to user ${userId}`);
     
-    // Save to database - related_entity_id is the senderId (person who whispered)
+    // Save to database
     const dbSuccess = await saveNotificationToDB(
       userId,
       'whisper',
       'New Whisper',
       `${senderName}: ${messagePreview}`,
-      senderId  // CORRECT: This is the actor's user ID
+      senderId
     );
 
     // Fallback to console if DB fails
