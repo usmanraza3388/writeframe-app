@@ -41,25 +41,25 @@ const NotificationBell: React.FC<{ profileId?: string }> = ({ profileId }) => {
         break;
         
       case 'remake':
-        const remakeMatch = message.match(/^(.*?) remade your scene "(.*)"$/);
-        if (remakeMatch) return { name: remakeMatch[1], suffix: ` remade your scene "${remakeMatch[2]}"` };
+        const remakeMatch = message.match(/^(.*?) remade your (.+?) "(.*)"$/);
+        if (remakeMatch) return { name: remakeMatch[1], suffix: ` remade your ${remakeMatch[2]} "${remakeMatch[3]}"` };
         break;
         
       case 'comment':
         // UPDATED: Handle generic comment format for all content types
-        const commentMatch = message.match(/^(.*?) commented on your (.*?): "(.*)"$/);
+        const commentMatch = message.match(/^(.*?) commented on your (.+?) "(.*)"$/);
         if (commentMatch) return { 
           name: commentMatch[1], 
-          suffix: ` commented on your ${commentMatch[2]}: "${commentMatch[3]}"` 
+          suffix: ` commented on your ${commentMatch[2]} "${commentMatch[3]}"` 
         };
         break;
         
       case 'like':
         // NEW: Handle like notification format
-        const likeMatch = message.match(/^(.*?) liked your (.*?): "(.*)"$/);
+        const likeMatch = message.match(/^(.*?) liked your (.+?) "(.*)"$/);
         if (likeMatch) return { 
           name: likeMatch[1], 
-          suffix: ` liked your ${likeMatch[2]}: "${likeMatch[3]}"` 
+          suffix: ` liked your ${likeMatch[2]} "${likeMatch[3]}"` 
         };
         break;
         

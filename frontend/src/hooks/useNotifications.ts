@@ -250,7 +250,7 @@ export const useNotifications = () => {
       'remake',
       'Scene Remade',
       `${remakerName} remade your scene "${sceneTitle}"`,
-      sceneId
+      remakerId
     );
 
     // Fallback to console if DB fails
@@ -298,7 +298,7 @@ export const useNotifications = () => {
         'comment',
         'New Comment',
         `${commenterName} commented on your ${contentTypeDisplay}: "${contentName}"`,
-        contentId
+        commenterId
       );
 
       if (!dbSuccess) {
@@ -351,7 +351,7 @@ export const useNotifications = () => {
         'like',
         'New Like',
         `${likerName} liked your ${contentTypeDisplay}: "${contentName}"`,
-        contentId
+        likerId
       );
 
       if (!dbSuccess) {
