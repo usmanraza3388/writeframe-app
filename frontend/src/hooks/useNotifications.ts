@@ -1,4 +1,3 @@
-here is the useNotification.ts - update it and give me full file back and resolve these issues:
 // src/hooks/useNotifications.ts
 import { useCallback } from 'react';
 import { supabase } from '../assets/lib/supabaseClient';
