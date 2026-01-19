@@ -185,71 +185,79 @@ const HomeFeed: React.FC = () => {
     };
   }, []);
 
-  // FIXED: Catalyst Card timing logic - UPDATED to be independent of tour
+  // FIXED: Catalyst Card timing logic - PROPER FIX
   useEffect(() => {
-    // Don't show if user has already created something
-    const hasCreated = localStorage.getItem('user_has_created') === 'true';
-    if (hasCreated) return;
-    
-    // Don't show if already shown before
-    const alreadyShown = localStorage.getItem('catalyst_card_shown') === 'true';
-    if (alreadyShown) return;
-    
-    // Check if user completed onboarding modal (independent of tour)
-    const onboardingCompleted = localStorage.getItem('writeframe_onboarding_complete') === 'true';
-    if (!onboardingCompleted) return;
-    
-    // Optional: Add a small delay after modal closes
-    const modalClosedTime = localStorage.getItem('writeframe_modal_closed_time');
-    const currentTime = Date.now();
-    
-    // If modal just closed, wait 2 seconds before showing CatalystCard
-    if (modalClosedTime) {
-      const timeSinceModal = currentTime - parseInt(modalClosedTime);
-      if (timeSinceModal < 2000) return; // Wait 2 seconds after modal closes
-    }
-    
-    console.log('✅ CatalystCard conditions met - waiting for user to see content');
-    
-    let scrollTimer: NodeJS.Timeout;
-    let timeoutTimer: NodeJS.Timeout;
-    
-    const handleScrollForCatalyst = () => {
-      // Clear any existing scroll timer
-      if (scrollTimer) clearTimeout(scrollTimer);
+    const checkAndShowCatalyst = () => {
+      console.log('🔍 CatalystCard: Checking conditions...');
       
-      // Wait for user to scroll past approximately 5 items (~800-1000px)
-      // This ensures user has seen enough content to be inspired
-      if (window.scrollY > 800 && !showCatalystCard && !hasShownCatalystMidFeed) {
-        console.log('📜 User has scrolled past ~5 items - showing CatalystCard mid-feed');
-        scrollTimer = setTimeout(() => {
+      // Don't show if user has already created something
+      const hasCreated = localStorage.getItem('user_has_created') === 'true';
+      if (hasCreated) {
+        console.log('❌ CatalystCard: User has created content');
+        return false;
+      }
+      
+      // Don't show if already shown before
+      const alreadyShown = localStorage.getItem('catalyst_card_shown') === 'true';
+      if (alreadyShown) {
+        console.log('❌ CatalystCard: Already shown before');
+        return false;
+      }
+      
+      // Check if user completed onboarding modal
+      const onboardingCompleted = localStorage.getItem('writeframe_onboarding_complete') === 'true';
+      if (!onboardingCompleted) {
+        console.log('❌ CatalystCard: Onboarding not completed');
+        return false;
+      }
+      
+      console.log('✅ CatalystCard: All conditions met');
+      return true;
+    };
+
+    // Only set up listeners if conditions are met
+    if (checkAndShowCatalyst() && !showCatalystCard && !hasShownCatalystMidFeed) {
+      console.log('🎯 CatalystCard: Setting up scroll/timeout listeners');
+      
+      let scrollTimer: NodeJS.Timeout;
+      let timeoutTimer: NodeJS.Timeout;
+      
+      const handleScrollForCatalyst = () => {
+        // Clear any existing scroll timer
+        if (scrollTimer) clearTimeout(scrollTimer);
+        
+        // Wait for user to scroll past approximately 3-5 items (~500px)
+        if (window.scrollY > 500 && !showCatalystCard && !hasShownCatalystMidFeed) {
+          console.log('📜 CatalystCard: User scrolled past threshold');
+          scrollTimer = setTimeout(() => {
+            console.log('✨ CatalystCard: Showing via scroll');
+            setShowCatalystCard(true);
+            setHasShownCatalystMidFeed(true);
+          }, 300);
+        }
+      };
+      
+      // Add scroll listener
+      window.addEventListener('scroll', handleScrollForCatalyst, { passive: true });
+      
+      // Also show after 30 seconds
+      timeoutTimer = setTimeout(() => {
+        if (!showCatalystCard && !hasShownCatalystMidFeed && checkAndShowCatalyst()) {
+          console.log('⏰ CatalystCard: 30-second timeout - showing');
           setShowCatalystCard(true);
           setHasShownCatalystMidFeed(true);
-          // Don't remove scroll listener yet - user might scroll more
-        }, 500); // Small delay for smoothness
-      }
-    };
-    
-    // Add scroll listener
-    window.addEventListener('scroll', handleScrollForCatalyst, { passive: true });
-    
-    // Also show after 60 seconds of being on page (if user doesn't scroll much)
-    timeoutTimer = setTimeout(() => {
-      if (!showCatalystCard && !hasShownCatalystMidFeed) {
-        console.log('⏰ 60-second timeout - showing CatalystCard');
-        setShowCatalystCard(true);
-        setHasShownCatalystMidFeed(true);
-      }
-    }, 60000); // 60 seconds
-    
-    // Check initial scroll position (in case user already scrolled)
-    handleScrollForCatalyst();
-    
-    return () => {
-      window.removeEventListener('scroll', handleScrollForCatalyst);
-      if (scrollTimer) clearTimeout(scrollTimer);
-      if (timeoutTimer) clearTimeout(timeoutTimer);
-    };
+        }
+      }, 30000);
+      
+      // Check initial scroll position
+      handleScrollForCatalyst();
+      
+      return () => {
+        window.removeEventListener('scroll', handleScrollForCatalyst);
+        if (scrollTimer) clearTimeout(scrollTimer);
+        if (timeoutTimer) clearTimeout(timeoutTimer);
+      };
+    }
   }, [showCatalystCard, hasShownCatalystMidFeed]);
 
   // FIXED: Modal completion handler - NO DELAY NEEDED (modal handles animation)
