@@ -185,7 +185,7 @@ const HomeFeed: React.FC = () => {
     };
   }, []);
 
-  // FIXED: Catalyst Card timing logic - Show after user has seen ~5 items
+  // FIXED: Catalyst Card timing logic - UPDATED to be independent of tour
   useEffect(() => {
     // Don't show if user has already created something
     const hasCreated = localStorage.getItem('user_has_created') === 'true';
@@ -195,9 +195,19 @@ const HomeFeed: React.FC = () => {
     const alreadyShown = localStorage.getItem('catalyst_card_shown') === 'true';
     if (alreadyShown) return;
     
-    // Wait for tour to complete
-    const tourCompleted = localStorage.getItem('writeframe_bottomnav_tour_completed') === 'true';
-    if (!tourCompleted) return;
+    // Check if user completed onboarding modal (independent of tour)
+    const onboardingCompleted = localStorage.getItem('writeframe_onboarding_complete') === 'true';
+    if (!onboardingCompleted) return;
+    
+    // Optional: Add a small delay after modal closes
+    const modalClosedTime = localStorage.getItem('writeframe_modal_closed_time');
+    const currentTime = Date.now();
+    
+    // If modal just closed, wait 2 seconds before showing CatalystCard
+    if (modalClosedTime) {
+      const timeSinceModal = currentTime - parseInt(modalClosedTime);
+      if (timeSinceModal < 2000) return; // Wait 2 seconds after modal closes
+    }
     
     console.log('✅ CatalystCard conditions met - waiting for user to see content');
     
