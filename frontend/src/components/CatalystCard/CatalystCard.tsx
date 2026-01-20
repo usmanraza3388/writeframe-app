@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 interface CatalystCardProps {
@@ -8,6 +8,7 @@ interface CatalystCardProps {
 
 const CatalystCard: React.FC<CatalystCardProps> = ({ onSelect, onDismiss }) => {
   const navigate = useNavigate();
+  const containerRef = useRef<HTMLDivElement>(null);
 
   // Add debug log when component mounts
   useEffect(() => {
@@ -16,6 +17,35 @@ const CatalystCard: React.FC<CatalystCardProps> = ({ onSelect, onDismiss }) => {
       onSelect: typeof onSelect, 
       onDismiss: typeof onDismiss 
     });
+    
+    // Check DOM after mount
+    setTimeout(() => {
+      console.log('🔍 CatalystCard: Checking DOM after mount');
+      if (containerRef.current) {
+        const rect = containerRef.current.getBoundingClientRect();
+        const style = window.getComputedStyle(containerRef.current);
+        console.log('📐 CatalystCard DOM details:', {
+          exists: true,
+          isConnected: containerRef.current.isConnected,
+          rect: {
+            top: rect.top,
+            left: rect.left,
+            width: rect.width,
+            height: rect.height,
+            visible: rect.width > 0 && rect.height > 0
+          },
+          computedStyle: {
+            display: style.display,
+            visibility: style.visibility,
+            opacity: style.opacity,
+            position: style.position,
+            zIndex: style.zIndex
+          }
+        });
+      } else {
+        console.log('❌ CatalystCard: containerRef is null - element not in DOM');
+      }
+    }, 100);
     
     return () => {
       console.log('🗑️ CatalystCard UNMOUNTED');
@@ -101,7 +131,7 @@ const CatalystCard: React.FC<CatalystCardProps> = ({ onSelect, onDismiss }) => {
   console.log('🎨 CatalystCard: Rendering JSX');
 
   return (
-    <div style={containerStyle}>
+    <div ref={containerRef} style={containerStyle}>
       {/* Debug indicator */}
       <div style={{
         position: 'absolute',
