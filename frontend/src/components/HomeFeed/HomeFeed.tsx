@@ -150,6 +150,23 @@ const HomeFeed: React.FC = () => {
   // ADDED: Track when to show CatalystCard mid-feed
   const [hasShownCatalystMidFeed, setHasShownCatalystMidFeed] = useState(false);
 
+  // DEBUG: Check localStorage on component mount
+  useEffect(() => {
+    console.log('🏠 HomeFeed MOUNTED');
+    console.log('📋 HomeFeed: localStorage check:', {
+      user_has_created: localStorage.getItem('user_has_created'),
+      catalyst_card_shown: localStorage.getItem('catalyst_card_shown'),
+      writeframe_onboarding_complete: localStorage.getItem('writeframe_onboarding_complete'),
+      writeframe_bottomnav_tour_completed: localStorage.getItem('writeframe_bottomnav_tour_completed')
+    });
+    
+    console.log('🏠 HomeFeed: Initial state:', {
+      showCatalystCard,
+      hasShownCatalystMidFeed,
+      showOnboarding
+    });
+  }, []);
+
   // ADDED: Infinite scroll handler
   const handleScroll = useCallback(() => {
     if (isLoadingMore) return;
@@ -185,84 +202,52 @@ const HomeFeed: React.FC = () => {
     };
   }, []);
 
-  // FIXED: Catalyst Card timing logic - PROPER FIX
+  // FIXED: Catalyst Card timing logic - DEBUG VERSION
   useEffect(() => {
-    const checkAndShowCatalyst = () => {
-      console.log('🔍 CatalystCard: Checking conditions...');
-      
-      // Don't show if user has already created something
-      const hasCreated = localStorage.getItem('user_has_created') === 'true';
-      if (hasCreated) {
-        console.log('❌ CatalystCard: User has created content');
-        return false;
-      }
-      
-      // Don't show if already shown before
-      const alreadyShown = localStorage.getItem('catalyst_card_shown') === 'true';
-      if (alreadyShown) {
-        console.log('❌ CatalystCard: Already shown before');
-        return false;
-      }
-      
-      // Check if user completed onboarding modal
-      const onboardingCompleted = localStorage.getItem('writeframe_onboarding_complete') === 'true';
-      if (!onboardingCompleted) {
-        console.log('❌ CatalystCard: Onboarding not completed');
-        return false;
-      }
-      
-      console.log('✅ CatalystCard: All conditions met');
-      return true;
-    };
-
-    // Only set up listeners if conditions are met
-    if (checkAndShowCatalyst() && !showCatalystCard && !hasShownCatalystMidFeed) {
-      console.log('🎯 CatalystCard: Setting up scroll/timeout listeners');
-      
-      let scrollTimer: NodeJS.Timeout;
-      let timeoutTimer: NodeJS.Timeout;
-      
-      const handleScrollForCatalyst = () => {
-        // Clear any existing scroll timer
-        if (scrollTimer) clearTimeout(scrollTimer);
-        
-        // Wait for user to scroll past approximately 3-5 items (~500px)
-        if (window.scrollY > 500 && !showCatalystCard && !hasShownCatalystMidFeed) {
-          console.log('📜 CatalystCard: User scrolled past threshold');
-          scrollTimer = setTimeout(() => {
-            console.log('✨ CatalystCard: Showing via scroll');
-            setShowCatalystCard(true);
-            setHasShownCatalystMidFeed(true);
-          }, 300);
-        }
-      };
-      
-      // Add scroll listener
-      window.addEventListener('scroll', handleScrollForCatalyst, { passive: true });
-      
-      // Also show after 30 seconds
-      timeoutTimer = setTimeout(() => {
-        if (!showCatalystCard && !hasShownCatalystMidFeed && checkAndShowCatalyst()) {
-          console.log('⏰ CatalystCard: 30-second timeout - showing');
-          setShowCatalystCard(true);
-          setHasShownCatalystMidFeed(true);
-        }
-      }, 30000);
-      
-      // Check initial scroll position
-      handleScrollForCatalyst();
-      
-      return () => {
-        window.removeEventListener('scroll', handleScrollForCatalyst);
-        if (scrollTimer) clearTimeout(scrollTimer);
-        if (timeoutTimer) clearTimeout(timeoutTimer);
-      };
+    console.log('🔍 HomeFeed: CatalystCard useEffect RUNNING');
+    
+    const hasCreated = localStorage.getItem('user_has_created') === 'true';
+    const alreadyShown = localStorage.getItem('catalyst_card_shown') === 'true';
+    const onboardingCompleted = localStorage.getItem('writeframe_onboarding_complete') === 'true';
+    
+    console.log('📊 HomeFeed: CatalystCard Conditions:', {
+      hasCreated,
+      alreadyShown,
+      onboardingCompleted,
+      showCatalystCard, // state
+      hasShownCatalystMidFeed // state
+    });
+    
+    if (hasCreated) {
+      console.log('❌ HomeFeed: CatalystCard blocked - user has created content');
+      return;
     }
-  }, [showCatalystCard, hasShownCatalystMidFeed]);
+    
+    if (alreadyShown) {
+      console.log('❌ HomeFeed: CatalystCard blocked - already shown');
+      return;
+    }
+    
+    if (!onboardingCompleted) {
+      console.log('❌ HomeFeed: CatalystCard blocked - onboarding not completed');
+      return;
+    }
+    
+    console.log('✅ HomeFeed: CatalystCard conditions PASSED');
+    
+    // FORCE SHOW FOR TESTING - Remove this after testing
+    console.log('🚨 HomeFeed: FORCING CatalystCard to show immediately');
+    setTimeout(() => {
+      console.log('🎯 HomeFeed: Setting showCatalystCard = true');
+      setShowCatalystCard(true);
+      setHasShownCatalystMidFeed(true);
+    }, 1000);
+    
+  }, []); // Empty dependency array for initial check
 
   // FIXED: Modal completion handler - NO DELAY NEEDED (modal handles animation)
   const handleModalComplete = () => {
-    console.log('🎯 Modal completion triggered - starting tour immediately');
+    console.log('🎯 HomeFeed: Modal completion triggered - starting tour immediately');
     
     // Mark onboarding as complete
     handleComplete();
@@ -576,6 +561,7 @@ const HomeFeed: React.FC = () => {
 
   // ADDED: Enhanced loading state with skeletons
   if (loading && mixedFeed.length === 0) {
+    console.log('🏠 HomeFeed: Showing loading skeletons');
     return (
       <div style={{
         width: '100%',
@@ -619,6 +605,7 @@ const HomeFeed: React.FC = () => {
   }
 
   if (error) {
+    console.log('🏠 HomeFeed: Showing error state');
     return (
       <div style={{
         padding: '20px',
@@ -647,6 +634,7 @@ const HomeFeed: React.FC = () => {
   }
 
   if (mixedFeed.length === 0) {
+    console.log('🏠 HomeFeed: Showing empty feed state');
     return (
       <div style={{
         padding: '40px 20px',
@@ -658,6 +646,17 @@ const HomeFeed: React.FC = () => {
       </div>
     );
   }
+
+  // DEBUG: Log render state
+  console.log('🎨 HomeFeed RENDER - CatalystCard state:', {
+    showCatalystCard,
+    catalystCardInsertIndex,
+    hasShownCatalystMidFeed,
+    displayFeedLength: displayFeed.length,
+    mixedFeedLength: mixedFeed.length,
+    shouldShowEndCard: showCatalystCard && catalystCardInsertIndex === -1 && !hasShownCatalystMidFeed,
+    shouldInsertMidFeed: catalystCardInsertIndex > -1
+  });
 
   return (
     <>
@@ -775,6 +774,7 @@ const HomeFeed: React.FC = () => {
             })();
 
             if (shouldInsertCatalystHere) {
+              console.log('🏠 HomeFeed: Inserting CatalystCard mid-feed at index', index);
               return (
                 <React.Fragment key={`catalyst-insert-${index}`}>
                   {feedItem}
@@ -807,10 +807,15 @@ const HomeFeed: React.FC = () => {
 
           {/* ADDED: Fallback Catalyst Card placement (if didn't show mid-feed and conditions are still met) */}
           {showCatalystCard && catalystCardInsertIndex === -1 && !hasShownCatalystMidFeed && (
-            <CatalystCard 
-              onSelect={handleCatalystSelect}
-              onDismiss={handleCatalystDismiss}
-            />
+            (() => {
+              console.log('🏠 HomeFeed: Rendering CatalystCard at end of feed');
+              return (
+                <CatalystCard 
+                  onSelect={handleCatalystSelect}
+                  onDismiss={handleCatalystDismiss}
+                />
+              );
+            })()
           )}
         </div>
 
