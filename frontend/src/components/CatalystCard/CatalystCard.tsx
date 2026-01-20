@@ -9,8 +9,23 @@ interface CatalystCardProps {
 const CatalystCard: React.FC<CatalystCardProps> = ({ onSelect, onDismiss }) => {
   const navigate = useNavigate();
 
+  // Add debug log when component mounts
+  useEffect(() => {
+    console.log('🎨 CatalystCard MOUNTED - Component is rendering');
+    console.log('📦 CatalystCard props:', { 
+      onSelect: typeof onSelect, 
+      onDismiss: typeof onDismiss 
+    });
+    
+    return () => {
+      console.log('🗑️ CatalystCard UNMOUNTED');
+    };
+  }, []);
+
   // Add CSS styles for animations
   useEffect(() => {
+    console.log('🎨 CatalystCard: Adding CSS styles');
+    
     const catalystStyles = `
       @keyframes fadeInUp {
         from {
@@ -33,8 +48,10 @@ const CatalystCard: React.FC<CatalystCardProps> = ({ onSelect, onDismiss }) => {
     const style = document.createElement('style');
     style.textContent = catalystStyles;
     document.head.appendChild(style);
+    console.log('🎨 CatalystCard: CSS styles added to document');
 
     return () => {
+      console.log('🎨 CatalystCard: Removing CSS styles');
       document.head.removeChild(style);
     };
   }, []);
@@ -70,17 +87,36 @@ const CatalystCard: React.FC<CatalystCardProps> = ({ onSelect, onDismiss }) => {
   ];
 
   const handleOptionClick = (type: 'scene' | 'character' | 'monologue' | 'frame', prompt: string) => {
+    console.log('🖱️ CatalystCard: Option clicked:', { type, prompt });
     onSelect(type, prompt);
   };
 
   const handleFrameClick = () => {
+    console.log('🖱️ CatalystCard: Frame option clicked');
     // Special case for frame - no prompt needed
     onDismiss();
     navigate('/compose-frame');
   };
 
+  console.log('🎨 CatalystCard: Rendering JSX');
+
   return (
     <div style={containerStyle}>
+      {/* Debug indicator */}
+      <div style={{
+        position: 'absolute',
+        top: 5,
+        left: 5,
+        background: '#ff0000',
+        color: '#ffffff',
+        fontSize: '10px',
+        padding: '2px 6px',
+        borderRadius: '10px',
+        zIndex: 1000
+      }}>
+        CATALYST DEBUG
+      </div>
+      
       {/* Decorative background elements */}
       <div style={backgroundGlowStyle} />
       <div style={backgroundGlow2Style} />
@@ -169,7 +205,10 @@ const CatalystCard: React.FC<CatalystCardProps> = ({ onSelect, onDismiss }) => {
 
         {/* Close Button */}
         <button
-          onClick={onDismiss}
+          onClick={() => {
+            console.log('🖱️ CatalystCard: Close button clicked');
+            onDismiss();
+          }}
           style={closeButtonStyle}
           aria-label="Dismiss"
         >
