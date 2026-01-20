@@ -202,48 +202,12 @@ const HomeFeed: React.FC = () => {
     };
   }, []);
 
-  // FIXED: Catalyst Card timing logic - DEBUG VERSION
+  // FIXED: Catalyst Card timing logic - SIMPLE FORCE SHOW
   useEffect(() => {
-    console.log('🔍 HomeFeed: CatalystCard useEffect RUNNING');
-    
-    const hasCreated = localStorage.getItem('user_has_created') === 'true';
-    const alreadyShown = localStorage.getItem('catalyst_card_shown') === 'true';
-    const onboardingCompleted = localStorage.getItem('writeframe_onboarding_complete') === 'true';
-    
-    console.log('📊 HomeFeed: CatalystCard Conditions:', {
-      hasCreated,
-      alreadyShown,
-      onboardingCompleted,
-      showCatalystCard, // state
-      hasShownCatalystMidFeed // state
-    });
-    
-    if (hasCreated) {
-      console.log('❌ HomeFeed: CatalystCard blocked - user has created content');
-      return;
-    }
-    
-    if (alreadyShown) {
-      console.log('❌ HomeFeed: CatalystCard blocked - already shown');
-      return;
-    }
-    
-    if (!onboardingCompleted) {
-      console.log('❌ HomeFeed: CatalystCard blocked - onboarding not completed');
-      return;
-    }
-    
-    console.log('✅ HomeFeed: CatalystCard conditions PASSED');
-    
-    // FORCE SHOW FOR TESTING - Remove this after testing
-    console.log('🚨 HomeFeed: FORCING CatalystCard to show immediately');
-    setTimeout(() => {
-      console.log('🎯 HomeFeed: Setting showCatalystCard = true');
-      setShowCatalystCard(true);
-      setHasShownCatalystMidFeed(true);
-    }, 1000);
-    
-  }, []); // Empty dependency array for initial check
+    console.log("FORCE SHOWING CATALYST CARD");
+    setShowCatalystCard(true);
+    setHasShownCatalystMidFeed(true);
+  }, []);
 
   // FIXED: Modal completion handler - NO DELAY NEEDED (modal handles animation)
   const handleModalComplete = () => {
