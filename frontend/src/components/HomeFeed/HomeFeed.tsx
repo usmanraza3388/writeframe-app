@@ -147,26 +147,6 @@ const HomeFeed: React.FC = () => {
   // ADDED: Catalyst Card state
   const [showCatalystCard, setShowCatalystCard] = useState(false);
 
-  // ADDED: Track when to show CatalystCard mid-feed
-  const [hasShownCatalystMidFeed, setHasShownCatalystMidFeed] = useState(false);
-
-  // DEBUG: Check localStorage on component mount
-  useEffect(() => {
-    console.log('🏠 HomeFeed MOUNTED');
-    console.log('📋 HomeFeed: localStorage check:', {
-      user_has_created: localStorage.getItem('user_has_created'),
-      catalyst_card_shown: localStorage.getItem('catalyst_card_shown'),
-      writeframe_onboarding_complete: localStorage.getItem('writeframe_onboarding_complete'),
-      writeframe_bottomnav_tour_completed: localStorage.getItem('writeframe_bottomnav_tour_completed')
-    });
-    
-    console.log('🏠 HomeFeed: Initial state:', {
-      showCatalystCard,
-      hasShownCatalystMidFeed,
-      showOnboarding
-    });
-  }, []);
-
   // ADDED: Infinite scroll handler
   const handleScroll = useCallback(() => {
     if (isLoadingMore) return;
@@ -202,17 +182,22 @@ const HomeFeed: React.FC = () => {
     };
   }, []);
 
-  // FIXED: Catalyst Card timing logic - SIMPLE FORCE SHOW
+  // FIXED: Catalyst Card timing logic - SIMPLE WORKING VERSION
   useEffect(() => {
-    console.log("FORCE SHOWING CATALYST CARD");
-    setShowCatalystCard(true);
-    setHasShownCatalystMidFeed(true);
+    // Check if user completed onboarding
+    const onboardingCompleted = localStorage.getItem('writeframe_onboarding_complete') === 'true';
+    
+    // Don't show if already shown before
+    const alreadyShown = localStorage.getItem('catalyst_card_shown') === 'true';
+    
+    // Show CatalystCard if onboarding is complete and not already shown
+    if (onboardingCompleted && !alreadyShown) {
+      setShowCatalystCard(true);
+    }
   }, []);
 
   // FIXED: Modal completion handler - NO DELAY NEEDED (modal handles animation)
   const handleModalComplete = () => {
-    console.log('🎯 HomeFeed: Modal completion triggered - starting tour immediately');
-    
     // Mark onboarding as complete
     handleComplete();
     
@@ -497,21 +482,6 @@ const HomeFeed: React.FC = () => {
   // ADDED: Paginated feed
   const displayFeed = useMemo(() => mixedFeed.slice(0, visibleCount), [mixedFeed, visibleCount]);
 
-  // ADDED: Calculate where to insert CatalystCard (after ~5 items)
-  const catalystCardInsertIndex = useMemo(() => {
-    if (!showCatalystCard || hasShownCatalystMidFeed) return -1;
-    
-    // Insert after approximately 5 items, but not more than half the feed
-    const insertAt = Math.min(5, Math.floor(displayFeed.length / 2));
-    
-    // Ensure we have at least 3 items before showing
-    if (displayFeed.length >= 3 && insertAt > 0) {
-      return insertAt;
-    }
-    
-    return -1; // Don't show yet
-  }, [displayFeed.length, showCatalystCard, hasShownCatalystMidFeed]);
-
   const loading = scenesLoading || monologuesLoading || charactersLoading || framesLoading || authLoading;
   const error = scenesError || monologuesError || charactersError || framesError;
 
@@ -525,7 +495,6 @@ const HomeFeed: React.FC = () => {
 
   // ADDED: Enhanced loading state with skeletons
   if (loading && mixedFeed.length === 0) {
-    console.log('🏠 HomeFeed: Showing loading skeletons');
     return (
       <div style={{
         width: '100%',
@@ -569,7 +538,6 @@ const HomeFeed: React.FC = () => {
   }
 
   if (error) {
-    console.log('🏠 HomeFeed: Showing error state');
     return (
       <div style={{
         padding: '20px',
@@ -598,7 +566,6 @@ const HomeFeed: React.FC = () => {
   }
 
   if (mixedFeed.length === 0) {
-    console.log('🏠 HomeFeed: Showing empty feed state');
     return (
       <div style={{
         padding: '40px 20px',
@@ -610,17 +577,6 @@ const HomeFeed: React.FC = () => {
       </div>
     );
   }
-
-  // DEBUG: Log render state
-  console.log('🎨 HomeFeed RENDER - CatalystCard state:', {
-    showCatalystCard,
-    catalystCardInsertIndex,
-    hasShownCatalystMidFeed,
-    displayFeedLength: displayFeed.length,
-    mixedFeedLength: mixedFeed.length,
-    shouldShowEndCard: showCatalystCard && catalystCardInsertIndex === -1 && !hasShownCatalystMidFeed,
-    shouldInsertMidFeed: catalystCardInsertIndex > -1
-  });
 
   return (
     <>
@@ -655,106 +611,92 @@ const HomeFeed: React.FC = () => {
           gap: '20px',
           padding: '0 16px'
         }}>
-          {displayFeed.map((item, index) => {
-            // Check if we should insert CatalystCard at this position
-            const shouldInsertCatalystHere = 
-              catalystCardInsertIndex > 0 && 
-              index === catalystCardInsertIndex;
-
-            const feedItem = (() => {
-              if (item.type === 'scene') {
-                return (
-                  <div key={`scene-${item.data.id}`} id={`scene-${item.data.id}`}>
-                    <SceneCard 
-                      scene={item.data}
-                      currentUserId={currentUserId}
-                      onAction={handleSceneAction}
-                    />
-                  </div>
-                );
-              } else if (item.type === 'monologue') {
-                return (
-                  <div key={`monologue-${item.data.id}`} id={`monologue-${item.data.id}`}>
-                    <MonologueCard 
-                      monologue={item.data}
-                      currentUserId={currentUserId}
-                      onAction={handleMonologueAction}
-                    />
-                  </div>
-                );
-              } else if (item.type === 'reposted_monologue') {
-                return (
-                  <RepostedMonologueCard 
-                    key={`repost-${item.data.id}`}
-                    repost={item.data}
-                    originalMonologue={item.data.original_monologue}
-                    currentUserId={currentUserId}
-                    onAction={handleRepostedMonologueAction}
-                  />
-                );
-              } else if (item.type === 'character') {
-                return (
-                  <div key={`character-${item.data.id}`} id={`character-${item.data.id}`}>
-                    <CharacterCard 
-                      character={item.data}
-                      currentUserId={currentUserId}
-                      onAction={handleCharacterAction}
-                    />
-                  </div>
-                );
-              } else if (item.type === 'reposted_character') {
-                return (
-                  <RepostedCharacterCard 
-                    key={`repost-${item.data.id}`}
-                    repost={item.data}
-                    originalCharacter={item.data.original_character}
-                    currentUserId={currentUserId}
-                    onAction={handleRepostedCharacterAction}
-                  />
-                );
-              } else if (item.type === 'frame') {
-                return (
-                  <div key={`frame-${item.data.id}`} id={`frame-${item.data.id}`}>
-                    <FrameCard 
-                      frame={item.data}
-                      currentUserId={currentUserId}
-                      onAction={handleFrameAction}
-                    />
-                  </div>
-                );
-              } else if (item.type === 'reposted_frame') {
-                return (
-                  <RepostedFrameCard 
-                    key={`repost-${item.data.id}`}
-                    repost={item.data}
-                    originalFrame={item.data.original_frame}
-                    currentUserId={currentUserId}
-                    onAction={handleRepostedFrameAction}
-                  />
-                );
-              } else {
-                return null;
-              }
-            })();
-
-            if (shouldInsertCatalystHere) {
-              console.log('🏠 HomeFeed: Inserting CatalystCard mid-feed at index', index);
+          {displayFeed.map((item) => {
+            if (item.type === 'scene') {
               return (
-                <React.Fragment key={`catalyst-insert-${index}`}>
-                  {feedItem}
-                  <CatalystCard 
-                    onSelect={handleCatalystSelect}
-                    onDismiss={handleCatalystDismiss}
+                <div key={`scene-${item.data.id}`} id={`scene-${item.data.id}`}>
+                  <SceneCard 
+                    scene={item.data}
+                    currentUserId={currentUserId}
+                    onAction={handleSceneAction}
                   />
-                </React.Fragment>
+                </div>
               );
+            } else if (item.type === 'monologue') {
+              return (
+                <div key={`monologue-${item.data.id}`} id={`monologue-${item.data.id}`}>
+                  <MonologueCard 
+                    monologue={item.data}
+                    currentUserId={currentUserId}
+                    onAction={handleMonologueAction}
+                  />
+                </div>
+              );
+            } else if (item.type === 'reposted_monologue') {
+              return (
+                <RepostedMonologueCard 
+                  key={`repost-${item.data.id}`}
+                  repost={item.data}
+                  originalMonologue={item.data.original_monologue}
+                  currentUserId={currentUserId}
+                  onAction={handleRepostedMonologueAction}
+                />
+              );
+            } else if (item.type === 'character') {
+              return (
+                <div key={`character-${item.data.id}`} id={`character-${item.data.id}`}>
+                  <CharacterCard 
+                    character={item.data}
+                    currentUserId={currentUserId}
+                    onAction={handleCharacterAction}
+                  />
+                </div>
+              );
+            } else if (item.type === 'reposted_character') {
+              return (
+                <RepostedCharacterCard 
+                  key={`repost-${item.data.id}`}
+                  repost={item.data}
+                  originalCharacter={item.data.original_character}
+                  currentUserId={currentUserId}
+                  onAction={handleRepostedCharacterAction}
+                />
+              );
+            } else if (item.type === 'frame') {
+              return (
+                <div key={`frame-${item.data.id}`} id={`frame-${item.data.id}`}>
+                  <FrameCard 
+                    frame={item.data}
+                    currentUserId={currentUserId}
+                    onAction={handleFrameAction}
+                  />
+                </div>
+              );
+            } else if (item.type === 'reposted_frame') {
+              return (
+                <RepostedFrameCard 
+                  key={`repost-${item.data.id}`}
+                  repost={item.data}
+                  originalFrame={item.data.original_frame}
+                  currentUserId={currentUserId}
+                  onAction={handleRepostedFrameAction}
+                />
+              );
+            } else {
+              return null;
             }
-
-            return feedItem;
           })}
 
           {/* ADDED: Loading more indicator */}
           {isLoadingMore && <CardSkeleton />}
+
+          {/* ADDED: Catalyst Card at the end */}
+          {showCatalystCard && (
+            <CatalystCard 
+              onSelect={handleCatalystSelect}
+              onDismiss={handleCatalystDismiss}
+            />
+          )}
 
           {/* ADDED: End of feed message with dynamic text */}
           {visibleCount >= mixedFeed.length && mixedFeed.length > 0 && (
@@ -767,19 +709,6 @@ const HomeFeed: React.FC = () => {
             }}>
               — {mixedFeed.length > 50 ? "You've reached the end for now" : "That's all for now"} —
             </div>
-          )}
-
-          {/* ADDED: Fallback Catalyst Card placement (if didn't show mid-feed and conditions are still met) */}
-          {showCatalystCard && catalystCardInsertIndex === -1 && !hasShownCatalystMidFeed && (
-            (() => {
-              console.log('🏠 HomeFeed: Rendering CatalystCard at end of feed');
-              return (
-                <CatalystCard 
-                  onSelect={handleCatalystSelect}
-                  onDismiss={handleCatalystDismiss}
-                />
-              );
-            })()
           )}
         </div>
 
