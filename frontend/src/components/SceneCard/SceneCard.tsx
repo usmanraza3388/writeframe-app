@@ -654,7 +654,37 @@ const SceneCard: React.FC<SceneCardProps> = React.memo(({ scene, currentUserId, 
             }
           </div>
           
-          {(scene.description && scene.description.trim() !== '') ? (
+          {/* FIXED: Show original scene description for remakes, otherwise show scene description */}
+          {(isRemakeScene && hasOriginalSceneData && scene.original_scene_data?.description) ? (
+            <div style={{
+              fontFamily: 'Playfair Display, serif',
+              fontSize: '14px',
+              fontWeight: 400,
+              color: '#55524F',
+              lineHeight: '1.4',
+              whiteSpace: 'pre-line',
+              position: 'relative',
+              padding: '12px',
+              backgroundColor: '#FAFAFA',
+              borderRadius: '6px',
+              border: '1px solid #E5E5E5',
+              marginBottom: '12px'
+            }}>
+              <div style={{
+                fontSize: '11px',
+                color: '#6B7280',
+                marginBottom: '4px',
+                fontWeight: '500',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px'
+              }}>
+                <span>📝</span>
+                <span>Original Scene:</span>
+              </div>
+              <SceneDescription text={scene.original_scene_data.description} />
+            </div>
+          ) : (scene.description && scene.description.trim() !== '') ? (
             <SceneDescription text={scene.description} />
           ) : (
             <div style={{
