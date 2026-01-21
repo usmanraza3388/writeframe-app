@@ -1,8 +1,9 @@
 // src/components/NotificationBell/NotificationBell.tsx
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom'; // ADDED: Import useNavigate
 import { useNotifications } from '../../hooks/useNotifications';
 import { useAuth } from '../../contexts/AuthContext';
+import { supabase } from '../../assets/lib/supabaseClient'; // ADDED: Import supabase
 
 // UPDATED: Accept profileId prop
 const NotificationBell: React.FC<{ profileId?: string }> = ({ profileId }) => {
@@ -20,6 +21,34 @@ const NotificationBell: React.FC<{ profileId?: string }> = ({ profileId }) => {
 
   // UPDATED: Use profileId if provided, otherwise use auth user ID
   const targetUserId = profileId || user?.id;
+
+  // ADDED: Function to mark all notifications as read
+  const markAllAsRead = useCallback(async () => {
+    if (!targetUserId) return;
+    
+    try {
+      // Mark all unread notifications as read in the database
+      const { error } = await supabase
+        .from('notifications')
+        .update({ is_read: true })
+        .eq('user_id', targetUserId)
+        .eq('is_read', false);
+      
+      if (error) {
+        console.error('Failed to mark all as read:', error);
+        return;
+      }
+      
+      // Update local state immediately
+      setNotifications(prev => 
+        prev.map(n => ({ ...n, is_read: true }))
+      );
+      setUnreadCount(0);
+      
+    } catch (err) {
+      console.error('Error marking all as read:', err);
+    }
+  }, [targetUserId]);
 
   // ADDED: Click handler for profile navigation
   const handleProfileClick = (notification: any, event: React.MouseEvent) => {
@@ -105,7 +134,7 @@ const NotificationBell: React.FC<{ profileId?: string }> = ({ profileId }) => {
     }
   };
 
-  // Close panel when clicking outside
+  // UPDATED: Close panel when clicking outside with mark all as read
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (panelRef.current && !panelRef.current.contains(event.target as Node) &&
@@ -117,10 +146,15 @@ const NotificationBell: React.FC<{ profileId?: string }> = ({ profileId }) => {
     if (isOpen) {
       document.addEventListener('mousedown', handleClickOutside);
       loadNotifications(); // Refresh when opening
+      
+      // MARK ALL AS READ WHEN PANEL OPENS
+      if (unreadCount > 0) {
+        markAllAsRead();
+      }
     }
 
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [isOpen, targetUserId]); // UPDATED: Use targetUserId
+  }, [isOpen, targetUserId, unreadCount, markAllAsRead]); // ADDED: unreadCount and markAllAsRead dependencies
 
   // UPDATED: Enhanced target user change handling
   useEffect(() => {
@@ -144,8 +178,15 @@ const NotificationBell: React.FC<{ profileId?: string }> = ({ profileId }) => {
     }
   }, [targetUserId]);
 
+  // UPDATED: Handle bell click with mark all as read
   const handleBellClick = () => {
-    setIsOpen(!isOpen);
+    const newIsOpen = !isOpen;
+    setIsOpen(newIsOpen);
+    
+    // When opening the panel, mark all as read
+    if (newIsOpen && unreadCount > 0) {
+      markAllAsRead();
+    }
   };
 
   const handleNotificationClick = async (notification: any) => {
@@ -239,8 +280,8 @@ const NotificationBell: React.FC<{ profileId?: string }> = ({ profileId }) => {
           <path d="M13.73 21a2 2 0 0 1-3.46 0" />
         </svg>
         
-        {/* Unread Badge */}
-        {unreadCount > 0 && (
+        {/* Unread Badge - Only shows when panel is closed AND count > 0 */}
+        {unreadCount > 0 && !isOpen && (
           <div
             style={{
               position: 'absolute',
@@ -306,20 +347,7 @@ const NotificationBell: React.FC<{ profileId?: string }> = ({ profileId }) => {
             >
               Notifications
             </h3>
-            {unreadCount > 0 && (
-              <span
-                style={{
-                  backgroundColor: 'var(--text-primary)',
-                  color: 'var(--background-card)',
-                  borderRadius: '12px',
-                  padding: '2px 8px',
-                  fontSize: '12px',
-                  fontWeight: 'bold',
-                }}
-              >
-                {unreadCount} new
-              </span>
-            )}
+            {/* REMOVED: Unread count from panel header since all are marked read */}
           </div>
 
           {/* Notifications List */}
@@ -449,18 +477,7 @@ const NotificationBell: React.FC<{ profileId?: string }> = ({ profileId }) => {
                         {formatTime(notification.created_at)}
                       </div>
                     </div>
-                    {!notification.is_read && (
-                      <div
-                        style={{
-                          width: '8px',
-                          height: '8px',
-                          borderRadius: '50%',
-                          backgroundColor: 'var(--text-primary)',
-                          flexShrink: 0,
-                          marginTop: '4px',
-                        }}
-                      />
-                    )}
+                    {/* REMOVED: Unread dot indicator since all are marked read when panel opens */}
                   </div>
                 </div>
               ))
