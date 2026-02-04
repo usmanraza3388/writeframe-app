@@ -122,11 +122,11 @@ const AboutPage: React.FC = () => {
               color: '#55524F',
               lineHeight: 1.6
             }}>
-              <li>Create and showcase cinematic scene cards</li>
-              <li>Design characters and craft monologues</li>
-              <li>Build cinematic mood boards</li>
-              <li>Build your creative identity and audience</li>
-              <li>Connect with other storytellers</li>
+              <li>Share scenes, characters, monologues, and visual frames</li>
+              <li>Build your portfolio automatically as you create</li>
+              <li>Get feedback from other screenwriters and filmmakers</li>
+              <li>Organize your creative work in one professional space</li>
+              <li>Gain visibility—not buried in private folders</li>
             </ul>
           </div>
         </div>
@@ -155,10 +155,19 @@ const AboutPage: React.FC = () => {
               color: '#55524F',
               margin: 0
             }}>
+              If you're a screenwriter or filmmaker without produced work, how do you prove your talent?
+              Your scripts get buried in piles. Only other writers find you.
+              Pay-to-play networking. Success requires paying for pitch sessions.
+              
               Every filmmaker, writer, and cinephile starts with fragments: a character sketch, 
               a powerful monologue, a scene that plays in your head. But where do you share these 
               beginnings without a full screenplay? How do you build a portfolio when you're just 
               starting out?
+
+              WriteFrame gives you a professional way to market yourself—without needing finished scripts or paying for access.
+
+              Instead of uploading full scripts and hoping someone finds them, you showcase 
+              <strong>specific strengths</strong>—your best dialogue, character work, visual storytelling—in a professional portfolio.
             </p>
           </div>
         </section>
@@ -211,7 +220,7 @@ const AboutPage: React.FC = () => {
                 color: '#55524F',
                 margin: '0 0 12px 0'
               }}>
-                A world where stories do not need studios to exist. Where creators own their work, 
+                A world Where creators own their work, 
                 their audience, and their voice.
               </p>
               
@@ -419,7 +428,7 @@ const AboutPage: React.FC = () => {
               { emoji: '✍️', title: 'Screenwriters', desc: 'Build your portfolio' },
               { emoji: '🎥', title: 'Filmmakers', desc: 'Find collaborators' },
               { emoji: '🎓', title: 'Students', desc: 'Practice the craft' },
-              { emoji: '🎬', title: 'Cinephiles', desc: 'Explore creativity' }
+              { emoji: '🎬', title: 'Producers', desc: 'Discover new talent' }
             ].map((persona) => (
               <div 
                 key={persona.title}
