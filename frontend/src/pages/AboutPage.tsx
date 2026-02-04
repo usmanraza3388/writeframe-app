@@ -89,7 +89,7 @@ const AboutPage: React.FC = () => {
             margin: '0 0 12px 0',
             lineHeight: 1.3
           }}>
-            The New Home for Indie Cinematic Creators
+            The New Home for Cinematic Creators
           </h2>
           <p style={{
             fontSize: '15px',
@@ -155,19 +155,19 @@ const AboutPage: React.FC = () => {
               color: '#55524F',
               margin: 0
             }}>
-              If you're a screenwriter or filmmaker without produced work, how do you prove your talent?
-              Your scripts get buried in piles. Only other writers find you.
-              Pay-to-play networking. Success requires paying for pitch sessions.
+              If you are a screenwriter or filmmaker without produced work, how do you prove your talent? 
+              Your scripts get buried in piles. Only other writers find you. Networking becomes pay to play. 
+              Progress often requires paying for pitch sessions.
               
               Every filmmaker, writer, and cinephile starts with fragments: a character sketch, 
               a powerful monologue, a scene that plays in your head. But where do you share these 
               beginnings without a full screenplay? How do you build a portfolio when you're just 
               starting out?
 
-              WriteFrame gives you a professional way to market yourself—without needing finished scripts or paying for access.
-
-              Instead of uploading full scripts and hoping someone finds them, you showcase 
-              <strong>specific strengths</strong>—your best dialogue, character work, visual storytelling—in a professional portfolio.
+              WriteFrame gives you a professional way to market yourself without finished scripts 
+              and without paying for access. Instead of uploading full scripts and hoping someone 
+              discovers them, you showcase specific strengths: your dialogue, your character work, 
+              and your visual storytelling, all presented as a focused professional portfolio.
             </p>
           </div>
         </section>
