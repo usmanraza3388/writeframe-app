@@ -19,6 +19,7 @@ export const frameActions = {
           title: frameData.title,
           notes: frameData.notes,
           status: frameData.status,
+          view_count: 0 // ADDED: Initialize view count
         })
         .select()
         .single();
@@ -71,6 +72,7 @@ export const frameActions = {
           user_name: 'Unknown User',
           user_genre_tag: 'Creator',
           avatar_url: undefined,
+          view_count: frame.view_count || 0, // ADDED: View count with fallback
           // NESTED (existing - for backward compatibility)
           user: {
             id: frame.user_id,
@@ -98,6 +100,7 @@ export const frameActions = {
           user_name: userProfile?.username || 'Unknown User',
           user_genre_tag: userProfile?.genre_persona || 'Creator',
           avatar_url: userProfile?.avatar_url,
+          view_count: frame.view_count || 0, // ADDED: View count with fallback
           // NESTED (existing - for backward compatibility)
           user: {
             id: frame.user_id,
@@ -230,7 +233,8 @@ export const frameActions = {
         .from('frame_reposts')
         .insert({
           user_id: user.id,
-          frame_id: frameId
+          frame_id: frameId,
+          view_count: 0 // ADDED: Initialize view count
         });
 
       if (error) throw error;
@@ -340,6 +344,7 @@ export const frameActions = {
           user_name: frameCreatorProfile?.full_name || frameCreatorProfile?.username || 'Unknown User',
           user_genre_tag: frameCreatorProfile?.genre_persona || 'Creator',
           avatar_url: frameCreatorProfile?.avatar_url,
+          view_count: originalFrame.view_count || 0, // ADDED: View count
           // NESTED (existing)
           user: {
             id: originalFrame.user_id,
@@ -371,7 +376,8 @@ export const frameActions = {
           user_id: repost.user_id,
           user_name: reposterProfile?.full_name || reposterProfile?.username || 'Unknown User',
           user_genre_tag: reposterProfile?.genre_persona || 'Storyteller',
-          avatar_url: reposterProfile?.avatar_url, // ← THIS IS THE FIX!
+          avatar_url: reposterProfile?.avatar_url,
+          view_count: repost.view_count || 0, // ADDED: View count for repost
           created_at: repost.created_at,
           like_count: 0,
           comment_count: 0, 

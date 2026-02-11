@@ -16,6 +16,8 @@ import { useShareStatus } from '../../hooks/useShareStatus';
 import CommentsSection from '../Comments/CommentsSection';
 import ShareDialog from '../Shares/ShareDialog';
 import { useCharacter } from '../../hooks/useCharacter'; // ADDED: Import useCharacter hook
+// ADDED: Import view hooks
+import { useViewItem, useViewCount } from '../../hooks/useViewItem';
 
 // Relative time utility function
 const getRelativeTime = (dateString: string): string => {
@@ -87,6 +89,14 @@ const MenuIcon = () => (
     <circle cx="12" cy="6" r="1"/>
     <circle cx="12" cy="12" r="1"/>
     <circle cx="12" cy="18" r="1"/>
+  </svg>
+);
+
+// ADDED: View icon component
+const ViewIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+    <circle cx="12" cy="12" r="3"/>
   </svg>
 );
 
@@ -170,6 +180,22 @@ const CharacterCard: React.FC<CharacterCardProps> = React.memo(({
   // Refs for click outside detection
   const menuButtonRef = useRef<HTMLButtonElement>(null);
   const menuContainerRef = useRef<HTMLDivElement>(null);
+
+  // ADDED: View tracking hooks
+  const { incrementView } = useViewItem();
+  const { data: viewData, fetchViewCount } = useViewCount({
+    content_type: 'character',
+    content_id: character.id
+  });
+
+  // ADDED: Increment view count when card mounts
+  useEffect(() => {
+    incrementView({
+      content_type: 'character',
+      content_id: character.id
+    });
+    fetchViewCount();
+  }, [character.id, incrementView, fetchViewCount]);
 
   // Existing hooks
   const { deleteItem } = useDeleteItem();
@@ -822,6 +848,25 @@ const CharacterCard: React.FC<CharacterCardProps> = React.memo(({
                 {sharesData?.shareCount || 0}
               </span>
             </button>
+            
+            {/* ADDED: View count display */}
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+              padding: '4px 6px',
+              color: '#6B7280'
+            }}>
+              <ViewIcon />
+              <span style={{ 
+                fontSize: '11px',
+                color: '#6B7280',
+                fontFamily: 'Arial, sans-serif',
+                minWidth: '14px'
+              }}>
+                {viewData?.viewCount || 0}
+              </span>
+            </div>
           </div>
 
           {/* Right Actions - Timestamp and Repost */}

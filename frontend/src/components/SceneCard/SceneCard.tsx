@@ -16,6 +16,8 @@ import { useShareItem } from '../../hooks/useShareItem';
 import { useShareStatus } from '../../hooks/useShareStatus';
 import CommentsSection from '../Comments/CommentsSection';
 import ShareDialog from '../Shares/ShareDialog';
+// ADDED: Import view hooks
+import { useViewItem, useViewCount } from '../../hooks/useViewItem';
 
 const getRelativeTime = (dateString: string): string => {
   const date = new Date(dateString);
@@ -127,6 +129,14 @@ const ShareIcon = () => (
   </svg>
 );
 
+// ADDED: View icon component
+const ViewIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+    <circle cx="12" cy="12" r="3"/>
+  </svg>
+);
+
 interface SceneCardProps {
   scene: FeedScene;
   currentUserId?: string;
@@ -140,13 +150,27 @@ const SceneCard: React.FC<SceneCardProps> = React.memo(({ scene, currentUserId, 
   const [showReportDialog, setShowReportDialog] = useState(false);
   const [showCommentDialog, setShowCommentDialog] = useState(false);
   const [showShareDialog, setShowShareDialog] = useState(false);
-  // ADDED: Gallery state for image opening (simplified for single image)
   const [galleryOpen, setGalleryOpen] = useState(false);
   
   const menuButtonRef = useRef<HTMLButtonElement>(null);
   const menuContainerRef = useRef<HTMLDivElement>(null);
 
-  // ADDED: Debug logging for images
+  // ADDED: View tracking hooks
+  const { incrementView } = useViewItem();
+  const { data: viewData, fetchViewCount } = useViewCount({
+    content_type: 'scene',
+    content_id: scene.id
+  });
+
+  // ADDED: Increment view count when card mounts
+  useEffect(() => {
+    incrementView({
+      content_type: 'scene',
+      content_id: scene.id
+    });
+    fetchViewCount();
+  }, [scene.id, incrementView, fetchViewCount]);
+
   useEffect(() => {
     if (scene.image_path) {
       console.log('SceneCard image debug:', {
@@ -189,22 +213,18 @@ const SceneCard: React.FC<SceneCardProps> = React.memo(({ scene, currentUserId, 
     ? ['Edit', 'Delete']
     : ['Save', 'Copy Link', 'Report'];
 
-  // ADDED: Image URL helper function
   const getImageUrl = (imagePath: string) => {
     if (!imagePath) return '';
-    // Check if it's already a full URL
     if (imagePath.startsWith('http')) return imagePath;
     return `https://ycrvsbtqmjksdbyrefek.supabase.co/storage/v1/object/public/scene-images/${imagePath}`;
   };
 
-  // ADDED: Simple gallery handler for single image
   const openGallery = useCallback(() => {
     if (scene.image_path) {
       setGalleryOpen(true);
     }
   }, [scene.image_path]);
 
-  // ADDED: Keyboard navigation for gallery
   useEffect(() => {
     if (!galleryOpen) return;
 
@@ -218,7 +238,6 @@ const SceneCard: React.FC<SceneCardProps> = React.memo(({ scene, currentUserId, 
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [galleryOpen]);
 
-  // ADDED: Profile click handler
   const handleProfileClick = useCallback(() => {
     navigate(`/profile/${scene.user_id}`);
   }, [navigate, scene.user_id]);
@@ -654,7 +673,6 @@ const SceneCard: React.FC<SceneCardProps> = React.memo(({ scene, currentUserId, 
             }
           </div>
           
-          {/* FIXED: Show original scene description for remakes, otherwise show scene description */}
           {(isRemakeScene && hasOriginalSceneData && scene.original_scene_data?.description) ? (
             <div style={{
               fontFamily: 'Playfair Display, serif',
@@ -811,7 +829,7 @@ const SceneCard: React.FC<SceneCardProps> = React.memo(({ scene, currentUserId, 
           </div>
         )}
 
-        {/* NEUTRAL: Action bar */}
+        {/* UPDATED: Action bar with view count */}
         <div style={{
           display: 'flex',
           justifyContent: 'space-between',
@@ -919,6 +937,25 @@ const SceneCard: React.FC<SceneCardProps> = React.memo(({ scene, currentUserId, 
                 {sharesData?.shareCount || 0}
               </span>
             </button>
+            
+            {/* ADDED: View count display */}
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+              padding: '4px 6px',
+              color: '#6B7280'
+            }}>
+              <ViewIcon />
+              <span style={{ 
+                fontSize: '11px',
+                color: '#6B7280',
+                fontFamily: 'Arial, sans-serif',
+                minWidth: '14px'
+              }}>
+                {viewData?.viewCount || 0}
+              </span>
+            </div>
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>

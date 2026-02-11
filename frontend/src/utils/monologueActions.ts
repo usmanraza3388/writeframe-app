@@ -14,6 +14,7 @@ export interface MonologueFeedItem {
   comment_count: number;
   share_count: number;
   repost_count: number; // ADDED: Repost count
+  view_count?: number; // ADDED: Optional view count for backward compatibility
   created_at: string;
   user_has_liked: boolean;
   user_has_reposted: boolean; // ADDED: User repost state
@@ -33,6 +34,15 @@ export interface MonologueComment {
   created_at: string;
   user_name: string;
   user_genre_tag: string;
+}
+
+// ADDED: Repost interface with view_count
+export interface MonologueRepost {
+  id: string;
+  user_id: string;
+  monologue_id: string;
+  created_at: string;
+  view_count?: number; // ADDED: Optional view count for reposts
 }
 
 export const monologueActions = {
@@ -55,7 +65,8 @@ export const monologueActions = {
         title: monologueData.title,
         content_text: monologueData.content_text,
         soundtrack_id: monologueData.soundtrack_id || null,
-        status: monologueData.is_draft ? 'draft' : 'published' // UPDATED: Use status field instead of is_draft/published
+        status: monologueData.is_draft ? 'draft' : 'published', // UPDATED: Use status field instead of is_draft/published
+        view_count: 0 // ADDED: Initialize view count
       })
       .select()
       .single();
@@ -102,7 +113,8 @@ export const monologueActions = {
       ...monologue,
       user_has_liked: userHasLiked,
       user_has_reposted: userHasReposted,
-      repost_count: monologue.repost_count || 0 // Add repost_count with fallback
+      repost_count: monologue.repost_count || 0, // Add repost_count with fallback
+      view_count: monologue.view_count || 0 // ADDED: View count with fallback
     };
   },
 
@@ -204,7 +216,8 @@ export const monologueActions = {
         .from('monologue_reposts')
         .insert({
           user_id: user.id,
-          monologue_id: monologueId
+          monologue_id: monologueId,
+          view_count: 0 // ADDED: Initialize view count
         });
 
       if (error) throw error;
@@ -306,6 +319,7 @@ export const monologueActions = {
           comment_count: originalMonologue.comment_count || 0,
           share_count: originalMonologue.share_count || 0,
           repost_count: originalMonologue.repost_count || 0,
+          view_count: originalMonologue.view_count || 0, // ADDED: View count
           created_at: originalMonologue.created_at,
           user_has_reposted: false,
           emotional_tags: originalMonologue.monologue_emotional_tags?.map((tag: any) => tag.emotional_tone) || [],
@@ -325,6 +339,7 @@ export const monologueActions = {
           like_count: repost.like_count || 0,
           comment_count: repost.comment_count || 0,
           share_count: repost.share_count || 0,
+          view_count: repost.view_count || 0, // ADDED: View count for repost
           original_monologue: transformedOriginalMonologue
         };
       });
@@ -381,6 +396,7 @@ export const monologueActions = {
             user_genre_tag: monologue.profiles?.genre_persona || 'Writer',
             content_text: monologue.content_text,
             repost_count: monologue.repost_count || 0, // ADDED: Repost count
+            view_count: monologue.view_count || 0, // ADDED: View count
             soundtrack: monologue.soundtracks ? {
               title: monologue.soundtracks.title,
               artist: monologue.soundtracks.artist
@@ -505,10 +521,11 @@ export const monologueActions = {
               like_count: newMonologue.like_count || 0,
               comment_count: newMonologue.comment_count || 0,
               share_count: newMonologue.share_count || 0,
-              repost_count: (newMonologue as any).repost_count || 0, // FIX: Use type assertion with fallback
+              repost_count: (newMonologue as any).repost_count || 0,
+              view_count: (newMonologue as any).view_count || 0, // ADDED: View count with fallback
               created_at: newMonologue.created_at,
               user_has_liked: newMonologue.user_has_liked || false,
-              user_has_reposted: (newMonologue as any).user_has_reposted || false, // FIX: Use type assertion with fallback
+              user_has_reposted: (newMonologue as any).user_has_reposted || false,
               emotional_tags: newMonologue.monologue_emotional_tags?.map((tag: any) => tag.emotional_tone) || [],
               soundtrack: newMonologue.soundtracks ? {
                 title: newMonologue.soundtracks.title,

@@ -117,13 +117,13 @@ const skeletonStyles = `
 `;
 
 type FeedItem = 
-  | { type: 'scene'; data: any }
-  | { type: 'monologue'; data: any }
-  | { type: 'reposted_monologue'; data: any }
-  | { type: 'character'; data: CharacterWithDetails }
-  | { type: 'reposted_character'; data: any }
-  | { type: 'frame'; data: FrameWithDetails }
-  | { type: 'reposted_frame'; data: any };
+  | { type: 'scene'; data: any; created_at: string }
+  | { type: 'monologue'; data: any; created_at: string }
+  | { type: 'reposted_monologue'; data: any; created_at: string }
+  | { type: 'character'; data: CharacterWithDetails; created_at: string }
+  | { type: 'reposted_character'; data: any; created_at: string }
+  | { type: 'frame'; data: FrameWithDetails; created_at: string }
+  | { type: 'reposted_frame'; data: any; created_at: string };
 
 const HomeFeed: React.FC = () => {
   const { scenes, loading: scenesLoading, error: scenesError, refresh: refreshScenes } = useFeed();

@@ -281,10 +281,11 @@ export const useSingleMonologue = (monologueId: string): UseSingleMonologueRetur
           like_count: monologueData.like_count || 0,
           comment_count: monologueData.comment_count || 0,
           share_count: monologueData.share_count || 0,
-          repost_count: (monologueData as any).repost_count || 0, // FIX: Use type assertion
+          repost_count: (monologueData as any).repost_count || 0,
+          view_count: (monologueData as any).view_count || 0, // ADDED: Optional view count
           created_at: monologueData.created_at,
           user_has_liked: monologueData.user_has_liked || false,
-          user_has_reposted: (monologueData as any).user_has_reposted || false, // FIX: Use type assertion
+          user_has_reposted: (monologueData as any).user_has_reposted || false,
           emotional_tags: monologueData.monologue_emotional_tags?.map((tag: any) => tag.emotional_tone) || [],
           soundtrack: monologueData.soundtracks ? {
             title: monologueData.soundtracks.title,

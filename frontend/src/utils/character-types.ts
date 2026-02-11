@@ -12,6 +12,7 @@ export interface Character {
   updated_at: string;
   like_count: number; // ADDED: From database schema
   repost_count: number; // ADDED: From database schema
+  view_count?: number; // ADDED: Optional view count for backward compatibility
 }
 
 export interface CharacterInsert {
@@ -22,6 +23,7 @@ export interface CharacterInsert {
   bio?: string | null;
   tagline?: string | null;
   status?: 'draft' | 'published';
+  view_count?: number; // ADDED: Optional view count
 }
 
 export interface CharacterVisualReference {
@@ -66,6 +68,7 @@ export interface CharacterRepost {
   user_id: string;
   character_id: string;
   created_at: string;
+  view_count?: number; // ADDED: Optional view count for reposts
 }
 
 // ADDED: Feed item interface for HomeFeed integration
@@ -84,6 +87,7 @@ export interface CharacterFeedItem {
   comment_count: number;
   share_count: number;
   repost_count: number;
+  view_count?: number; // ADDED: Optional view count
   created_at: string;
   user_has_liked: boolean;
   user_has_reposted: boolean;
@@ -106,5 +110,6 @@ export interface RepostedCharacterData {
   like_count: number;
   comment_count: number;
   share_count: number;
+  view_count?: number; // ADDED: Optional view count for reposts
   original_character: CharacterFeedItem | null;
 }

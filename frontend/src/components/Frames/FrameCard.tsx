@@ -16,6 +16,8 @@ import { useShareStatus } from '../../hooks/useShareStatus';
 import CommentsSection from '../Comments/CommentsSection';
 import ShareDialog from '../Shares/ShareDialog';
 import { useFrame } from '../../hooks/useFrame'; // ADDED: Import useFrame hook
+// ADDED: Import view hooks
+import { useViewItem, useViewCount } from '../../hooks/useViewItem';
 
 // ADDED: Mood Board configuration for artistic, hand-crafted feel
 const MOOD_BOARD_CONFIG = {
@@ -99,6 +101,14 @@ const MenuIcon = () => (
   </svg>
 );
 
+// ADDED: View icon component
+const ViewIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+    <circle cx="12" cy="12" r="3"/>
+  </svg>
+);
+
 const FrameCard: React.FC<FrameCardProps> = React.memo(({ 
   frame, 
   currentUserId, 
@@ -120,6 +130,22 @@ const FrameCard: React.FC<FrameCardProps> = React.memo(({
   // ADD: Refs for click outside detection (same as other cards)
   const menuButtonRef = useRef<HTMLButtonElement>(null);
   const menuContainerRef = useRef<HTMLDivElement>(null);
+
+  // ADDED: View tracking hooks
+  const { incrementView } = useViewItem();
+  const { data: viewData, fetchViewCount } = useViewCount({
+    content_type: 'frame',
+    content_id: frame.id
+  });
+
+  // ADDED: Increment view count when card mounts
+  useEffect(() => {
+    incrementView({
+      content_type: 'frame',
+      content_id: frame.id
+    });
+    fetchViewCount();
+  }, [frame.id, incrementView, fetchViewCount]);
 
   // EXISTING HOOKS
   const { deleteItem } = useDeleteItem();
@@ -976,6 +1002,25 @@ const FrameCard: React.FC<FrameCardProps> = React.memo(({
                 {sharesData?.shareCount || 0}
               </span>
             </button>
+            
+            {/* ADDED: View count display */}
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+              padding: '4px 6px',
+              color: '#6B7280'
+            }}>
+              <ViewIcon />
+              <span style={{ 
+                fontSize: '11px',
+                color: '#6B7280',
+                fontFamily: 'Arial, sans-serif',
+                minWidth: '14px'
+              }}>
+                {viewData?.viewCount || 0}
+              </span>
+            </div>
           </div>
 
           {/* UPDATED: Right Actions - Timestamp and Repost */}

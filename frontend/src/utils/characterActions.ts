@@ -22,6 +22,7 @@ interface CharacterWithJoins extends Character {
   comment_count: number;
   share_count: number;
   repost_count: number;
+  view_count?: number; // ADDED: View count
 }
 
 export const characterActions = {
@@ -29,7 +30,10 @@ export const characterActions = {
   async createCharacter(characterData: CharacterInsert): Promise<Character> {
     const { data, error } = await supabase
       .from('characters')
-      .insert(characterData)
+      .insert({
+        ...characterData,
+        view_count: 0 // ADDED: Initialize view count
+      })
       .select()
       .single();
 
@@ -72,7 +76,8 @@ export const characterActions = {
         .from('character_reposts')
         .insert({
           user_id: user.id,
-          character_id: characterId
+          character_id: characterId,
+          view_count: 0 // ADDED: Initialize view count
         });
 
       if (error) throw error;
@@ -160,7 +165,7 @@ export const characterActions = {
         const transformedOriginalCharacter = originalCharacter ? {
           id: originalCharacter.id,
           user_id: originalCharacter.user_id,
-          user_name: originalCharacter.creator?.full_name || 'Unknown User', // ← full_name not username
+          user_name: originalCharacter.creator?.full_name || 'Unknown User',
           user_genre_tag: originalCharacter.creator?.genre_persona || 'Creator',
           name: originalCharacter.name,
           bio: originalCharacter.bio,
@@ -170,23 +175,25 @@ export const characterActions = {
           comment_count: originalCharacter.comment_count || 0,
           share_count: originalCharacter.share_count || 0,
           repost_count: originalCharacter.repost_count || 0,
+          view_count: originalCharacter.view_count || 0, // ADDED: View count
           created_at: originalCharacter.created_at,
           user_has_liked: false,
           user_has_reposted: false,
           visual_references: originalCharacter.character_visual_references || [],
-          avatar_url: originalCharacter.creator?.avatar_url // ← avatar_url included
+          avatar_url: originalCharacter.creator?.avatar_url
         } : null;
 
         return {
           id: repost.id,
           user_id: repost.user_id,
-          user_name: repost.reposter?.full_name || 'Unknown User', // ← full_name not username
+          user_name: repost.reposter?.full_name || 'Unknown User',
           user_genre_tag: repost.reposter?.genre_persona || 'Storyteller',
-          avatar_url: repost.reposter?.avatar_url, // ← avatar_url included for reposter
+          avatar_url: repost.reposter?.avatar_url,
           created_at: repost.created_at,
           like_count: 0,
           comment_count: 0, 
           share_count: 0,
+          view_count: repost.view_count || 0, // ADDED: View count for repost
           original_character: transformedOriginalCharacter
         };
       });
@@ -196,7 +203,7 @@ export const characterActions = {
     }
   },
 
-  // Get a character by ID with full details for CharacterCard - UPDATED: Include repost state
+  // Get a character by ID with full details for CharacterCard - UPDATED: Include repost state and view count
   async getCharacterById(id: string): Promise<CharacterWithDetails | null> {
     const { data: { user } } = await supabase.auth.getUser();
     
@@ -230,11 +237,12 @@ export const characterActions = {
       like_count: characterData.like_count || 0,
       comment_count: characterData.comment_count || 0,
       share_count: characterData.share_count || 0,
+      view_count: characterData.view_count || 0, // ADDED: View count
       user_has_reposted: userHasReposted
     };
   },
 
-  // Get characters for home feed with full details - UPDATED: Include repost state
+  // Get characters for home feed with full details - UPDATED: Include repost state and view count
   async getCharactersForHomeFeed(limit = 20): Promise<CharacterWithDetails[]> {
     const { data: { user } } = await supabase.auth.getUser();
     
@@ -270,6 +278,7 @@ export const characterActions = {
           like_count: character.like_count || 0,
           comment_count: character.comment_count || 0,
           share_count: character.share_count || 0,
+          view_count: character.view_count || 0, // ADDED: View count
           user_has_reposted: userHasReposted
         };
       })
@@ -278,7 +287,7 @@ export const characterActions = {
     return charactersWithReposts;
   },
 
-  // Get characters by user ID with details - UPDATED: Include repost state
+  // Get characters by user ID with details - UPDATED: Include repost state and view count
   async getCharactersByUser(userId: string): Promise<CharacterWithDetails[]> {
     const { data: { user } } = await supabase.auth.getUser();
     
@@ -312,6 +321,7 @@ export const characterActions = {
           like_count: character.like_count || 0,
           comment_count: character.comment_count || 0,
           share_count: character.share_count || 0,
+          view_count: character.view_count || 0, // ADDED: View count
           user_has_reposted: userHasReposted
         };
       })

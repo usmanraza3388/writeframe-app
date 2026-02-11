@@ -13,6 +13,7 @@ export interface Scene {
   share_count: number;
   remake_count: number;
   repost_count: number;     // ADD: For repost functionality
+  view_count?: number;      // FIXED: Make optional for backward compatibility
   created_at: string;
   // For overflow menu - check if current user owns this scene
   is_owner?: boolean;
@@ -26,4 +27,5 @@ export interface SceneEngagement {
   shares: number;
   remakes: number;
   reposts: number;          // ADD: For repost functionality
+  views?: number;           // FIXED: Make optional for backward compatibility
 }

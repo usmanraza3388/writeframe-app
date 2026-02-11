@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom'; // ADDED: Import useNavigate
 import CharacterCard from './CharacterCard';
 // REMOVED: Unused import
@@ -13,6 +13,8 @@ import { useShareStatus } from '../../hooks/useShareStatus';
 import CommentsSection from '../Comments/CommentsSection';
 import ShareDialog from '../Shares/ShareDialog';
 import { useCharacter } from '../../hooks/useCharacter'; // ADDED: Import useCharacter hook
+// ADDED: Import view hooks
+import { useViewItem, useViewCount } from '../../hooks/useViewItem';
 
 // ADDED: Relative time utility function
 const getRelativeTime = (dateString: string): string => {
@@ -80,6 +82,14 @@ const ShareIcon = () => (
   </svg>
 );
 
+// ADDED: View icon component
+const ViewIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+    <circle cx="12" cy="12" r="3"/>
+  </svg>
+);
+
 // FIXED: Added missing interface
 interface RepostedCharacterCardProps {
   repost: {
@@ -138,6 +148,22 @@ const RepostedCharacterCard: React.FC<RepostedCharacterCardProps> = React.memo((
   
   // ADDED: Use character hook for deleteRepost functionality
   const { deleteRepost } = useCharacter();
+  
+  // ADDED: View tracking hooks
+  const { incrementView } = useViewItem();
+  const { data: viewData, fetchViewCount } = useViewCount({
+    content_type: 'character_repost',
+    content_id: repost.id
+  });
+
+  // ADDED: Increment view count when card mounts
+  useEffect(() => {
+    incrementView({
+      content_type: 'character_repost',
+      content_id: repost.id
+    });
+    fetchViewCount();
+  }, [repost.id, incrementView, fetchViewCount]);
   
   // UPDATED: All hooks now use 'character_repost' and repost.id for separate engagement
   const likeMutation = useLikeItem();
@@ -599,6 +625,25 @@ const RepostedCharacterCard: React.FC<RepostedCharacterCardProps> = React.memo((
               {sharesData?.shareCount || 0}
             </span>
           </button>
+          
+          {/* ADDED: View count display */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '4px',
+            padding: '4px',
+            color: '#6B7280'
+          }}>
+            <ViewIcon />
+            <span style={{ 
+              fontSize: '12px',
+              color: '#6B7280',
+              fontFamily: 'Arial, sans-serif',
+              minWidth: '16px'
+            }}>
+              {viewData?.viewCount || 0}
+            </span>
+          </div>
         </div>
 
         {/* UPDATED: Relative Time */}

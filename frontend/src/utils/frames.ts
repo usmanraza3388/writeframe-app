@@ -14,6 +14,7 @@ export interface Frame {
   like_count: number;
   comment_count: number;
   repost_count: number;
+  view_count?: number; // ADDED: Optional view count for backward compatibility
   created_at: string;
 }
 
@@ -61,6 +62,7 @@ export interface FrameRepost {
   user_id: string;
   frame_id: string;
   created_at: string;
+  view_count?: number; // ADDED: Optional view count for reposts
 }
 
 export interface FrameCardProps {

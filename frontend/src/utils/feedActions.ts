@@ -6,6 +6,7 @@ import type { Scene } from './scenes';
 export interface FeedScene extends Scene {
   original_scene_data?: Scene; // ADD: Store original scene data for remakes
   context_text?: string; // ADD: Store remake context separately
+  view_count?: number; // ADDED: View count for scenes
 }
 
 export const feedActions = {
@@ -65,7 +66,8 @@ export const feedActions = {
                 comment_count: originalScene.comment_count || 0,
                 share_count: originalScene.share_count || 0,
                 remake_count: originalScene.remake_count || 0,
-                repost_count: originalScene.repost_count || 0, // Keep repost_count but set to 0
+                repost_count: originalScene.repost_count || 0,
+                view_count: originalScene.view_count || 0, // ADDED: View count for original scene
                 created_at: originalScene.created_at,
               };
             }
@@ -84,7 +86,8 @@ export const feedActions = {
             comment_count: scene.comment_count || 0,
             share_count: scene.share_count || 0,
             remake_count: scene.remake_count || 0,
-            repost_count: scene.repost_count || 0, // Keep repost_count but set to 0
+            repost_count: scene.repost_count || 0,
+            view_count: scene.view_count || 0, // ADDED: View count for this scene
             created_at: scene.created_at,
             is_owner: false,
             original_scene_id: scene.original_scene_id || undefined,
@@ -156,7 +159,8 @@ export const feedActions = {
         comment_count: 0,
         share_count: 0,
         remake_count: 0,
-        repost_count: 0 // Keep repost_count but set to 0
+        repost_count: 0,
+        view_count: 0 // ADDED: Initialize view count to 0
       };
 
       const { data: newScene, error: createError } = await supabase
@@ -203,7 +207,8 @@ export const feedActions = {
         comment_count: originalScene.comment_count || 0,
         share_count: originalScene.share_count || 0,
         remake_count: originalScene.remake_count || 0,
-        repost_count: originalScene.repost_count || 0, // Keep repost_count but set to 0
+        repost_count: originalScene.repost_count || 0,
+        view_count: originalScene.view_count || 0, // ADDED: View count for original scene
         created_at: originalScene.created_at,
       };
 
@@ -220,7 +225,8 @@ export const feedActions = {
         comment_count: newScene.comment_count,
         share_count: newScene.share_count,
         remake_count: newScene.remake_count,
-        repost_count: newScene.repost_count || 0, // Keep repost_count but set to 0
+        repost_count: newScene.repost_count || 0,
+        view_count: newScene.view_count || 0, // ADDED: View count for new scene
         created_at: newScene.created_at,
         is_owner: true,
         original_scene_id: newScene.original_scene_id,
@@ -279,7 +285,8 @@ export const feedActions = {
                 comment_count: originalScene.comment_count || 0,
                 share_count: originalScene.share_count || 0,
                 remake_count: originalScene.remake_count || 0,
-                repost_count: originalScene.repost_count || 0, // Keep repost_count but set to 0
+                repost_count: originalScene.repost_count || 0,
+                view_count: originalScene.view_count || 0, // ADDED: View count for original scene
                 created_at: originalScene.created_at,
               };
             }
@@ -298,7 +305,8 @@ export const feedActions = {
             comment_count: newScene.comment_count || 0,
             share_count: newScene.share_count || 0,
             remake_count: newScene.remake_count || 0,
-            repost_count: newScene.repost_count || 0, // Keep repost_count but set to 0
+            repost_count: newScene.repost_count || 0,
+            view_count: newScene.view_count || 0, // ADDED: View count for new scene
             created_at: newScene.created_at,
             is_owner: false,
             original_scene_id: newScene.original_scene_id || undefined,

@@ -56,7 +56,8 @@ export const createSceneRemake = async (originalSceneId: string, newSceneData: a
         content_text: newSceneData.content_text,
         image_path: newSceneData.image_path,
         soundtrack_id: newSceneData.soundtrack_id,
-        status: 'published' // UPDATED: Use status instead of is_draft/published
+        status: 'published', // UPDATED: Use status instead of is_draft/published
+        view_count: 0 // ADDED: Initialize view count
       })
       .select()
       .single();
@@ -94,15 +95,17 @@ export const createOrUpdateScene = async (sceneData: any, isUpdate: boolean = fa
       image_path: sceneData.image_path,
       soundtrack_id: sceneData.soundtrack_id,
       status: sceneData.status || 'draft', // UPDATED: Use status field
-      updated_at: new Date().toISOString()
+      updated_at: new Date().toISOString(),
+      view_count: 0 // ADDED: Initialize view count
     };
 
     let query;
     if (isUpdate && sceneData.id) {
-      // Update existing scene
+      // Update existing scene - don't reset view_count on update
+      const { view_count, ...updatePayload } = scenePayload;
       query = supabase
         .from('scenes')
-        .update(scenePayload)
+        .update(updatePayload)
         .eq('id', sceneData.id);
     } else {
       // Create new scene
