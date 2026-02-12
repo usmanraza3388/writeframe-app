@@ -333,7 +333,7 @@ const AboutPage: React.FC = () => {
               color: '#1C1C1C',
               margin: '0 0 16px 0'
             }}>
-              "As a film lover, I wanted a space where raw ideas are celebrated—not just polished scripts. 
+              "I wanted a space where raw ideas are celebrated not just polished scripts. 
               writeFrame is the community I wished existed when I was starting out."
             </p>
             <div style={{
