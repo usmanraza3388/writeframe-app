@@ -25,6 +25,9 @@ import { useOnboarding } from '../../hooks/useOnboarding';
 // ADDED: Import CatalystCard
 import CatalystCard from '../CatalystCard/CatalystCard';
 
+// ADDED: Import SearchToggle
+import SearchToggle from '../Search/SearchToggle';
+
 // ADDED: Skeleton Loading Components
 const CardSkeleton: React.FC = () => (
   <div style={{
@@ -594,15 +597,7 @@ const HomeFeed: React.FC = () => {
           borderBottom: '1px solid #E5E5E5',
           marginBottom: '16px'
         }}>
-          <h1 style={{
-            fontFamily: 'Playfair Display, serif',
-            fontSize: '24px',
-            fontWeight: 'bold',
-            color: '#1C1C1C',
-            margin: 0
-          }}>
-            writeFrame
-          </h1>
+          <SearchToggle />
         </div>
 
         <div style={{
