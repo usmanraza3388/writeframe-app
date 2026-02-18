@@ -51,12 +51,8 @@ export default function SignIn() {
 
   // Check for pending prompt on component mount
   useEffect(() => {
-    const pendingPrompt = sessionStorage.getItem('pending_prompt');
-    if (pendingPrompt) {
-      console.log('📌 SignIn: Pending prompt found on mount:', pendingPrompt);
-    } else {
-      console.log('📌 SignIn: No pending prompt on mount');
-    }
+    // Intentionally empty - we don't need to do anything on mount
+    // The prompt will be handled after sign in
   }, []);
 
   const handleSignIn = async (e: FormEvent<HTMLFormElement>) => {
@@ -65,34 +61,24 @@ export default function SignIn() {
     setMessage(null);
 
     try {
-      console.log('🔐 SignIn: Attempting sign in for:', email);
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       
       if (error) {
-        console.log('❌ SignIn: Sign in error:', error.message);
         setMessage(error.message);
       } else {
-        console.log('✅ SignIn: Sign in successful');
         setMessage("Signed in successfully");
         
         // Check for pending prompt after successful sign in
         const pendingPrompt = sessionStorage.getItem('pending_prompt');
-        console.log('🔍 SignIn: Checking sessionStorage for prompt:', pendingPrompt);
 
         if (pendingPrompt) {
-          console.log('✅ SignIn: Found pending prompt:', pendingPrompt);
-          console.log('🗑️ SignIn: Removing from sessionStorage');
           sessionStorage.removeItem('pending_prompt');
-          console.log('➡️ SignIn: Redirecting to compose-scene with prompt:', pendingPrompt);
           navigate(`/compose-scene?prompt=${pendingPrompt}`);
         } else {
-          console.log('❌ SignIn: No pending prompt found');
-          console.log('➡️ SignIn: Redirecting to home-feed');
           navigate("/home-feed");
         }
       }
     } catch (err: any) {
-      console.log('💥 SignIn: Unexpected error:', err);
       setMessage(err?.message || String(err));
     } finally {
       setLoading(false);
@@ -104,14 +90,10 @@ export default function SignIn() {
       setMessage(null);
       setLoading(true);
       
-      console.log('🔐 SignIn: Starting OAuth sign in with:', provider);
-      
       // Store any pending prompt in localStorage for OAuth redirect
       const pendingPrompt = sessionStorage.getItem('pending_prompt');
-      console.log('🔍 SignIn: Checking for pending prompt before OAuth:', pendingPrompt);
       
       if (pendingPrompt) {
-        console.log('💾 SignIn: Moving prompt to localStorage for OAuth:', pendingPrompt);
         localStorage.setItem('oauth_pending_prompt', pendingPrompt);
         sessionStorage.removeItem('pending_prompt');
       }
@@ -124,14 +106,11 @@ export default function SignIn() {
       });
       
       if (error) {
-        console.log('❌ SignIn: OAuth error:', error.message);
         setMessage(error.message);
       } else {
-        console.log('➡️ SignIn: Redirecting to OAuth provider');
         setMessage("Redirecting...");
       }
     } catch (err: any) {
-      console.log('💥 SignIn: OAuth unexpected error:', err);
       setMessage(err?.message || String(err));
     } finally {
       setLoading(false);

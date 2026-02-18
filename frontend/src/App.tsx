@@ -38,14 +38,10 @@ function AppContent() {
     const isFirstVisit = !localStorage.getItem('writeframe_app_initialized');
     
     if (isFirstVisit) {
-      console.log('🔄 Initializing app localStorage state...');
-      
       localStorage.removeItem('writeframe_bottomnav_tour_completed');
       localStorage.removeItem('writeframe_onboarding_complete');
       
       localStorage.setItem('writeframe_app_initialized', 'true');
-      
-      console.log('✅ App localStorage initialized');
     }
   }, []);
 
@@ -75,8 +71,6 @@ function AppContent() {
         setSession(session);
       }
     );
-
-    console.log('AppContent rendering - session:', session, 'loading:', loading);
 
     return () => listener.subscription.unsubscribe();
   }, []);
