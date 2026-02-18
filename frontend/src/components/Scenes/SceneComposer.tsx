@@ -70,7 +70,7 @@ export const SceneComposer: React.FC = () => {
   const sceneId = searchParams.get('id');
   const navigate = useNavigate();
   const location = useLocation();
-  const { user } = useAuth(); // ADDED
+  const { user, isLoading } = useAuth(); // UPDATED
   
   const returnPath = location.state?.from || '/home-feed';
   
@@ -99,20 +99,34 @@ export const SceneComposer: React.FC = () => {
 
   const prompt = searchParams.get('prompt');
 
-  // ADDED: Auth check - redirect to signin if not logged in
-  useEffect(() => {
-    if (!user) {
-      // Save the prompt and redirect to signin
-      if (prompt) {
-        sessionStorage.setItem('pending_prompt', prompt);
-      }
-      navigate('/signin');
-      return;
-    }
-  }, [user, prompt, navigate]);
+  // Show loading while checking auth
+  if (isLoading) {
+    return (
+      <div style={{
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: '#FFFFFF'
+      }}>
+        <div style={{
+          textAlign: 'center',
+          fontFamily: "'Cormorant', serif",
+          color: '#55524F'
+        }}>
+          Loading...
+        </div>
+      </div>
+    );
+  }
 
-  // ADDED: Prevent rendering if no user
+  // Redirect if not logged in
   if (!user) {
+    // Save the prompt and redirect to signin
+    if (prompt) {
+      sessionStorage.setItem('pending_prompt', prompt);
+    }
+    navigate('/signin', { replace: true });
     return null;
   }
 
