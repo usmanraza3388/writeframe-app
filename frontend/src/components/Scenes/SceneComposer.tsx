@@ -101,6 +101,7 @@ export const SceneComposer: React.FC = () => {
 
   // Show loading while checking auth
   if (isLoading) {
+    console.log('⏳ SceneComposer: Loading auth state...');
     return (
       <div style={{
         minHeight: '100vh',
@@ -122,26 +123,48 @@ export const SceneComposer: React.FC = () => {
 
   // Redirect if not logged in
   if (!user) {
-    // Save the prompt and redirect to signin
+    console.log('🔴 SceneComposer: No user found');
+    console.log('📝 SceneComposer: Prompt value:', prompt);
+    
     if (prompt) {
+      console.log('💾 SceneComposer: Saving to sessionStorage:', prompt);
       sessionStorage.setItem('pending_prompt', prompt);
+    } else {
+      console.log('⚠️ SceneComposer: No prompt to save');
     }
+    
+    console.log('➡️ SceneComposer: Redirecting to /signin');
     navigate('/signin', { replace: true });
     return null;
+  } else {
+    console.log('🟢 SceneComposer: User found:', user.id);
+    console.log('📝 SceneComposer: Current prompt:', prompt);
+    
+    // Check if there's a pending prompt from sessionStorage
+    const pendingPrompt = sessionStorage.getItem('pending_prompt');
+    if (pendingPrompt && !prompt) {
+      console.log('🔄 SceneComposer: Found pending prompt, redirecting to:', pendingPrompt);
+      sessionStorage.removeItem('pending_prompt');
+      navigate(`/compose-scene?prompt=${pendingPrompt}`, { replace: true });
+      return null;
+    }
   }
 
   // EFFECT 1: Handle email campaign prompts (short codes like ?prompt=waiting)
   useEffect(() => {
     if (prompt && emailPrompts[prompt as keyof typeof emailPrompts]) {
+      console.log('📧 SceneComposer: Email campaign prompt detected:', prompt);
       const promptData = emailPrompts[prompt as keyof typeof emailPrompts];
       
       // Set title from email campaign
       if (promptData.title) {
+        console.log('📝 SceneComposer: Setting title:', promptData.title);
         setTitle(promptData.title);
       }
       
       // Set image from email campaign
       if (promptData.image) {
+        console.log('🖼️ SceneComposer: Setting image:', promptData.image);
         setImagePreviewUrl(promptData.image);
       }
       
@@ -152,7 +175,7 @@ export const SceneComposer: React.FC = () => {
   // EFFECT 2: Handle CatalystCard and direct text prompts (existing functionality)
   useEffect(() => {
     if (prompt && !emailPrompts[prompt as keyof typeof emailPrompts]) {
-      // Only run if it's NOT an email campaign prompt
+      console.log('🎯 SceneComposer: CatalystCard/direct prompt detected:', prompt);
       setContent(decodeURIComponent(prompt));
       localStorage.setItem('user_has_created', 'true');
     }

@@ -19,23 +19,29 @@ export default function AuthCallback() {
   useEffect(() => {
     const handleOAuthCallback = async () => {
       try {
+        console.log('🔄 AuthCallback: Starting OAuth callback handling');
         setLoading(true);
         
         // Get the session after OAuth redirect
+        console.log('🔍 AuthCallback: Getting session...');
         const { data: { session }, error: sessionError } = await supabase.auth.getSession();
         
         if (sessionError) {
+          console.log('❌ AuthCallback: Session error:', sessionError);
           throw new Error(`Session error: ${sessionError.message}`);
         }
 
         if (!session?.user) {
+          console.log('❌ AuthCallback: No user session found');
           throw new Error('No user session found');
         }
 
         const user = session.user;
-        console.log('OAuth user:', user);
+        console.log('✅ AuthCallback: User found:', user.id);
+        console.log('📧 AuthCallback: User email:', user.email);
 
         // Check if profile already exists and get its completeness
+        console.log('🔍 AuthCallback: Checking existing profile...');
         const { data: existingProfile, error: profileError } = await supabase
           .from('profiles')
           .select('id, username, full_name, genre_persona, expression')
@@ -44,16 +50,18 @@ export default function AuthCallback() {
 
         if (profileError && profileError.code !== 'PGRST116') {
           // PGRST116 means no profile found, which is fine for new users
+          console.log('❌ AuthCallback: Profile check error:', profileError);
           throw new Error(`Profile check error: ${profileError.message}`);
         }
 
-        console.log('Existing profile:', existingProfile);
+        console.log('📊 AuthCallback: Existing profile:', existingProfile);
 
         // Determine if profile needs creation/update
         const needsProfileCreation = !existingProfile;
         const hasCriticalFields = existingProfile?.username && existingProfile?.full_name;
 
         if (needsProfileCreation || !hasCriticalFields) {
+          console.log('📝 AuthCallback: Creating/updating profile...');
           // Create or update profile with required fields
           const profileData = {
             id: user.id,
@@ -73,7 +81,7 @@ export default function AuthCallback() {
             updated_at: new Date().toISOString()
           };
 
-          console.log('Upserting profile:', profileData);
+          console.log('📦 AuthCallback: Profile data to upsert:', profileData);
 
           const { error: upsertError } = await supabase
             .from('profiles')
@@ -83,30 +91,34 @@ export default function AuthCallback() {
             });
 
           if (upsertError) {
+            console.log('❌ AuthCallback: Profile upsert error:', upsertError);
             throw new Error(`Profile upsert error: ${upsertError.message}`);
           }
 
-          console.log('Profile upsert successful');
+          console.log('✅ AuthCallback: Profile upsert successful');
         }
 
         // Check if user needs to complete onboarding
+        console.log('🔍 AuthCallback: Checking onboarding status...');
         const { data: updatedProfile } = await supabase
           .from('profiles')
           .select('genre_persona, expression')
           .eq('id', user.id)
           .single();
 
-        console.log('Updated profile check:', updatedProfile);
+        console.log('📊 AuthCallback: Updated profile check:', updatedProfile);
 
         // ADDED: Check for pending prompt from OAuth flow
         const pendingPrompt = localStorage.getItem('oauth_pending_prompt');
+        console.log('🔍 AuthCallback: Checking for oauth_pending_prompt:', pendingPrompt);
 
         if (!updatedProfile?.genre_persona || !updatedProfile?.expression) {
           // Redirect to onboarding if missing critical onboarding data
-          console.log('Redirecting to onboarding - profile incomplete');
+          console.log('➡️ AuthCallback: Profile incomplete, redirecting to welcome');
           
           // If there's a pending prompt, save it for after onboarding
           if (pendingPrompt) {
+            console.log('💾 AuthCallback: Moving prompt to sessionStorage for after onboarding:', pendingPrompt);
             sessionStorage.setItem('pending_prompt', pendingPrompt);
             localStorage.removeItem('oauth_pending_prompt');
           }
@@ -115,25 +127,25 @@ export default function AuthCallback() {
         } else {
           // Profile is complete
           if (pendingPrompt) {
-            // Has pending prompt - go to composer
-            console.log('Redirecting to composer with prompt');
+            console.log('✅ AuthCallback: Found pending prompt, redirecting to composer with:', pendingPrompt);
             localStorage.removeItem('oauth_pending_prompt');
             navigate(`/compose-scene?prompt=${pendingPrompt}`, { replace: true });
           } else {
-            // No pending prompt - go to home feed
-            console.log('Redirecting to home feed - profile complete');
+            console.log('➡️ AuthCallback: No pending prompt, going to home-feed');
             navigate('/home-feed', { replace: true });
           }
         }
 
       } catch (err: any) {
-        console.error('OAuth callback error:', err);
+        console.error('💥 AuthCallback: Fatal error:', err);
         setError(err.message || 'Authentication failed');
         // Fallback - send to signin page after delay
         setTimeout(() => {
+          console.log('⏱️ AuthCallback: Falling back to signin');
           navigate('/signin', { replace: true });
         }, 3000);
       } finally {
+        console.log('🏁 AuthCallback: Finished handling');
         setLoading(false);
       }
     };
