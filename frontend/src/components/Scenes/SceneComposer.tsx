@@ -9,6 +9,8 @@ import InspirationBottomSheet from '../InspirationBottomSheet/InspirationBottomS
 import emailPrompts from '../../data/emailPrompts.json'; // ADDED
 import { useAuth } from '../../contexts/AuthContext'; // ADDED
 
+console.log('🔥🔥🔥 SCENE COMPOSER FILE IS BEING EVALUATED');
+
 // ADDED: URL Input Component
 const UrlImageInput: React.FC<{ onAddImage: (url: string) => void }> = ({ onAddImage }) => {
   const [url, setUrl] = useState('');
