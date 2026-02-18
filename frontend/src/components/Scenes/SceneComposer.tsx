@@ -6,6 +6,7 @@ import { supabase } from '../../assets/lib/supabaseClient';
 import { useSearchParams, useNavigate, useLocation } from 'react-router-dom';
 import { promptsData } from '../../data/promptsData';
 import InspirationBottomSheet from '../InspirationBottomSheet/InspirationBottomSheet';
+import emailPrompts from '../../data/emailPrompts.json'; // ADDED
 
 // ADDED: URL Input Component
 const UrlImageInput: React.FC<{ onAddImage: (url: string) => void }> = ({ onAddImage }) => {
@@ -94,10 +95,31 @@ export const SceneComposer: React.FC = () => {
   const { createScene, loading, error } = useSceneComposer();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // ADDED: CatalystCard prompt handling
   const prompt = searchParams.get('prompt');
+
+  // EFFECT 1: Handle email campaign prompts (short codes like ?prompt=waiting)
   useEffect(() => {
-    if (prompt) {
+    if (prompt && emailPrompts[prompt as keyof typeof emailPrompts]) {
+      const promptData = emailPrompts[prompt as keyof typeof emailPrompts];
+      
+      // Set title from email campaign
+      if (promptData.title) {
+        setTitle(promptData.title);
+      }
+      
+      // Set image from email campaign
+      if (promptData.image) {
+        setImagePreviewUrl(promptData.image);
+      }
+      
+      localStorage.setItem('user_has_created', 'true');
+    }
+  }, [prompt]);
+
+  // EFFECT 2: Handle CatalystCard and direct text prompts (existing functionality)
+  useEffect(() => {
+    if (prompt && !emailPrompts[prompt as keyof typeof emailPrompts]) {
+      // Only run if it's NOT an email campaign prompt
       setContent(decodeURIComponent(prompt));
       localStorage.setItem('user_has_created', 'true');
     }
