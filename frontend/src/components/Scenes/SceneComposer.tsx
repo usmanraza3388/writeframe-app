@@ -111,6 +111,11 @@ export const SceneComposer: React.FC = () => {
     }
   }, [user, prompt, navigate]);
 
+  // ADDED: Prevent rendering if no user
+  if (!user) {
+    return null;
+  }
+
   // EFFECT 1: Handle email campaign prompts (short codes like ?prompt=waiting)
   useEffect(() => {
     if (prompt && emailPrompts[prompt as keyof typeof emailPrompts]) {
