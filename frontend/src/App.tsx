@@ -81,8 +81,6 @@ function AppContent() {
     return () => listener.subscription.unsubscribe();
   }, []);
 
-  if (loading) return <div>Loading...</div>;
-
   return (
     <Router>
       <Routes>
@@ -98,7 +96,11 @@ function AppContent() {
         <Route
           path="/app"
           element={
-            !session ? (
+            loading ? (
+              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+                Loading...
+              </div>
+            ) : !session ? (
               <Navigate to="/" replace />
             ) : !profile?.genre_persona ? (
               <Navigate to="/welcome" replace />
@@ -110,31 +112,94 @@ function AppContent() {
           }
         />
 
-        <Route path="/home-feed" element={<HomeFeed />} />
+        <Route
+          path="/home-feed"
+          element={
+            loading ? (
+              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+                Loading...
+              </div>
+            ) : session ? (
+              <HomeFeed />
+            ) : (
+              <Navigate to="/signin" replace />
+            )
+          }
+        />
 
         <Route
           path="/dashboard"
-          element={session ? <Dashboard /> : <Navigate to="/signin" replace />}
+          element={
+            loading ? (
+              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+                Loading...
+              </div>
+            ) : session ? (
+              <Dashboard />
+            ) : (
+              <Navigate to="/signin" replace />
+            )
+          }
         />
 
         <Route
           path="/drafts"
-          element={session ? <Drafts /> : <Navigate to="/signin" replace />}
+          element={
+            loading ? (
+              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+                Loading...
+              </div>
+            ) : session ? (
+              <Drafts />
+            ) : (
+              <Navigate to="/signin" replace />
+            )
+          }
         />
 
         <Route
           path="/settings"
-          element={session ? <Settings /> : <Navigate to="/signin" replace />}
+          element={
+            loading ? (
+              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+                Loading...
+              </div>
+            ) : session ? (
+              <Settings />
+            ) : (
+              <Navigate to="/signin" replace />
+            )
+          }
         />
 
         <Route
           path="/inbox"
-          element={session ? <InboxPage /> : <Navigate to="/signin" replace />}
+          element={
+            loading ? (
+              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+                Loading...
+              </div>
+            ) : session ? (
+              <InboxPage />
+            ) : (
+              <Navigate to="/signin" replace />
+            )
+          }
         />
 
         <Route
           path="/whisper-thread/:userId"
-          element={session ? <WhisperThread /> : <Navigate to="/signin" replace />}
+          element={
+            loading ? (
+              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+                Loading...
+              </div>
+            ) : session ? (
+              <WhisperThread />
+            ) : (
+              <Navigate to="/signin" replace />
+            )
+          }
         />
 
         <Route path="/signup" element={<SignUp />} />
@@ -145,45 +210,137 @@ function AppContent() {
 
         <Route
           path="/welcome"
-          element={session ? <Welcome /> : <Navigate to="/signup" replace />}
+          element={
+            loading ? (
+              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+                Loading...
+              </div>
+            ) : session ? (
+              <Welcome />
+            ) : (
+              <Navigate to="/signup" replace />
+            )
+          }
         />
+
         <Route
           path="/genre-selection"
-          element={session ? <GenreSelection /> : <Navigate to="/signup" replace />}
+          element={
+            loading ? (
+              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+                Loading...
+              </div>
+            ) : session ? (
+              <GenreSelection />
+            ) : (
+              <Navigate to="/signup" replace />
+            )
+          }
         />
+
         <Route
           path="/expression-selection"
-          element={session ? <ExpressionSelection /> : <Navigate to="/signup" replace />}
+          element={
+            loading ? (
+              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+                Loading...
+              </div>
+            ) : session ? (
+              <ExpressionSelection />
+            ) : (
+              <Navigate to="/signup" replace />
+            )
+          }
         />
 
         <Route
           path="/profile/:id"
-          element={session ? <Profile /> : <Navigate to="/signin" replace />}
+          element={
+            loading ? (
+              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+                Loading...
+              </div>
+            ) : session ? (
+              <Profile />
+            ) : (
+              <Navigate to="/signin" replace />
+            )
+          }
         />
 
         <Route
           path="/compose-scene"
-          element={session ? <SceneComposer /> : <Navigate to="/signin" replace />}
+          element={
+            loading ? (
+              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+                Loading...
+              </div>
+            ) : session ? (
+              <SceneComposer />
+            ) : (
+              <Navigate to="/signin" replace />
+            )
+          }
         />
 
         <Route
           path="/compose-monologue"
-          element={session ? <MonologueComposer /> : <Navigate to="/signin" replace />}
+          element={
+            loading ? (
+              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+                Loading...
+              </div>
+            ) : session ? (
+              <MonologueComposer />
+            ) : (
+              <Navigate to="/signin" replace />
+            )
+          }
         />
 
         <Route
           path="/compose-character"
-          element={session ? <CharacterComposer /> : <Navigate to="/signin" replace />}
+          element={
+            loading ? (
+              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+                Loading...
+              </div>
+            ) : session ? (
+              <CharacterComposer />
+            ) : (
+              <Navigate to="/signin" replace />
+            )
+          }
         />
 
         <Route
           path="/compose-frame"
-          element={session ? <FrameComposer /> : <Navigate to="/signin" replace />}
+          element={
+            loading ? (
+              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+                Loading...
+              </div>
+            ) : session ? (
+              <FrameComposer />
+            ) : (
+              <Navigate to="/signin" replace />
+            )
+          }
         />
 
         <Route
           path="/whisper/:userId"
-          element={session ? <WhisperComposer /> : <Navigate to="/signin" replace />}
+          element={
+            loading ? (
+              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+                Loading...
+              </div>
+            ) : session ? (
+              <WhisperComposer />
+            ) : (
+              <Navigate to="/signin" replace />
+            )
+          }
         />
 
         <Route
