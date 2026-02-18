@@ -76,6 +76,8 @@ function AppContent() {
       }
     );
 
+    console.log('AppContent rendering - session:', session, 'loading:', loading);
+
     return () => listener.subscription.unsubscribe();
   }, []);
 
