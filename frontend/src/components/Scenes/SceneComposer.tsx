@@ -582,7 +582,7 @@ export const SceneComposer: React.FC = () => {
             <textarea
               value={content}
               onChange={(e) => setContent(e.target.value)}
-              placeholder="Write a monologue, moment, or memory..."
+              placeholder="Write your scene here..."
               required
               style={textareaStyle}
             />
