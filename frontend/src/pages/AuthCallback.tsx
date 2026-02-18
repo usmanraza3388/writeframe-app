@@ -98,14 +98,32 @@ export default function AuthCallback() {
 
         console.log('Updated profile check:', updatedProfile);
 
+        // ADDED: Check for pending prompt from OAuth flow
+        const pendingPrompt = localStorage.getItem('oauth_pending_prompt');
+
         if (!updatedProfile?.genre_persona || !updatedProfile?.expression) {
           // Redirect to onboarding if missing critical onboarding data
           console.log('Redirecting to onboarding - profile incomplete');
+          
+          // If there's a pending prompt, save it for after onboarding
+          if (pendingPrompt) {
+            sessionStorage.setItem('pending_prompt', pendingPrompt);
+            localStorage.removeItem('oauth_pending_prompt');
+          }
+          
           navigate('/welcome', { replace: true });
         } else {
-          // Profile is complete - go to home feed
-          console.log('Redirecting to home feed - profile complete');
-          navigate('/home-feed', { replace: true });
+          // Profile is complete
+          if (pendingPrompt) {
+            // Has pending prompt - go to composer
+            console.log('Redirecting to composer with prompt');
+            localStorage.removeItem('oauth_pending_prompt');
+            navigate(`/compose-scene?prompt=${pendingPrompt}`, { replace: true });
+          } else {
+            // No pending prompt - go to home feed
+            console.log('Redirecting to home feed - profile complete');
+            navigate('/home-feed', { replace: true });
+          }
         }
 
       } catch (err: any) {

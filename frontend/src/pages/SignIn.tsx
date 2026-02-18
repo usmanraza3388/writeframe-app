@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import type { FormEvent } from "react";
 import { supabase } from "../assets/lib/supabaseClient";
 import { useNavigate, Link } from "react-router-dom";
@@ -49,6 +49,15 @@ export default function SignIn() {
   const [message, setMessage] = useState<string | null>(null);
   const navigate = useNavigate();
 
+  // Check for pending prompt on component mount
+  useEffect(() => {
+    const pendingPrompt = sessionStorage.getItem('pending_prompt');
+    if (pendingPrompt) {
+      // Just log it - we'll handle after sign in
+      console.log('Pending prompt found:', pendingPrompt);
+    }
+  }, []);
+
   const handleSignIn = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
@@ -60,7 +69,15 @@ export default function SignIn() {
         setMessage(error.message);
       } else {
         setMessage("Signed in successfully");
-        navigate("/home-feed");
+        
+        // Check for pending prompt after successful sign in
+        const pendingPrompt = sessionStorage.getItem('pending_prompt');
+        if (pendingPrompt) {
+          sessionStorage.removeItem('pending_prompt');
+          navigate(`/compose-scene?prompt=${pendingPrompt}`);
+        } else {
+          navigate("/home-feed");
+        }
       }
     } catch (err: any) {
       setMessage(err?.message || String(err));
@@ -73,6 +90,14 @@ export default function SignIn() {
     try {
       setMessage(null);
       setLoading(true);
+      
+      // Store any pending prompt in localStorage for OAuth redirect
+      const pendingPrompt = sessionStorage.getItem('pending_prompt');
+      if (pendingPrompt) {
+        localStorage.setItem('oauth_pending_prompt', pendingPrompt);
+        sessionStorage.removeItem('pending_prompt');
+      }
+      
       const { error } = await supabase.auth.signInWithOAuth({
         provider,
         options: {

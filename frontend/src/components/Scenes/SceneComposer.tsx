@@ -7,6 +7,7 @@ import { useSearchParams, useNavigate, useLocation } from 'react-router-dom';
 import { promptsData } from '../../data/promptsData';
 import InspirationBottomSheet from '../InspirationBottomSheet/InspirationBottomSheet';
 import emailPrompts from '../../data/emailPrompts.json'; // ADDED
+import { useAuth } from '../../contexts/AuthContext'; // ADDED
 
 // ADDED: URL Input Component
 const UrlImageInput: React.FC<{ onAddImage: (url: string) => void }> = ({ onAddImage }) => {
@@ -69,6 +70,7 @@ export const SceneComposer: React.FC = () => {
   const sceneId = searchParams.get('id');
   const navigate = useNavigate();
   const location = useLocation();
+  const { user } = useAuth(); // ADDED
   
   const returnPath = location.state?.from || '/home-feed';
   
@@ -96,6 +98,18 @@ export const SceneComposer: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const prompt = searchParams.get('prompt');
+
+  // ADDED: Auth check - redirect to signin if not logged in
+  useEffect(() => {
+    if (!user) {
+      // Save the prompt and redirect to signin
+      if (prompt) {
+        sessionStorage.setItem('pending_prompt', prompt);
+      }
+      navigate('/signin');
+      return;
+    }
+  }, [user, prompt, navigate]);
 
   // EFFECT 1: Handle email campaign prompts (short codes like ?prompt=waiting)
   useEffect(() => {
