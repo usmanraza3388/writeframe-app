@@ -11,6 +11,15 @@ import { useAuth } from '../../contexts/AuthContext'; // ADDED
 
 console.log('🔥🔥🔥 SCENE COMPOSER FILE IS BEING EVALUATED');
 
+// IMMEDIATE PROMPT SAVING - runs before anything else
+const urlParams = new URLSearchParams(window.location.search);
+const immediatePrompt = urlParams.get('prompt');
+if (immediatePrompt) {
+  console.log('💾🔥 IMMEDIATE SAVE - Prompt detected in URL:', immediatePrompt);
+  sessionStorage.setItem('pending_prompt', immediatePrompt);
+  console.log('💾🔥 IMMEDIATE SAVE - Saved to sessionStorage');
+}
+
 // ADDED: URL Input Component
 const UrlImageInput: React.FC<{ onAddImage: (url: string) => void }> = ({ onAddImage }) => {
   const [url, setUrl] = useState('');
@@ -128,8 +137,10 @@ export const SceneComposer: React.FC = () => {
     console.log('🔴 SceneComposer: No user found');
     console.log('📝 SceneComposer: Prompt value:', prompt);
     
+    // Note: Prompt is already saved at the top of the file,
+    // but we'll keep this as a backup
     if (prompt) {
-      console.log('💾 SceneComposer: Saving to sessionStorage:', prompt);
+      console.log('💾 SceneComposer: Saving to sessionStorage (backup):', prompt);
       sessionStorage.setItem('pending_prompt', prompt);
     } else {
       console.log('⚠️ SceneComposer: No prompt to save');
