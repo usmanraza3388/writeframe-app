@@ -110,6 +110,17 @@ export default function SignUp() {
         return;
       }
 
+      // 🔹 Add user to MailerLite group via Edge Function
+      try {
+        await fetch("https://ycrvsbtqmjksdbyrefek.supabase.co/functions/v1/hyper-task", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email })
+        });
+      } catch (err) {
+        console.error("Failed to add to MailerLite:", err);
+      }
+
       const { data: sessionData } = await supabase.auth.getSession();
       if (sessionData.session) {
         navigate("/welcome");
@@ -130,7 +141,7 @@ export default function SignUp() {
 
       await supabase.auth.signInWithOAuth({
         provider,
-        options: { redirectTo: `${window.location.origin}/auth/callback` }, // 👈 CHANGED: redirect to auth callback
+        options: { redirectTo: `${window.location.origin}/auth/callback` },
       });
     } catch (err: any) {
       setMessage(err?.message || String(err));
