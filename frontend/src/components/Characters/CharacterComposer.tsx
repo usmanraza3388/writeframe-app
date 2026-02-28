@@ -7,6 +7,13 @@ import { supabase } from '../../assets/lib/supabaseClient';
 import { promptsData } from '../../data/promptsData';
 import InspirationBottomSheet from '../InspirationBottomSheet/InspirationBottomSheet';
 
+// IMMEDIATE PROMPT SAVING - runs before anything else
+const urlParams = new URLSearchParams(window.location.search);
+const immediatePrompt = urlParams.get('prompt');
+if (immediatePrompt) {
+  sessionStorage.setItem('pending_prompt', immediatePrompt);
+}
+
 export default function CharacterComposer() {
   const [searchParams] = useSearchParams();
   const characterId = searchParams.get('id');
