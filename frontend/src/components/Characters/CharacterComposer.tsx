@@ -6,12 +6,17 @@ import { useSearchParams, useNavigate, useLocation } from 'react-router-dom'; //
 import { supabase } from '../../assets/lib/supabaseClient';
 import { promptsData } from '../../data/promptsData';
 import InspirationBottomSheet from '../InspirationBottomSheet/InspirationBottomSheet';
+import emailPrompts from '../../data/emailPrompts.json'; // ADDED
 
 // IMMEDIATE PROMPT SAVING - runs before anything else
 const urlParams = new URLSearchParams(window.location.search);
 const immediatePrompt = urlParams.get('prompt');
+const currentPath = window.location.pathname;
+const contentType = currentPath.includes('character') ? 'character' : 'scene';
+
 if (immediatePrompt) {
   sessionStorage.setItem('pending_prompt', immediatePrompt);
+  sessionStorage.setItem('pending_path', contentType);
 }
 
 export default function CharacterComposer() {
@@ -57,6 +62,20 @@ export default function CharacterComposer() {
   useEffect(() => {
     if (prompt) {
       updateField('tagline', decodeURIComponent(prompt));
+      localStorage.setItem('user_has_created', 'true');
+    }
+  }, [prompt]);
+
+  // ADDED: Email campaign prompt handling
+  useEffect(() => {
+    if (prompt && emailPrompts[prompt as keyof typeof emailPrompts]) {
+      const promptData = emailPrompts[prompt as keyof typeof emailPrompts];
+      
+      // Set image from email campaign
+      if (promptData.image) {
+        addVisualReference(promptData.image);
+      }
+      
       localStorage.setItem('user_has_created', 'true');
     }
   }, [prompt]);
