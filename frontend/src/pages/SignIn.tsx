@@ -70,10 +70,12 @@ export default function SignIn() {
         
         // Check for pending prompt after successful sign in
         const pendingPrompt = sessionStorage.getItem('pending_prompt');
+        const pendingPath = sessionStorage.getItem('pending_path') || 'scene';
 
         if (pendingPrompt) {
           sessionStorage.removeItem('pending_prompt');
-          navigate(`/compose-scene?prompt=${pendingPrompt}`);
+          sessionStorage.removeItem('pending_path');
+          navigate(`/compose-${pendingPath}?prompt=${pendingPrompt}`);
         } else {
           navigate("/home-feed");
         }
@@ -92,10 +94,13 @@ export default function SignIn() {
       
       // Store any pending prompt in localStorage for OAuth redirect
       const pendingPrompt = sessionStorage.getItem('pending_prompt');
+      const pendingPath = sessionStorage.getItem('pending_path') || 'scene';
       
       if (pendingPrompt) {
         localStorage.setItem('oauth_pending_prompt', pendingPrompt);
+        localStorage.setItem('oauth_pending_path', pendingPath);
         sessionStorage.removeItem('pending_prompt');
+        sessionStorage.removeItem('pending_path');
       }
       
       const { error } = await supabase.auth.signInWithOAuth({

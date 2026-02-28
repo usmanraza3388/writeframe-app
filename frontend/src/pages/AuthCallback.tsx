@@ -91,6 +91,7 @@ export default function AuthCallback() {
 
         // Check for pending prompt from OAuth flow
         const pendingPrompt = localStorage.getItem('oauth_pending_prompt');
+        const pendingPath = localStorage.getItem('oauth_pending_path') || 'scene';
 
         if (!updatedProfile?.genre_persona || !updatedProfile?.expression) {
           // Redirect to onboarding if missing critical onboarding data
@@ -98,7 +99,9 @@ export default function AuthCallback() {
           // If there's a pending prompt, save it for after onboarding
           if (pendingPrompt) {
             sessionStorage.setItem('pending_prompt', pendingPrompt);
+            sessionStorage.setItem('pending_path', pendingPath);
             localStorage.removeItem('oauth_pending_prompt');
+            localStorage.removeItem('oauth_pending_path');
           }
           
           navigate('/welcome', { replace: true });
@@ -106,7 +109,8 @@ export default function AuthCallback() {
           // Profile is complete
           if (pendingPrompt) {
             localStorage.removeItem('oauth_pending_prompt');
-            navigate(`/compose-scene?prompt=${pendingPrompt}`, { replace: true });
+            localStorage.removeItem('oauth_pending_path');
+            navigate(`/compose-${pendingPath}?prompt=${pendingPrompt}`, { replace: true });
           } else {
             navigate('/home-feed', { replace: true });
           }
