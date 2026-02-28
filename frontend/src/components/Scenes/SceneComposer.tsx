@@ -12,8 +12,12 @@ import { useAuth } from '../../contexts/AuthContext'; // ADDED
 // IMMEDIATE PROMPT SAVING - runs before anything else
 const urlParams = new URLSearchParams(window.location.search);
 const immediatePrompt = urlParams.get('prompt');
+const currentPath = window.location.pathname;
+const contentType = currentPath.includes('character') ? 'character' : 'scene';
+
 if (immediatePrompt) {
   sessionStorage.setItem('pending_prompt', immediatePrompt);
+  sessionStorage.setItem('pending_path', contentType);
 }
 
 // ADDED: URL Input Component
