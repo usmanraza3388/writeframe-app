@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import type { ChangeEvent } from 'react';
 import { useSceneComposer } from '../../hooks/useSceneComposer';
 import type { CreateSceneData } from '../../../types/database.types';
@@ -8,6 +8,10 @@ import { promptsData } from '../../data/promptsData';
 import InspirationBottomSheet from '../InspirationBottomSheet/InspirationBottomSheet';
 import emailPrompts from '../../data/emailPrompts.json'; // ADDED
 import { useAuth } from '../../contexts/AuthContext'; // ADDED
+// ADDED: Preview imports
+import { PreviewModal } from '../Preview/PreviewModal';
+import { usePreview } from '../../hooks/usePreview';
+import SceneCard from '../SceneCard/SceneCard';
 
 // IMMEDIATE PROMPT SAVING - runs before anything else
 const urlParams = new URLSearchParams(window.location.search);
@@ -109,6 +113,29 @@ export const SceneComposer: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const prompt = searchParams.get('prompt');
+
+  // ADDED: Preview hook
+  const { showPreview, previewData, openPreview, closePreview, canPreview } = usePreview({
+    user: user,
+    buildPreviewData: useCallback(() => {
+      return {
+        id: `preview-${Date.now()}`,
+        user_id: user?.id || '',
+        user_name: user?.user_metadata?.full_name || 'You',
+        user_genre_tag: user?.user_metadata?.genre_persona || 'Writer',
+        title: title || 'Untitled Scene',
+        description: content || 'No description yet',
+        image_path: imagePreviewUrl,
+        created_at: new Date().toISOString(),
+        like_count: 0,
+        comment_count: 0,
+        profiles: {
+          avatar_url: user?.user_metadata?.avatar_url || null
+        }
+      };
+    }, [title, content, imagePreviewUrl, user]),
+    hasContent: title.length > 0 || content.length > 0
+  });
 
   // Show loading while checking auth
   if (isLoading) {
@@ -921,6 +948,45 @@ export const SceneComposer: React.FC = () => {
               </>
             )}
           </div>
+
+          {/* ADDED: Preview button and modal */}
+          {canPreview && !isEditing && (
+            <>
+              <button
+                onClick={openPreview}
+                style={{
+                  width: '100%',
+                  padding: '16px',
+                  background: '#1A1A1A',
+                  color: '#FFFFFF',
+                  border: 'none',
+                  borderRadius: '12px',
+                  fontSize: '16px',
+                  fontWeight: 600,
+                  fontFamily: "'Playfair Display', serif",
+                  marginTop: '24px',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = '#2A2A2A';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = '#1A1A1A';
+                }}
+              >
+                See Final Design
+              </button>
+              
+              <PreviewModal isOpen={showPreview} onClose={closePreview}>
+                <SceneCard 
+                  scene={previewData as any}
+                  currentUserId={user?.id}
+                  onAction={() => {}}
+                />
+              </PreviewModal>
+            </>
+          )}
         </div>
 
         <InspirationBottomSheet

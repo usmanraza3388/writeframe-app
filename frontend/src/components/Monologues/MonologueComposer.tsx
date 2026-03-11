@@ -1,15 +1,21 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useMonologueComposer } from '../../hooks/useMonologueComposer';
 import { useSearchParams, useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '../../assets/lib/supabaseClient';
 import { promptsData } from '../../data/promptsData';
 import InspirationBottomSheet from '../InspirationBottomSheet/InspirationBottomSheet';
+// ADDED: Preview imports
+import { PreviewModal } from '../Preview/PreviewModal';
+import { usePreview } from '../../hooks/usePreview';
+import MonologueCard from '../Monologue/MonologueCard';
+import { useAuth } from '../../contexts/AuthContext';
 
 export const MonologueComposer: React.FC = () => {
   const [searchParams] = useSearchParams();
   const monologueId = searchParams.get('id');
   const navigate = useNavigate();
   const location = useLocation();
+  const { user } = useAuth();
   
   const returnPath = location.state?.from || '/home-feed';
   
@@ -27,6 +33,28 @@ export const MonologueComposer: React.FC = () => {
   const [isSavingDraft, setIsSavingDraft] = useState(false);
   
   const { createMonologue, isLoading, error } = useMonologueComposer();
+
+  // ADDED: Preview hook
+  const { showPreview, previewData, openPreview, closePreview, canPreview } = usePreview({
+    user: user,
+    buildPreviewData: useCallback(() => {
+      return {
+        id: `preview-${Date.now()}`,
+        user_id: user?.id || '',
+        user_name: user?.user_metadata?.full_name || 'You',
+        user_genre_tag: user?.user_metadata?.genre_persona || 'Writer',
+        title: title || 'Untitled Monologue',
+        content_text: content || 'No content yet',
+        created_at: new Date().toISOString(),
+        like_count: 0,
+        comment_count: 0,
+        profiles: {
+          avatar_url: user?.user_metadata?.avatar_url || null
+        }
+      };
+    }, [title, content, user]),
+    hasContent: title.length > 0 || content.length > 0
+  });
 
   // ADDED: CatalystCard prompt handling
   const prompt = searchParams.get('prompt');
@@ -555,6 +583,45 @@ export const MonologueComposer: React.FC = () => {
               </>
             )}
           </div>
+
+          {/* ADDED: Preview button and modal */}
+          {canPreview && !isEditing && (
+            <>
+              <button
+                onClick={openPreview}
+                style={{
+                  width: '100%',
+                  padding: '16px',
+                  background: '#1A1A1A',
+                  color: '#FFFFFF',
+                  border: 'none',
+                  borderRadius: '12px',
+                  fontSize: '16px',
+                  fontWeight: 600,
+                  fontFamily: "'Playfair Display', serif",
+                  marginTop: '24px',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = '#2A2A2A';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = '#1A1A1A';
+                }}
+              >
+                See Final Design
+              </button>
+              
+              <PreviewModal isOpen={showPreview} onClose={closePreview}>
+                <MonologueCard 
+                  monologue={previewData as any}
+                  currentUserId={user?.id}
+                  onAction={() => {}}
+                />
+              </PreviewModal>
+            </>
+          )}
         </div>
 
         <InspirationBottomSheet

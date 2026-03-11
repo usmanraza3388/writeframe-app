@@ -1,12 +1,17 @@
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useCharacterComposer } from '../../hooks/useCharacterComposer';
 import { useSearchParams, useNavigate, useLocation } from 'react-router-dom'; // ADD: useLocation
 import { supabase } from '../../assets/lib/supabaseClient';
 import { promptsData } from '../../data/promptsData';
 import InspirationBottomSheet from '../InspirationBottomSheet/InspirationBottomSheet';
 import emailPrompts from '../../data/emailPrompts.json'; // ADDED
+// ADDED: Preview imports
+import { PreviewModal } from '../Preview/PreviewModal';
+import { usePreview } from '../../hooks/usePreview';
+import CharacterCard from '../Characters/CharacterCard';
+import { useAuth } from '../../contexts/AuthContext';
 
 // IMMEDIATE PROMPT SAVING - runs before anything else
 const urlParams = new URLSearchParams(window.location.search);
@@ -24,6 +29,7 @@ export default function CharacterComposer() {
   const characterId = searchParams.get('id');
   const navigate = useNavigate();
   const location = useLocation(); // ADD: useLocation hook
+  const { user } = useAuth();
   
   // ADD: Get return path with fallback to home feed
   const returnPath = location.state?.from || '/home-feed';
@@ -56,6 +62,30 @@ export default function CharacterComposer() {
   const [isInspirationOpen, setIsInspirationOpen] = useState(false);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // ADDED: Preview hook
+  const { showPreview, previewData, openPreview, closePreview, canPreview } = usePreview({
+    user: user,
+    buildPreviewData: useCallback(() => {
+      return {
+        id: `preview-${Date.now()}`,
+        user_id: user?.id || '',
+        user_name: user?.user_metadata?.full_name || 'You',
+        user_genre_tag: user?.user_metadata?.genre_persona || 'Creator',
+        name: characterData.name || 'Unnamed Character',
+        tagline: characterData.tagline || '',
+        bio: characterData.bio || '',
+        visual_references: visualReferences.map(ref => ({ image_url: ref.image_url })),
+        created_at: new Date().toISOString(),
+        like_count: 0,
+        comment_count: 0,
+        profiles: {
+          avatar_url: user?.user_metadata?.avatar_url || null
+        }
+      };
+    }, [characterData, visualReferences, user]),
+    hasContent: characterData.name.length > 0 || characterData.bio.length > 0
+  });
 
   // ADDED: CatalystCard prompt handling
   const prompt = searchParams.get('prompt');
@@ -861,6 +891,45 @@ export default function CharacterComposer() {
             )}
           </div>
         </form>
+
+        {/* ADDED: Preview button and modal */}
+        {canPreview && !isEditing && (
+          <>
+            <button
+              onClick={openPreview}
+              style={{
+                width: '100%',
+                padding: '16px',
+                background: '#1A1A1A',
+                color: '#FFFFFF',
+                border: 'none',
+                borderRadius: '12px',
+                fontSize: '16px',
+                fontWeight: 600,
+                fontFamily: "'Playfair Display', serif",
+                marginTop: '24px',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = '#2A2A2A';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = '#1A1A1A';
+              }}
+            >
+              See Final Design
+            </button>
+            
+            <PreviewModal isOpen={showPreview} onClose={closePreview}>
+              <CharacterCard 
+                character={previewData as any}
+                currentUserId={user?.id}
+                onAction={() => {}}
+              />
+            </PreviewModal>
+          </>
+        )}
 
         {/* ADDED: Inspiration Bottom Sheet */}
         <InspirationBottomSheet
