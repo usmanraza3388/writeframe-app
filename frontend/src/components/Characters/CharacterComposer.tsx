@@ -918,7 +918,7 @@ export default function CharacterComposer() {
                 e.currentTarget.style.background = '#1A1A1A';
               }}
             >
-              See Final Design
+              Preview
             </button>
             
             <PreviewModal isOpen={showPreview} onClose={closePreview}>
