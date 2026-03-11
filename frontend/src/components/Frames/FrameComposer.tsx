@@ -6,7 +6,6 @@ import { promptsData } from '../../data/promptsData';
 import InspirationBottomSheet from '../InspirationBottomSheet/InspirationBottomSheet';
 // ADDED: Preview imports
 import { PreviewModal } from '../Preview/PreviewModal';
-import { PreviewButton } from '../Preview/PreviewButton';
 import { usePreview } from '../../hooks/usePreview';
 import FrameCard from './FrameCard';
 import { useAuth } from '../../contexts/AuthContext';
@@ -793,10 +792,34 @@ const FrameComposer: React.FC = () => {
             )}
           </div>
 
-          {/* ADDED: Preview button and modal - FIXED with 'as any' */}
+          {/* ADDED: Preview button and modal - FIXED with 'as any' and updated styling */}
           {canPreview && !isEditing && (
             <>
-              <PreviewButton onClick={openPreview} contentType="frame" />
+              <button
+                onClick={openPreview}
+                style={{
+                  width: '100%',
+                  padding: '16px',
+                  background: '#1A1A1A',
+                  color: '#FFFFFF',
+                  border: 'none',
+                  borderRadius: '12px',
+                  fontSize: '16px',
+                  fontWeight: 600,
+                  fontFamily: "'Playfair Display', serif",
+                  marginTop: '24px',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = '#2A2A2A';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = '#1A1A1A';
+                }}
+              >
+                See Final Design
+              </button>
               
               <PreviewModal isOpen={showPreview} onClose={closePreview}>
                 <FrameCard 
