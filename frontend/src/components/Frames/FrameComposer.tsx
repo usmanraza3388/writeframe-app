@@ -9,6 +9,7 @@ import { PreviewModal } from '../Preview/PreviewModal';
 import { PreviewButton } from '../Preview/PreviewButton';
 import { usePreview } from '../../hooks/usePreview';
 import FrameCard from './FrameCard';
+import { useAuth } from '../../contexts/AuthContext';
 
 // Slot configuration
 const SLOT_CONFIG = [
@@ -25,6 +26,7 @@ const FrameComposer: React.FC = () => {
   const frameId = searchParams.get('id');
   const navigate = useNavigate();
   const location = useLocation();
+  const { user } = useAuth();
   
   const returnPath = location.state?.from || '/home-feed';
   
@@ -57,41 +59,39 @@ const FrameComposer: React.FC = () => {
     }
   }, [prompt]);
 
-  // ADDED: Preview hook with proper type casting to avoid TypeScript errors
+  // ADDED: Preview hook - with correct types
   const { showPreview, previewData, openPreview, closePreview, canPreview } = usePreview({
-    user: null,
+    user: user,
     buildPreviewData: useCallback(() => {
       const validImages = imageSlots.filter((slot): slot is string => slot !== null);
       
-      // Use type assertion to tell TypeScript this is fine for preview
       return {
         id: `preview-${Date.now()}`,
-        user_id: '',
-        user_name: '',
-        user_genre_tag: '',
+        user_id: user?.id || '',
+        user_name: user?.user_metadata?.full_name || 'You',
+        user_genre_tag: user?.user_metadata?.genre_persona || 'Filmmaker',
         mood_description: moodDescription,
         image_urls: validImages,
-        image_url: validImages[0] || null,
+        image_url: validImages[0] || '',
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
-        status: 'draft',
+        status: 'draft' as const,
         like_count: 0,
         comment_count: 0,
         share_count: 0,
         repost_count: 0,
         profiles: {
-          avatar_url: null
+          avatar_url: user?.user_metadata?.avatar_url || null
         },
         user: {
-          id: '',
-          email: '',
-          full_name: '',
-          avatar_url: null,
-          genre_persona: '',
-          expression: ''
+          id: user?.id || '',
+          username: user?.user_metadata?.username || user?.email?.split('@')[0] || 'user',
+          full_name: user?.user_metadata?.full_name || '',
+          avatar_url: user?.user_metadata?.avatar_url || null,
+          genre_persona: user?.user_metadata?.genre_persona || ''
         }
-      } as any; // Type assertion to bypass strict type checking for preview
-    }, [moodDescription, imageSlots]),
+      };
+    }, [moodDescription, imageSlots, user]),
     hasContent: imageSlots.some(slot => slot !== null)
   });
 
@@ -793,15 +793,15 @@ const FrameComposer: React.FC = () => {
             )}
           </div>
 
-          {/* ADDED: Preview button and modal */}
+          {/* ADDED: Preview button and modal - FIXED with 'as any' */}
           {canPreview && !isEditing && (
             <>
               <PreviewButton onClick={openPreview} contentType="frame" />
               
               <PreviewModal isOpen={showPreview} onClose={closePreview}>
                 <FrameCard 
-                  frame={previewData}
-                  currentUserId={undefined}
+                  frame={previewData as any}
+                  currentUserId={user?.id}
                   onAction={() => {}}
                 />
               </PreviewModal>
