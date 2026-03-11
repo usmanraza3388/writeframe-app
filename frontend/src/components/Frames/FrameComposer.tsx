@@ -1,9 +1,14 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useFrameComposer } from '../../hooks/useFrameComposer';
 import { useSearchParams, useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '../../assets/lib/supabaseClient';
 import { promptsData } from '../../data/promptsData';
 import InspirationBottomSheet from '../InspirationBottomSheet/InspirationBottomSheet';
+// ADDED: Preview imports
+import { PreviewModal } from '../Preview/PreviewModal';
+import { PreviewButton } from '../Preview/PreviewButton';
+import { usePreview } from '../../hooks/usePreview';
+import FrameCard from './FrameCard';
 
 // Slot configuration
 const SLOT_CONFIG = [
@@ -51,6 +56,44 @@ const FrameComposer: React.FC = () => {
       localStorage.setItem('user_has_created', 'true');
     }
   }, [prompt]);
+
+  // ADDED: Preview hook with proper type casting to avoid TypeScript errors
+  const { showPreview, previewData, openPreview, closePreview, canPreview } = usePreview({
+    user: null,
+    buildPreviewData: useCallback(() => {
+      const validImages = imageSlots.filter((slot): slot is string => slot !== null);
+      
+      // Use type assertion to tell TypeScript this is fine for preview
+      return {
+        id: `preview-${Date.now()}`,
+        user_id: '',
+        user_name: '',
+        user_genre_tag: '',
+        mood_description: moodDescription,
+        image_urls: validImages,
+        image_url: validImages[0] || null,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        status: 'draft',
+        like_count: 0,
+        comment_count: 0,
+        share_count: 0,
+        repost_count: 0,
+        profiles: {
+          avatar_url: null
+        },
+        user: {
+          id: '',
+          email: '',
+          full_name: '',
+          avatar_url: null,
+          genre_persona: '',
+          expression: ''
+        }
+      } as any; // Type assertion to bypass strict type checking for preview
+    }, [moodDescription, imageSlots]),
+    hasContent: imageSlots.some(slot => slot !== null)
+  });
 
   const handlePromptSelect = (prompt: any) => {
     if (prompt.mood) {
@@ -749,6 +792,21 @@ const FrameComposer: React.FC = () => {
               </>
             )}
           </div>
+
+          {/* ADDED: Preview button and modal */}
+          {canPreview && !isEditing && (
+            <>
+              <PreviewButton onClick={openPreview} contentType="frame" />
+              
+              <PreviewModal isOpen={showPreview} onClose={closePreview}>
+                <FrameCard 
+                  frame={previewData}
+                  currentUserId={undefined}
+                  onAction={() => {}}
+                />
+              </PreviewModal>
+            </>
+          )}
         </div>
 
         <InspirationBottomSheet
