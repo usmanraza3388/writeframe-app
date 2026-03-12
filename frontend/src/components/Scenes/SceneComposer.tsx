@@ -390,6 +390,8 @@ export const SceneComposer: React.FC = () => {
         // UPDATED: Use alerts instead of notifications
         if (publish) {
           alert('Scene published successfully!');
+          // ADDED: Navigate to home feed after successful publish
+          navigate('/home-feed');
         } else {
           alert('Scene saved as draft!');
         }

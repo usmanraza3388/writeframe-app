@@ -189,6 +189,11 @@ export const MonologueComposer: React.FC = () => {
       setEmotionalTone('');
       setShowPublishOption(false);
       alert(publish ? 'Monologue published successfully!' : 'Monologue saved as draft!');
+      
+      // ADDED: Navigate to home feed after successful publish
+      if (publish) {
+        navigate('/home-feed');
+      }
     } catch (err) {
       console.error('Failed to create monologue:', err);
     } finally {

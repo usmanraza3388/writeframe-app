@@ -236,6 +236,11 @@ export default function CharacterComposer() {
         resetForm();
         setShowVisualRefInput(false);
         setShowPublishOption(false);
+        
+        // ADDED: Navigate to home feed after successful publish
+        if (publish) {
+          navigate('/home-feed');
+        }
       }
     } catch (err) {
       console.error('Submit error:', err);
