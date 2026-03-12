@@ -263,6 +263,11 @@ const FrameComposer: React.FC = () => {
         setMoodDescription('');
         setShowPublishOption(false);
         alert(publish ? 'Collage published successfully!' : 'Collage saved as draft!');
+        
+        // ADDED: Navigate to home feed after successful publish
+        if (publish) {
+          navigate('/home-feed');
+        }
       }
     } catch (err) {
       console.error('Submit error:', err);
