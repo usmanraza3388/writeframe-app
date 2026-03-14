@@ -16,7 +16,7 @@ const immediatePrompt = urlParams.get('prompt');
 const contentType = 'monologue';
 
 if (immediatePrompt) {
-  sessionStorage.setItem('pending_prompt', immediatePrompt);
+  // For monologues, we only need to save the path, not the prompt value
   sessionStorage.setItem('pending_path', contentType);
 }
 
