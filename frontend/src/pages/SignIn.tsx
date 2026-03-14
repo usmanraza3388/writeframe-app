@@ -68,17 +68,9 @@ export default function SignIn() {
       } else {
         setMessage("Signed in successfully");
         
-        // Check for pending prompt after successful sign in
-        const pendingPrompt = sessionStorage.getItem('pending_prompt');
-        const pendingPath = sessionStorage.getItem('pending_path') || 'scene';
-
-        if (pendingPrompt) {
-          sessionStorage.removeItem('pending_prompt');
-          sessionStorage.removeItem('pending_path');
-          navigate(`/compose-${pendingPath}?prompt=${pendingPrompt}`);
-        } else {
-          navigate("/home-feed");
-        }
+        const postLoginRedirect = sessionStorage.getItem('post_login_redirect');
+        sessionStorage.removeItem('post_login_redirect');
+        navigate(postLoginRedirect || '/home-feed');
       }
     } catch (err: any) {
       setMessage(err?.message || String(err));
@@ -92,15 +84,11 @@ export default function SignIn() {
       setMessage(null);
       setLoading(true);
       
-      // Store any pending prompt in localStorage for OAuth redirect
-      const pendingPrompt = sessionStorage.getItem('pending_prompt');
-      const pendingPath = sessionStorage.getItem('pending_path') || 'scene';
-      
-      if (pendingPrompt) {
-        localStorage.setItem('oauth_pending_prompt', pendingPrompt);
-        localStorage.setItem('oauth_pending_path', pendingPath);
-        sessionStorage.removeItem('pending_prompt');
-        sessionStorage.removeItem('pending_path');
+      // Store the intended redirect destination for after OAuth callback
+      const postLoginRedirect = sessionStorage.getItem('post_login_redirect');
+      if (postLoginRedirect) {
+        localStorage.setItem('oauth_post_login_redirect', postLoginRedirect);
+        sessionStorage.removeItem('post_login_redirect');
       }
       
       const { error } = await supabase.auth.signInWithOAuth({
