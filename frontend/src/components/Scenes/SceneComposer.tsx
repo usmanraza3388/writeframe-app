@@ -1,3 +1,4 @@
+console.log('🔥🔥🔥 SCENE COMPOSER LOADED ON:', window.location.pathname);
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import type { ChangeEvent } from 'react';
 import { useSceneComposer } from '../../hooks/useSceneComposer';
