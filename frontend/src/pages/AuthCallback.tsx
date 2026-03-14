@@ -91,15 +91,19 @@ export default function AuthCallback() {
 
         // Check for pending prompt from OAuth flow
         const pendingPrompt = localStorage.getItem('oauth_pending_prompt');
-        const pendingPath = localStorage.getItem('oauth_pending_path') || 'scene';
+        const pendingPath = localStorage.getItem('oauth_pending_path');
 
         if (!updatedProfile?.genre_persona || !updatedProfile?.expression) {
           // Redirect to onboarding if missing critical onboarding data
           
           // If there's a pending prompt, save it for after onboarding
-          if (pendingPrompt) {
-            sessionStorage.setItem('pending_prompt', pendingPrompt);
-            sessionStorage.setItem('pending_path', pendingPath);
+          if (pendingPrompt || pendingPath) {
+            if (pendingPrompt) {
+              sessionStorage.setItem('pending_prompt', pendingPrompt);
+            }
+            if (pendingPath) {
+              sessionStorage.setItem('pending_path', pendingPath);
+            }
             localStorage.removeItem('oauth_pending_prompt');
             localStorage.removeItem('oauth_pending_path');
           }
@@ -107,10 +111,15 @@ export default function AuthCallback() {
           navigate('/welcome', { replace: true });
         } else {
           // Profile is complete
-          if (pendingPrompt) {
+          if (pendingPath) {
             localStorage.removeItem('oauth_pending_prompt');
             localStorage.removeItem('oauth_pending_path');
-            navigate(`/compose-${pendingPath}?prompt=${pendingPrompt}`, { replace: true });
+            
+            const url = pendingPrompt 
+              ? `/compose-${pendingPath}?prompt=${pendingPrompt}`
+              : `/compose-${pendingPath}`;
+            
+            navigate(url, { replace: true });
           } else {
             navigate('/home-feed', { replace: true });
           }
