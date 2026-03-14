@@ -68,14 +68,18 @@ export default function SignIn() {
       } else {
         setMessage("Signed in successfully");
         
-        // Check for pending prompt after successful sign in
-        const pendingPrompt = sessionStorage.getItem('pending_prompt');
-        const pendingPath = sessionStorage.getItem('pending_path') || 'scene';
+        // Check for pending path after successful sign in
+        const pendingPath = sessionStorage.getItem('pending_path');
 
-        if (pendingPrompt) {
+        if (pendingPath) {
+          const pendingPrompt = sessionStorage.getItem('pending_prompt');
+          const url = pendingPrompt 
+            ? `/compose-${pendingPath}?prompt=${pendingPrompt}`
+            : `/compose-${pendingPath}`;
+          
           sessionStorage.removeItem('pending_prompt');
           sessionStorage.removeItem('pending_path');
-          navigate(`/compose-${pendingPath}?prompt=${pendingPrompt}`);
+          navigate(url);
         } else {
           navigate("/home-feed");
         }
