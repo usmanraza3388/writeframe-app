@@ -1,4 +1,3 @@
-console.log('🔥🔥🔥 SCENE COMPOSER LOADED ON:', window.location.pathname);
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import type { ChangeEvent } from 'react';
 import { useSceneComposer } from '../../hooks/useSceneComposer';
@@ -24,6 +23,7 @@ const typedEmailPrompts = emailPrompts as Record<string, EmailPrompt>;
 
 // IMMEDIATE PROMPT SAVING - runs before anything else - ONLY on scene composer pages
 if (window.location.pathname.includes('/compose-scene')) {
+  console.log('🔥🔥🔥 SCENE COMPOSER LOADED ON:', window.location.pathname);
   const urlParams = new URLSearchParams(window.location.search);
   const immediatePrompt = urlParams.get('prompt');
   const currentPath = window.location.pathname;
