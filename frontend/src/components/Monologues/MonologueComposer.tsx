@@ -11,13 +11,21 @@ import MonologueCard from '../Monologue/MonologueCard';
 import { useAuth } from '../../contexts/AuthContext';
 
 // IMMEDIATE PROMPT SAVING - runs before anything else
+console.log('🔵 MonologueComposer top-level code running');
+console.log('🔵 Current path:', window.location.pathname);
+console.log('🔵 URL params:', window.location.search);
 const urlParams = new URLSearchParams(window.location.search);
 const immediatePrompt = urlParams.get('prompt');
 const contentType = 'monologue';
+console.log('🔵 immediatePrompt:', immediatePrompt);
+console.log('🔵 Setting pending_path to:', contentType);
 
 if (immediatePrompt) {
   // For monologues, we only need to save the path, not the prompt value
   sessionStorage.setItem('pending_path', contentType);
+  console.log('🔵 Saved pending_path to sessionStorage');
+} else {
+  console.log('🔵 No immediatePrompt, not saving anything');
 }
 
 export const MonologueComposer: React.FC = () => {
