@@ -1,6 +1,3 @@
-console.log('🔴 DEBUG - Current path:', window.location.pathname);
-console.log('🔴 DEBUG - Path includes scene:', window.location.pathname.includes('/compose-scene'));
-console.log('🔴 DEBUG - Path includes monologue:', window.location.pathname.includes('/compose-monologue'));
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import type { ChangeEvent } from 'react';
 import { useSceneComposer } from '../../hooks/useSceneComposer';
@@ -23,20 +20,6 @@ type EmailPrompt = {
 };
 
 const typedEmailPrompts = emailPrompts as Record<string, EmailPrompt>;
-
-// IMMEDIATE PROMPT SAVING - runs before anything else - ONLY on scene composer pages
-if (window.location.pathname.includes('/compose-scene')) {
-  console.log('🔥🔥🔥 SCENE COMPOSER LOADED ON:', window.location.pathname);
-  const urlParams = new URLSearchParams(window.location.search);
-  const immediatePrompt = urlParams.get('prompt');
-  const currentPath = window.location.pathname;
-  const contentType = currentPath.includes('character') ? 'character' : 'scene';
-
-  if (immediatePrompt) {
-    sessionStorage.setItem('pending_prompt', immediatePrompt);
-    sessionStorage.setItem('pending_path', contentType);
-  }
-}
 
 // ADDED: URL Input Component
 const UrlImageInput: React.FC<{ onAddImage: (url: string) => void }> = ({ onAddImage }) => {
@@ -174,16 +157,12 @@ export const SceneComposer: React.FC = () => {
 
   // Redirect if not logged in
   if (!user) {
-    // Note: Prompt is already saved at the top of the file,
-    // but we'll keep this as a backup
-    if (prompt) {
-      sessionStorage.setItem('pending_prompt', prompt);
-    }
-    
+    // Save the full intended URL so sign-in can redirect back to the correct composer
+    sessionStorage.setItem('post_login_redirect', window.location.pathname + window.location.search);
     navigate('/signin', { replace: true });
     return null;
   } else {
-    // Check if there's a pending prompt from sessionStorage
+    // Check if there's a pending prompt from sessionStorage (legacy fallback)
     const pendingPrompt = sessionStorage.getItem('pending_prompt');
     if (pendingPrompt && !prompt) {
       sessionStorage.removeItem('pending_prompt');

@@ -10,24 +10,6 @@ import { usePreview } from '../../hooks/usePreview';
 import MonologueCard from '../Monologue/MonologueCard';
 import { useAuth } from '../../contexts/AuthContext';
 
-// IMMEDIATE PROMPT SAVING - runs before anything else
-console.log('🔵 MonologueComposer top-level code running');
-console.log('🔵 Current path:', window.location.pathname);
-console.log('🔵 URL params:', window.location.search);
-const urlParams = new URLSearchParams(window.location.search);
-const immediatePrompt = urlParams.get('prompt');
-const contentType = 'monologue';
-console.log('🔵 immediatePrompt:', immediatePrompt);
-console.log('🔵 Setting pending_path to:', contentType);
-
-if (immediatePrompt) {
-  // For monologues, we only need to save the path, not the prompt value
-  sessionStorage.setItem('pending_path', contentType);
-  console.log('🔵 Saved pending_path to sessionStorage');
-} else {
-  console.log('🔵 No immediatePrompt, not saving anything');
-}
-
 export const MonologueComposer: React.FC = () => {
   const [searchParams] = useSearchParams();
   const monologueId = searchParams.get('id');
@@ -73,6 +55,14 @@ export const MonologueComposer: React.FC = () => {
     }, [title, content, user]),
     hasContent: title.length > 0 || content.length > 0
   });
+
+  // Redirect if not logged in
+  if (!user) {
+    // Save the full intended URL so sign-in can redirect back to the correct composer
+    sessionStorage.setItem('post_login_redirect', window.location.pathname + window.location.search);
+    navigate('/signin', { replace: true });
+    return null;
+  }
 
   // COMMENTED OUT for freeform monologue - no pre-filling
   // const prompt = searchParams.get('prompt');
