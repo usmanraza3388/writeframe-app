@@ -1,3 +1,6 @@
+console.log('🔴 DEBUG - Current path:', window.location.pathname);
+console.log('🔴 DEBUG - Path includes scene:', window.location.pathname.includes('/compose-scene'));
+console.log('🔴 DEBUG - Path includes monologue:', window.location.pathname.includes('/compose-monologue'));
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import type { ChangeEvent } from 'react';
 import { useSceneComposer } from '../../hooks/useSceneComposer';
