@@ -13,15 +13,25 @@ import { PreviewModal } from '../Preview/PreviewModal';
 import { usePreview } from '../../hooks/usePreview';
 import SceneCard from '../SceneCard/SceneCard';
 
-// IMMEDIATE PROMPT SAVING - runs before anything else
-const urlParams = new URLSearchParams(window.location.search);
-const immediatePrompt = urlParams.get('prompt');
-const currentPath = window.location.pathname;
-const contentType = currentPath.includes('character') ? 'character' : 'scene';
+// Define type for email prompts
+type EmailPrompt = {
+  title: string;
+  image?: string;
+};
 
-if (immediatePrompt) {
-  sessionStorage.setItem('pending_prompt', immediatePrompt);
-  sessionStorage.setItem('pending_path', contentType);
+const typedEmailPrompts = emailPrompts as Record<string, EmailPrompt>;
+
+// IMMEDIATE PROMPT SAVING - runs before anything else - ONLY on scene composer pages
+if (window.location.pathname.includes('/compose-scene')) {
+  const urlParams = new URLSearchParams(window.location.search);
+  const immediatePrompt = urlParams.get('prompt');
+  const currentPath = window.location.pathname;
+  const contentType = currentPath.includes('character') ? 'character' : 'scene';
+
+  if (immediatePrompt) {
+    sessionStorage.setItem('pending_prompt', immediatePrompt);
+    sessionStorage.setItem('pending_path', contentType);
+  }
 }
 
 // ADDED: URL Input Component
@@ -180,16 +190,16 @@ export const SceneComposer: React.FC = () => {
 
   // EFFECT 1: Handle email campaign prompts (short codes like ?prompt=waiting)
   useEffect(() => {
-    if (prompt && emailPrompts[prompt as keyof typeof emailPrompts]) {
-      const promptData = emailPrompts[prompt as keyof typeof emailPrompts];
+    if (prompt && typedEmailPrompts[prompt]) {
+      const promptData = typedEmailPrompts[prompt];
       
       // Set title from email campaign
       if (promptData.title) {
         setTitle(promptData.title);
       }
       
-      // Set image from email campaign
-      if (promptData.image) {
+      // Set image from email campaign - check if image exists
+      if (promptData.image && typeof promptData.image === 'string') {
         setImagePreviewUrl(promptData.image);
       }
       
@@ -199,7 +209,7 @@ export const SceneComposer: React.FC = () => {
 
   // EFFECT 2: Handle CatalystCard and direct text prompts (existing functionality)
   useEffect(() => {
-    if (prompt && !emailPrompts[prompt as keyof typeof emailPrompts]) {
+    if (prompt && !typedEmailPrompts[prompt]) {
       setContent(decodeURIComponent(prompt));
       localStorage.setItem('user_has_created', 'true');
     }
