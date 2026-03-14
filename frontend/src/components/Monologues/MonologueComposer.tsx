@@ -66,14 +66,14 @@ export const MonologueComposer: React.FC = () => {
     hasContent: title.length > 0 || content.length > 0
   });
 
-  // ADDED: CatalystCard prompt handling
-  const prompt = searchParams.get('prompt');
-  useEffect(() => {
-    if (prompt) {
-      setTitle(decodeURIComponent(prompt));
-      localStorage.setItem('user_has_created', 'true');
-    }
-  }, [prompt]);
+  // COMMENTED OUT for freeform monologue - no pre-filling
+  // const prompt = searchParams.get('prompt');
+  // useEffect(() => {
+  //   if (prompt) {
+  //     setTitle(decodeURIComponent(prompt));
+  //     localStorage.setItem('user_has_created', 'true');
+  //   }
+  // }, [prompt]);
 
   const handlePromptSelect = (prompt: any) => {
     if (prompt.title) {
