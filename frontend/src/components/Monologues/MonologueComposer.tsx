@@ -10,6 +10,16 @@ import { usePreview } from '../../hooks/usePreview';
 import MonologueCard from '../Monologue/MonologueCard';
 import { useAuth } from '../../contexts/AuthContext';
 
+// IMMEDIATE PROMPT SAVING - runs before anything else
+const urlParams = new URLSearchParams(window.location.search);
+const immediatePrompt = urlParams.get('prompt');
+const contentType = 'monologue';
+
+if (immediatePrompt) {
+  sessionStorage.setItem('pending_prompt', immediatePrompt);
+  sessionStorage.setItem('pending_path', contentType);
+}
+
 export const MonologueComposer: React.FC = () => {
   const [searchParams] = useSearchParams();
   const monologueId = searchParams.get('id');

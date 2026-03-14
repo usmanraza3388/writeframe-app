@@ -6,5 +6,8 @@
   "strength-flaw": {
     "title": "The Double-Edged Gift",
     "image": "https://ycrvsbtqmjksdbyrefek.supabase.co/storage/v1/object/public/prompt-images/character-prompt.png"
+  },
+  "monologue-reminder": {
+    "title": "Write a Monologue"
   }
 }
