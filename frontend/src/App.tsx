@@ -27,6 +27,18 @@ import { WhisperComposer } from "./components/Whisper/WhisperComposer";
 import { InboxPage } from "./components/Whisper/InboxPage";
 import { WhisperThread } from "./components/Whisper/WhisperThread";
 
+// Saves the current URL before redirecting to signin
+function ProtectedRoute({ session, loading, children }: { session: any; loading: boolean; children: React.ReactNode }) {
+  if (loading) {
+    return <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>Loading...</div>;
+  }
+  if (!session) {
+    localStorage.setItem('post_login_redirect', window.location.pathname + window.location.search);
+    return <Navigate to="/signin" replace />;
+  }
+  return <>{children}</>;
+}
+
 function AppContent() {
   useUserSettings();
   
@@ -263,60 +275,36 @@ function AppContent() {
         <Route
           path="/compose-scene"
           element={
-            loading ? (
-              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
-                Loading...
-              </div>
-            ) : session ? (
+            <ProtectedRoute session={session} loading={loading}>
               <SceneComposer />
-            ) : (
-              <Navigate to="/signin" replace />
-            )
+            </ProtectedRoute>
           }
         />
 
         <Route
           path="/compose-monologue"
           element={
-            loading ? (
-              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
-                Loading...
-              </div>
-            ) : session ? (
+            <ProtectedRoute session={session} loading={loading}>
               <MonologueComposer />
-            ) : (
-              <Navigate to="/signin" replace />
-            )
+            </ProtectedRoute>
           }
         />
 
         <Route
           path="/compose-character"
           element={
-            loading ? (
-              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
-                Loading...
-              </div>
-            ) : session ? (
+            <ProtectedRoute session={session} loading={loading}>
               <CharacterComposer />
-            ) : (
-              <Navigate to="/signin" replace />
-            )
+            </ProtectedRoute>
           }
         />
 
         <Route
           path="/compose-frame"
           element={
-            loading ? (
-              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
-                Loading...
-              </div>
-            ) : session ? (
+            <ProtectedRoute session={session} loading={loading}>
               <FrameComposer />
-            ) : (
-              <Navigate to="/signin" replace />
-            )
+            </ProtectedRoute>
           }
         />
 
