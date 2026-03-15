@@ -89,28 +89,24 @@ export default function AuthCallback() {
           .eq('id', user.id)
           .single();
 
-        // Check for pending prompt from OAuth flow
-        const pendingPrompt = localStorage.getItem('oauth_pending_prompt');
-        const pendingPath = localStorage.getItem('oauth_pending_path') || 'scene';
+        // Check for pending redirect from OAuth flow
+        const postLoginRedirect = localStorage.getItem('oauth_post_login_redirect');
 
         if (!updatedProfile?.genre_persona || !updatedProfile?.expression) {
           // Redirect to onboarding if missing critical onboarding data
-          
-          // If there's a pending prompt, save it for after onboarding
-          if (pendingPrompt) {
-            sessionStorage.setItem('pending_prompt', pendingPrompt);
-            sessionStorage.setItem('pending_path', pendingPath);
-            localStorage.removeItem('oauth_pending_prompt');
-            localStorage.removeItem('oauth_pending_path');
+
+          // If there's a pending redirect, save it for after onboarding
+          if (postLoginRedirect) {
+            sessionStorage.setItem('post_login_redirect', postLoginRedirect);
+            localStorage.removeItem('oauth_post_login_redirect');
           }
           
           navigate('/welcome', { replace: true });
         } else {
           // Profile is complete
-          if (pendingPrompt) {
-            localStorage.removeItem('oauth_pending_prompt');
-            localStorage.removeItem('oauth_pending_path');
-            navigate(`/compose-${pendingPath}?prompt=${pendingPrompt}`, { replace: true });
+          if (postLoginRedirect) {
+            localStorage.removeItem('oauth_post_login_redirect');
+            navigate(postLoginRedirect, { replace: true });
           } else {
             navigate('/home-feed', { replace: true });
           }

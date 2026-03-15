@@ -15,7 +15,7 @@ export const MonologueComposer: React.FC = () => {
   const monologueId = searchParams.get('id');
   const navigate = useNavigate();
   const location = useLocation();
-  const { user } = useAuth();
+  const { user, isLoading } = useAuth();
   
   const returnPath = location.state?.from || '/home-feed';
   
@@ -32,7 +32,7 @@ export const MonologueComposer: React.FC = () => {
   const [isPublishing, setIsPublishing] = useState(false);
   const [isSavingDraft, setIsSavingDraft] = useState(false);
   
-  const { createMonologue, isLoading, error } = useMonologueComposer();
+  const { createMonologue, isLoading: isSubmitLoading, error } = useMonologueComposer();
 
   // ADDED: Preview hook
   const { showPreview, previewData, openPreview, closePreview, canPreview } = usePreview({
@@ -56,9 +56,29 @@ export const MonologueComposer: React.FC = () => {
     hasContent: title.length > 0 || content.length > 0
   });
 
+  // Show loading while checking auth
+  if (isLoading) {
+    return (
+      <div style={{
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: '#FFFFFF'
+      }}>
+        <div style={{
+          textAlign: 'center',
+          fontFamily: "'Cormorant', serif",
+          color: '#55524F'
+        }}>
+          Loading...
+        </div>
+      </div>
+    );
+  }
+
   // Redirect if not logged in
   if (!user) {
-    // Save the full intended URL so sign-in can redirect back to the correct composer
     sessionStorage.setItem('post_login_redirect', window.location.pathname + window.location.search);
     navigate('/signin', { replace: true });
     return null;
@@ -549,16 +569,16 @@ export const MonologueComposer: React.FC = () => {
               <button
                 type="button"
                 onClick={() => handleSubmit(false)}
-                disabled={isLoading}
+                disabled={isSubmitLoading}
                 style={{
                   ...updateButtonStyle,
-                  opacity: isLoading ? 0.7 : 1,
-                  cursor: isLoading ? 'not-allowed' : 'pointer'
+                  opacity: isSubmitLoading ? 0.7 : 1,
+                  cursor: isSubmitLoading ? 'not-allowed' : 'pointer'
                 }}
-                onMouseOver={(e) => !isLoading && (e.currentTarget.style.background = '#2A2A2A')}
-                onMouseOut={(e) => !isLoading && (e.currentTarget.style.background = '#1A1A1A')}
+                onMouseOver={(e) => !isSubmitLoading && (e.currentTarget.style.background = '#2A2A2A')}
+                onMouseOut={(e) => !isSubmitLoading && (e.currentTarget.style.background = '#1A1A1A')}
               >
-                {isLoading ? 'Updating...' : 'Update'}
+                {isSubmitLoading ? 'Updating...' : 'Update'}
               </button>
             ) : (
               <>
