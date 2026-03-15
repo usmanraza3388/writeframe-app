@@ -49,10 +49,13 @@ export default function SignIn() {
   const [message, setMessage] = useState<string | null>(null);
   const navigate = useNavigate();
 
-  // Check for pending prompt on component mount
   useEffect(() => {
-    // Intentionally empty - we don't need to do anything on mount
-    // The prompt will be handled after sign in
+    // Move post_login_redirect to localStorage so it survives any full page navigation
+    const redirect = sessionStorage.getItem('post_login_redirect');
+    if (redirect) {
+      localStorage.setItem('post_login_redirect', redirect);
+      sessionStorage.removeItem('post_login_redirect');
+    }
   }, []);
 
   const handleSignIn = async (e: FormEvent<HTMLFormElement>) => {
@@ -68,8 +71,8 @@ export default function SignIn() {
       } else {
         setMessage("Signed in successfully");
         
-        const postLoginRedirect = sessionStorage.getItem('post_login_redirect');
-        sessionStorage.removeItem('post_login_redirect');
+        const postLoginRedirect = localStorage.getItem('post_login_redirect');
+        localStorage.removeItem('post_login_redirect');
         navigate(postLoginRedirect || '/home-feed');
       }
     } catch (err: any) {
@@ -85,10 +88,10 @@ export default function SignIn() {
       setLoading(true);
       
       // Store the intended redirect destination for after OAuth callback
-      const postLoginRedirect = sessionStorage.getItem('post_login_redirect');
+      const postLoginRedirect = localStorage.getItem('post_login_redirect');
       if (postLoginRedirect) {
         localStorage.setItem('oauth_post_login_redirect', postLoginRedirect);
-        sessionStorage.removeItem('post_login_redirect');
+        localStorage.removeItem('post_login_redirect');
       }
       
       const { error } = await supabase.auth.signInWithOAuth({
