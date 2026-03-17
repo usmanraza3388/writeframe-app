@@ -665,13 +665,10 @@ const FrameCard: React.FC<FrameCardProps> = React.memo(({
             <h4 style={{
               fontFamily: "'Cormorant', serif",
               fontSize: '20px',
-              fontWeight: 600,
+              fontWeight: 400,
               color: '#000000',
               margin: 0,
               lineHeight: '1.3',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
               letterSpacing: '0.02em',
               borderBottom: '1px solid #E5E5E5',
               paddingBottom: '4px'
