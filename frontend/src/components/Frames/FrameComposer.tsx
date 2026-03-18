@@ -1,852 +1,749 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { useFrameComposer } from '../../hooks/useFrameComposer';
-import { useSearchParams, useNavigate, useLocation } from 'react-router-dom';
-import { supabase } from '../../assets/lib/supabaseClient';
-import { promptsData } from '../../data/promptsData';
-import InspirationBottomSheet from '../InspirationBottomSheet/InspirationBottomSheet';
-// ADDED: Preview imports
-import { PreviewModal } from '../Preview/PreviewModal';
-import { usePreview } from '../../hooks/usePreview';
-import FrameCard from './FrameCard';
-import { useAuth } from '../../contexts/AuthContext';
+import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import type { FrameCardProps } from '../../utils/frames';
+import { useDeleteItem } from '../../hooks/useDeleteItem';
+import { useSaveItem } from '../../hooks/useSaveItem';
+import { useSavedStatus } from '../../hooks/useSavedStatus';
+import { useCopyLink } from '../../hooks/useCopyLink';
+import { useReportItem } from '../../hooks/useReportItem';
+import ReportDialog from '../ReportDialog/ReportDialog';
+import { useLikeItem } from '../../hooks/useLikeItem';
+import { useLikesStatus } from '../../hooks/useLikesStatus';
+import { useCommentItem } from '../../hooks/useCommentItem';
+import { useCommentsStatus } from '../../hooks/useCommentsStatus';
+import { useShareItem } from '../../hooks/useShareItem';
+import { useShareStatus } from '../../hooks/useShareStatus';
+import CommentsSection from '../Comments/CommentsSection';
+import ShareDialog from '../Shares/ShareDialog';
+import { useFrame } from '../../hooks/useFrame';
+import { useViewItem, useViewCount } from '../../hooks/useViewItem';
 
-// Slot configuration
-const SLOT_CONFIG = [
-  { label: 'Main', width: 152, height: 133 },
-  { label: 'Support', width: 152, height: 99 },
-  { label: 'Mood', width: 152, height: 70 },
-  { label: 'Style', width: 152, height: 106 }
-] as const;
+// Relative time utility function
+const getRelativeTime = (dateString: string): string => {
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+  
+  const intervals = {
+    year: 31536000,
+    month: 2592000,
+    week: 604800,
+    day: 86400,
+    hour: 3600,
+    minute: 60
+  };
+  
+  if (diffInSeconds < 60) return 'just now';
+  if (diffInSeconds < intervals.hour) {
+    const minutes = Math.floor(diffInSeconds / intervals.minute);
+    return `${minutes} ${minutes === 1 ? 'minute' : 'minutes'} ago`;
+  }
+  if (diffInSeconds < intervals.day) {
+    const hours = Math.floor(diffInSeconds / intervals.hour);
+    return `${hours} ${hours === 1 ? 'hour' : 'hours'} ago`;
+  }
+  if (diffInSeconds < intervals.week) {
+    const days = Math.floor(diffInSeconds / intervals.day);
+    return `${days} ${days === 1 ? 'day' : 'days'} ago`;
+  }
+  if (diffInSeconds < intervals.month) {
+    const weeks = Math.floor(diffInSeconds / intervals.week);
+    return `${weeks} ${weeks === 1 ? 'week' : 'weeks'} ago`;
+  }
+  if (diffInSeconds < intervals.year) {
+    const months = Math.floor(diffInSeconds / intervals.month);
+    return `${months} ${months === 1 ? 'month' : 'months'} ago`;
+  }
+  const years = Math.floor(diffInSeconds / intervals.year);
+  return `${years} ${years === 1 ? 'year' : 'years'} ago`;
+};
 
-type ImageSlot = string | null;
+// SVG Icons
+const LikeIcon: React.FC<{ filled?: boolean }> = ({ filled = false }) => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill={filled ? "#FF4444" : "none"} stroke="currentColor" strokeWidth="2">
+    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+  </svg>
+);
 
-const FrameComposer: React.FC = () => {
-  const [searchParams] = useSearchParams();
-  const frameId = searchParams.get('id');
+const CommentIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>
+  </svg>
+);
+
+const ShareIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8M16 6l-4-4-4 4M12 2v13"/>
+  </svg>
+);
+
+const RepostIcon: React.FC<{ filled?: boolean }> = ({ filled = false }) => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill={filled ? "#10B981" : "none"} stroke="currentColor" strokeWidth="2">
+    <path d="M17 1l4 4-4 4"/>
+    <path d="M3 11V9a4 4 0 0 1 4-4h14M7 23l-4-4 4-4"/>
+    <path d="M21 13v2a4 4 0 0 1-4 4H3"/>
+  </svg>
+);
+
+const MenuIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <circle cx="12" cy="6" r="1"/>
+    <circle cx="12" cy="12" r="1"/>
+    <circle cx="12" cy="18" r="1"/>
+  </svg>
+);
+
+const ViewIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+    <circle cx="12" cy="12" r="3"/>
+  </svg>
+);
+
+// Empty slot placeholder
+const EmptySlot: React.FC<{ style?: React.CSSProperties }> = ({ style }) => (
+  <div style={{
+    background: '#F0EDE4',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...style
+  }}>
+    <div style={{
+      width: '24px',
+      height: '24px',
+      borderRadius: '50%',
+      border: '1.5px dashed #C4B8A0',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center'
+    }}>
+      <span style={{ fontSize: '14px', color: '#C4B8A0', lineHeight: 1 }}>+</span>
+    </div>
+  </div>
+);
+
+const FrameCard: React.FC<FrameCardProps> = React.memo(({ 
+  frame, 
+  currentUserId, 
+  onAction 
+}) => {
   const navigate = useNavigate();
-  const location = useLocation();
-  const { user } = useAuth();
+  const [showMenu, setShowMenu] = useState(false);
+  const [showCommentDialog, setShowCommentDialog] = useState(false);
+  const [showShareDialog, setShowShareDialog] = useState(false);
+  const [showReportDialog, setShowReportDialog] = useState(false);
+  const [isReposting, setIsReposting] = useState(false);
+  const [galleryOpen, setGalleryOpen] = useState(false);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
   
-  const returnPath = location.state?.from || '/home-feed';
-  
-  // CHANGED: Use slot-based array with 4 fixed slots
-  const [imageSlots, setImageSlots] = useState<ImageSlot[]>([null, null, null, null]);
-  const [moodDescription, setMoodDescription] = useState('');
-  const { createFrame, isLoading, error } = useFrameComposer();
-  const [showPublishOption, setShowPublishOption] = useState<boolean>(false);
-  const [isEditing, setIsEditing] = useState(false);
-  const [loadingFrame, setLoadingFrame] = useState(false);
-  const [originalStatus, setOriginalStatus] = useState<'draft' | 'published'>('draft');
-  
-  // ADD: Separate loading states for publish vs draft
-  const [isPublishing, setIsPublishing] = useState(false);
-  const [isSavingDraft, setIsSavingDraft] = useState(false);
-  
-  const [isInspirationOpen, setIsInspirationOpen] = useState<boolean>(false);
-  
-  // CHANGED: Single file input for all slots
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  // NEW: Track which slot is currently being targeted for upload
-  const [targetSlotIndex, setTargetSlotIndex] = useState<number | null>(null);
+  const menuButtonRef = useRef<HTMLButtonElement>(null);
+  const menuContainerRef = useRef<HTMLDivElement>(null);
 
-  // ADDED: CatalystCard prompt handling
-  const prompt = searchParams.get('prompt');
-  useEffect(() => {
-    if (prompt) {
-      setMoodDescription(decodeURIComponent(prompt));
-      localStorage.setItem('user_has_created', 'true');
-    }
-  }, [prompt]);
-
-  // ADDED: Preview hook - with correct types
-  const { showPreview, previewData, openPreview, closePreview, canPreview } = usePreview({
-    user: user,
-    buildPreviewData: useCallback(() => {
-      const validImages = imageSlots.filter((slot): slot is string => slot !== null);
-      
-      return {
-        id: `preview-${Date.now()}`,
-        user_id: user?.id || '',
-        user_name: user?.user_metadata?.full_name || 'You',
-        user_genre_tag: user?.user_metadata?.genre_persona || 'Filmmaker',
-        mood_description: moodDescription,
-        image_urls: validImages,
-        image_url: validImages[0] || '',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        status: 'draft' as const,
-        like_count: 0,
-        comment_count: 0,
-        share_count: 0,
-        repost_count: 0,
-        profiles: {
-          avatar_url: user?.user_metadata?.avatar_url || null
-        },
-        user: {
-          id: user?.id || '',
-          username: user?.user_metadata?.username || user?.email?.split('@')[0] || 'user',
-          full_name: user?.user_metadata?.full_name || '',
-          avatar_url: user?.user_metadata?.avatar_url || null,
-          genre_persona: user?.user_metadata?.genre_persona || ''
-        }
-      };
-    }, [moodDescription, imageSlots, user]),
-    hasContent: imageSlots.some(slot => slot !== null)
+  const { incrementView } = useViewItem();
+  const { data: viewData, fetchViewCount } = useViewCount({
+    content_type: 'frame',
+    content_id: frame.id
   });
 
-  const handlePromptSelect = (prompt: any) => {
-    if (prompt.mood) {
-      setMoodDescription(prompt.mood);
-    }
-    setIsInspirationOpen(false);
-  };
-
-  // Load existing frame for editing
   useEffect(() => {
-    const loadFrame = async () => {
-      if (!frameId) return;
-      
-      try {
-        setLoadingFrame(true);
-        const { data: frame, error } = await supabase
-          .from('frames')
-          .select('*')
-          .eq('id', frameId)
-          .single();
+    incrementView({ content_type: 'frame', content_id: frame.id });
+    fetchViewCount();
+  }, [frame.id, incrementView, fetchViewCount]);
 
-        if (error) throw error;
-        if (frame) {
-          if (frame.image_urls && frame.image_urls.length > 0) {
-            // CHANGED: Map image_urls to our slot structure
-            const slots: ImageSlot[] = [null, null, null, null];
-            frame.image_urls.forEach((url: string, index: number) => {
-              if (index < 4) slots[index] = url;
-            });
-            setImageSlots(slots);
-          } else {
-            setImageSlots([null, null, null, null]);
-          }
-          setMoodDescription(frame.mood_description || '');
-          setIsEditing(true);
-          setOriginalStatus(frame.status as 'draft' | 'published');
-          setShowPublishOption(false);
-        }
-      } catch (err) {
-        console.error('Error loading frame:', err);
-      } finally {
-        setLoadingFrame(false);
-      }
-    };
+  const { deleteItem } = useDeleteItem();
+  const { saveItem, unsaveItem } = useSaveItem();
+  const { isSaved } = useSavedStatus('frame', frame.id);
+  const { copyLink } = useCopyLink();
+  const { reportItem } = useReportItem();
+  const { repostFrame, deleteRepost, repostedFrames } = useFrame();
 
-    loadFrame();
-  }, [frameId]);
+  const likeMutation = useLikeItem();
+  const { data: likesData } = useLikesStatus({ content_type: 'frame', content_id: frame.id });
+  const commentMutation = useCommentItem();
+  const { data: commentsData } = useCommentsStatus({ content_type: 'frame', content_id: frame.id });
+  const shareMutation = useShareItem();
+  const { data: sharesData } = useShareStatus({ content_type: 'frame', content_id: frame.id });
 
-  // Smart button logic - show publish option when content is substantial (CREATE MODE ONLY)
-  useEffect(() => {
-    if (!isEditing) {
-      // CHANGED: Check if any slot has content instead of array length
-      const hasSubstantialContent = 
-        imageSlots.some(slot => slot !== null) && 
-        moodDescription.length > 5;
-      
-      setShowPublishOption(hasSubstantialContent);
-    }
-  }, [imageSlots, moodDescription, isEditing]);
+  const isOwner = frame.user_id === currentUserId;
 
-  // CHANGED: Count of filled slots
-  const filledSlotCount = imageSlots.filter(slot => slot !== null).length;
+  const userData = useMemo(() => ({
+    userName: frame.user?.full_name || frame.user_name || frame.user?.username || 'Unknown User',
+    userGenre: frame.user_genre_tag || frame.user?.genre_persona || 'Creator',
+    userAvatar: frame.avatar_url || frame.user?.avatar_url
+  }), [frame.user_name, frame.user_genre_tag, frame.avatar_url, frame.user]);
 
-  const handleBack = () => {
-    const hasContent = imageSlots.some(slot => slot !== null) || moodDescription !== '';
-    
-    if (hasContent) {
-      const confirmLeave = window.confirm('Are you sure you want to leave? Your changes will not be saved.');
-      if (!confirmLeave) return;
-    }
-    
-    if (isEditing && frameId) {
-      navigate(`/home-feed#frame-${frameId}`);
-    } else {
-      navigate(returnPath);
-    }
-  };
-
-  const BackArrowIcon = () => (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-      <path d="M19 12H5M12 19l-7-7 7-7"/>
-    </svg>
+  const menuOptions = useMemo(() => 
+    isOwner ? ['Edit', 'Delete'] : ['Save', 'Copy Link', 'Report'],
+    [isOwner]
   );
 
-  // CHANGED: Handle slot-specific file selection
-  const handleSlotSelect = (slotIndex: number) => {
-    setTargetSlotIndex(slotIndex);
-    fileInputRef.current?.click();
-  };
+  const handleProfileClick = useCallback(() => {
+    navigate(`/profile/${frame.user_id}`);
+  }, [navigate, frame.user_id]);
 
-  // CHANGED: Handle file upload to specific slot
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
-    
-    if (files.length === 0 || targetSlotIndex === null) return;
-
-    const file = files[0];
-    
-    if (!file.type.startsWith('image/')) {
-      alert('Please select an image file');
-      return;
-    }
-
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const imageUrl = event.target?.result as string;
-      
-      // Update the specific slot
-      const newSlots = [...imageSlots];
-      newSlots[targetSlotIndex] = imageUrl;
-      setImageSlots(newSlots);
-      
-      // Reset target slot
-      setTargetSlotIndex(null);
-    };
-    reader.readAsDataURL(file);
-    
-    // Reset file input
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
-  };
-
-  // CHANGED: Remove image from specific slot
-  const handleRemoveImage = (slotIndex: number) => {
-    const newSlots = [...imageSlots];
-    newSlots[slotIndex] = null;
-    setImageSlots(newSlots);
-  };
-
-  // UPDATED: Handle submit with separate loading states
-  const handleSubmit = async (publish: boolean = false) => {
-    // CHANGED: Filter out null slots and check if any images exist
-    const validImageUrls = imageSlots.filter((slot): slot is string => slot !== null);
-    
-    if (validImageUrls.length === 0) {
-      alert('Please add at least one image');
-      return;
-    }
-
-    // Set the correct loading state
-    if (publish) {
-      setIsPublishing(true);
-    } else {
-      setIsSavingDraft(true);
-    }
-
+  const handleSave = useCallback(async () => {
+    if (!currentUserId) return;
     try {
-      // EDIT MODE: Completely separate logic
-      if (isEditing && frameId) {
-        await handleEditUpdate();
-        return;
+      if (isSaved) {
+        await unsaveItem({ content_type: 'frame', content_id: frame.id });
+      } else {
+        await saveItem({ content_type: 'frame', content_id: frame.id });
       }
-      
-      // CREATE MODE
-      const frameData = {
-        image_urls: validImageUrls, // CHANGED: Use filtered array
-        mood_description: moodDescription,
-        title: undefined,
-        status: publish ? 'published' as const : 'draft' as const,
-      };
+    } catch (error) {
+      console.error('Save operation failed:', error);
+    }
+  }, [isSaved, frame.id, currentUserId, saveItem, unsaveItem]);
 
-      const result = await createFrame(frameData);
-      
-      if (result) {
-        // CHANGED: Reset all slots to null
-        setImageSlots([null, null, null, null]);
-        setMoodDescription('');
-        setShowPublishOption(false);
-        alert(publish ? 'Collage published successfully!' : 'Collage saved as draft!');
-        
-        // ADDED: Navigate to home feed after successful publish
-        if (publish) {
-          navigate('/home-feed');
+  const handleMenuAction = useCallback(async (action: string) => {
+    setShowMenu(false);
+    if (action === 'Delete') {
+      if (window.confirm('Are you sure you want to delete this frame? This action cannot be undone.')) {
+        const success = await deleteItem(frame.id, 'frame');
+        if (success) {
+          alert('Frame deleted successfully.');
+          onAction?.('deleted', frame.id);
+        } else {
+          alert('Failed to delete frame. Please try again.');
         }
       }
-    } catch (err) {
-      console.error('Submit error:', err);
-    } finally {
-      // Reset the correct loading state
-      if (publish) {
-        setIsPublishing(false);
-      } else {
-        setIsSavingDraft(false);
-      }
+    } else if (action === 'Save') {
+      await handleSave();
+    } else if (action === 'Copy Link') {
+      await copyLink('frame', frame.id);
+    } else if (action === 'Report') {
+      setShowReportDialog(true);
+    } else {
+      onAction?.(action, frame.id);
     }
-  };
+  }, [frame.id, deleteItem, onAction, handleSave, copyLink]);
 
-  const handleEditUpdate = async () => {
-    if (!frameId) return;
-    
+  const handleReport = useCallback(async (reason: string) => {
+    await reportItem('frame', frame.id, reason);
+  }, [frame.id, reportItem]);
+
+  const toggleMenu = useCallback(() => setShowMenu(prev => !prev), []);
+  const closeMenu = useCallback(() => setShowMenu(false), []);
+
+  const handleLike = useCallback(() => {
+    likeMutation.mutate({ content_type: 'frame', content_id: frame.id });
+  }, [likeMutation, frame.id]);
+
+  const handleComment = useCallback(() => {
+    setShowCommentDialog(true);
+  }, []);
+
+  const handleCommentSubmit = useCallback((commentText: string) => {
+    commentMutation.mutate({ content_type: 'frame', content_id: frame.id, content: commentText });
+  }, [commentMutation, frame.id]);
+
+  const handleShare = useCallback(() => {
+    setShowShareDialog(true);
+  }, []);
+
+  const handleShareSubmit = useCallback(() => {
+    shareMutation.mutate({ content_type: 'frame', content_id: frame.id }, {
+      onSuccess: () => setShowShareDialog(false)
+    });
+  }, [shareMutation, frame.id]);
+
+  const handleRepost = useCallback(async () => {
+    if (!currentUserId) return;
+    setIsReposting(true);
     try {
-      // CHANGED: Filter out null slots for update
-      const validImageUrls = imageSlots.filter((slot): slot is string => slot !== null);
-      
-      const { error } = await supabase
-        .from('frames')
-        .update({
-          image_urls: validImageUrls,
-          mood_description: moodDescription,
-          status: originalStatus,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', frameId);
-
-      if (error) throw error;
-
-      alert('Collage updated successfully!');
-      
-      navigate(`/home-feed#frame-${frameId}`);
-      
-    } catch (err) {
-      console.error('Error updating frame:', err);
-      alert('Error updating collage. Please try again.');
+      const userHasReposted = repostedFrames.some(repost => repost.original_frame?.id === frame.id);
+      if (userHasReposted) {
+        const userRepost = repostedFrames.find(repost => repost.original_frame?.id === frame.id);
+        if (userRepost) {
+          const success = await deleteRepost(userRepost.id);
+          if (success) onAction?.('unrepost', frame.id);
+        }
+      } else {
+        const success = await repostFrame(frame.id);
+        if (success) onAction?.('repost', frame.id);
+      }
+    } catch (error) {
+      console.error('Error toggling repost:', error);
+    } finally {
+      setIsReposting(false);
     }
-  };
+  }, [frame.id, currentUserId, repostFrame, deleteRepost, repostedFrames, onAction]);
 
-  const containerStyle: React.CSSProperties = {
-    width: 375,
-    background: '#FFFFFF',
-    borderRadius: 18,
-    padding: 32,
-    boxSizing: 'border-box',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: 24,
-    alignSelf: 'center',
-    margin: '40px auto',
-    overflow: 'clip',
-    position: 'relative'
-  };
+  useEffect(() => {
+    if (!showMenu) return;
+    const handleClickOutside = (event: MouseEvent) => {
+      const clickedOutsideButton = menuButtonRef.current && !menuButtonRef.current.contains(event.target as Node);
+      const clickedOutsideMenu = menuContainerRef.current && !menuContainerRef.current.contains(event.target as Node);
+      if (clickedOutsideButton && clickedOutsideMenu) closeMenu();
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showMenu, closeMenu]);
 
-  const textareaStyle: React.CSSProperties = {
-    width: '100%',
-    display: 'block',
-    boxSizing: 'border-box',
-    padding: '12px 16px',
-    borderRadius: 12,
-    border: '1px solid rgba(0,0,0,0.12)',
-    background: '#FAF8F2',
-    outline: 'none',
-    fontSize: 15,
-    margin: 0,
-    fontFamily: "'Garamond', serif",
-    color: '#000000',
-    height: 48,
-    resize: 'none'
-  };
+  const displayImages = useMemo(() => {
+    const images = frame.image_urls?.slice(0, 4) || [];
+    if (images.length === 0 && frame.image_url) return [frame.image_url];
+    return images;
+  }, [frame.image_urls, frame.image_url]);
 
-  const draftButtonStyle: React.CSSProperties = {
-    width: showPublishOption ? '48%' : '100%',
-    height: 50,
-    padding: '12px 16px',
-    borderRadius: 10,
-    background: '#FAF8F2',
-    border: '1px solid rgba(0,0,0,0.12)',
-    color: '#000000',
-    cursor: 'pointer',
-    fontSize: 20,
-    fontFamily: "'Playfair Display', serif",
-    fontWeight: 700,
-    transition: 'all 0.3s ease'
-  };
+  const openGallery = useCallback((index: number) => {
+    setCurrentImageIndex(index);
+    setGalleryOpen(true);
+  }, []);
 
-  const publishButtonStyle: React.CSSProperties = {
-    width: '48%',
-    height: 50,
-    padding: '12px 16px',
-    borderRadius: 10,
-    background: '#1A1A1A',
-    border: '1px solid #1A1A1A',
-    color: '#FFFFFF',
-    cursor: 'pointer',
-    fontSize: 20,
-    fontFamily: "'Playfair Display', serif",
-    fontWeight: 700,
-    transition: 'all 0.3s ease'
-  };
+  const goToNext = useCallback(() => {
+    setCurrentImageIndex((prev) => prev === displayImages.length - 1 ? 0 : prev + 1);
+  }, [displayImages.length]);
 
-  const updateButtonStyle: React.CSSProperties = {
-    width: '100%',
-    height: 50,
-    padding: '12px 16px',
-    borderRadius: 10,
-    background: '#1A1A1A',
-    border: '1px solid #1A1A1A',
-    color: '#FFFFFF',
-    cursor: 'pointer',
-    fontSize: 20,
-    fontFamily: "'Playfair Display', serif",
-    fontWeight: 700,
-    transition: 'all 0.3s ease'
-  };
+  const goToPrev = useCallback(() => {
+    setCurrentImageIndex((prev) => prev === 0 ? displayImages.length - 1 : prev - 1);
+  }, [displayImages.length]);
 
-  // CHANGED: Render individual slot
-  const renderImageSlot = (slotIndex: number) => {
-    const slotConfig = SLOT_CONFIG[slotIndex];
-    const hasImage = imageSlots[slotIndex] !== null;
-    
-    return (
-      <div key={slotIndex} style={{ position: 'relative' }}>
-        {/* Slot label - always visible */}
-        <div style={{
-          position: 'absolute',
-          top: -20,
-          left: 0,
-          fontSize: 11,
-          color: hasImage ? '#55524F' : '#9CA3AF',
-          background: '#FAF8F2',
-          padding: '2px 6px',
-          borderRadius: 4,
-          border: '1px solid rgba(0,0,0,0.1)',
-          fontFamily: "'Inter', sans-serif",
-          fontWeight: hasImage ? 500 : 400,
-          zIndex: 2
-        }}>
-          {slotConfig.label}
-          {hasImage && <span style={{ marginLeft: 4, fontSize: 9 }}>✓</span>}
-        </div>
-        
-        {/* Slot container - clickable when empty */}
+  useEffect(() => {
+    if (!galleryOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setGalleryOpen(false);
+      else if (e.key === 'ArrowRight') goToNext();
+      else if (e.key === 'ArrowLeft') goToPrev();
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [galleryOpen, goToNext, goToPrev]);
+
+  const userHasReposted = useMemo(() => 
+    repostedFrames.some(repost => repost.original_frame?.id === frame.id),
+    [repostedFrames, frame.id]
+  );
+
+  // Helper to render an image or empty slot
+  const renderImage = (index: number, style: React.CSSProperties) => {
+    const image = displayImages[index];
+    if (image) {
+      return (
         <div
-          onClick={!hasImage ? () => handleSlotSelect(slotIndex) : undefined}
+          onClick={() => openGallery(index)}
           style={{
-            width: slotConfig.width,
-            height: slotConfig.height,
-            border: hasImage ? '2px solid rgba(0,0,0,0.12)' : '2px dashed rgba(0,0,0,0.2)',
-            borderRadius: 12,
-            background: hasImage ? 'transparent' : '#FAF8F2',
-            position: 'relative',
+            ...style,
             overflow: 'hidden',
-            transition: 'all 0.2s ease',
-            cursor: !hasImage ? 'pointer' : 'default'
+            cursor: 'pointer',
+            transition: 'opacity 0.2s ease'
           }}
-          onMouseEnter={(e) => {
-            if (!hasImage) {
-              e.currentTarget.style.background = '#F0EDE4';
-              e.currentTarget.style.borderColor = 'rgba(0,0,0,0.3)';
-            }
-          }}
-          onMouseLeave={(e) => {
-            if (!hasImage) {
-              e.currentTarget.style.background = '#FAF8F2';
-              e.currentTarget.style.borderColor = 'rgba(0,0,0,0.2)';
-            }
-          }}
+          onMouseEnter={(e) => e.currentTarget.style.opacity = '0.9'}
+          onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
         >
-          {hasImage ? (
-            <>
-              <img 
-                src={imageSlots[slotIndex]!} 
-                alt={`${slotConfig.label} reference`}
-                style={{
-                  width: '100%',
-                  height: '100%',
-                  objectFit: 'cover'
-                }}
-              />
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleRemoveImage(slotIndex);
-                }}
-                style={{
-                  position: 'absolute',
-                  top: -8,
-                  right: -8,
-                  background: '#DC2626',
-                  color: '#FFFFFF',
-                  borderRadius: '50%',
-                  width: 24,
-                  height: 24,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: 14,
-                  border: 'none',
-                  cursor: 'pointer',
-                  zIndex: 3
-                }}
-              >
-                ×
-              </button>
-            </>
-          ) : (
-            <div style={{
-              width: '100%',
-              height: '100%',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 8
-            }}>
-              <div style={{
-                width: 32,
-                height: 32,
-                background: 'rgba(0,0,0,0.05)',
-                borderRadius: 6,
+          <img
+            src={image}
+            alt={`Visual reference ${index + 1}`}
+            style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+            onError={(e) => { e.currentTarget.style.display = 'none'; }}
+          />
+        </div>
+      );
+    }
+    return <EmptySlot style={style} />;
+  };
+
+  return (
+    <>
+      {showCommentDialog && (
+        <CommentsSection
+          isOpen={showCommentDialog}
+          onClose={() => setShowCommentDialog(false)}
+          contentType="frame"
+          contentId={frame.id}
+          onSubmitComment={handleCommentSubmit}
+          isLoading={commentMutation.isPending}
+        />
+      )}
+      
+      {showShareDialog && (
+        <ShareDialog
+          isOpen={showShareDialog}
+          onClose={() => setShowShareDialog(false)}
+          onShare={handleShareSubmit}
+          shareUrl={`${window.location.origin}/frame/${frame.id}`}
+          content={{
+            title: frame.mood_description || frame.title || 'Cinematic Frame',
+            excerpt: frame.mood_description || frame.title || 'Cinematic frame from writeFrame',
+            images: displayImages
+          }}
+          creator={{
+            name: userData.userName,
+            genre: userData.userGenre
+          }}
+          contentType="frame"
+          targetElementId={`card-frame-${frame.id}`}
+        />
+      )}
+
+      <article
+        id={`card-frame-${frame.id}`}
+        style={{
+          width: 'calc(100% + 32px)',
+          marginLeft: '-16px',
+          marginRight: '-16px',
+          backgroundColor: '#FAF8F2',
+          borderRadius: '12px',
+          padding: '20px',
+          boxSizing: 'border-box',
+          position: 'relative',
+          borderTop: '2px solid #E5E5E5',
+          background: '#FAF8F2',
+          boxShadow: '0 1px 3px rgba(0, 0, 0, 0.08)',
+          display: 'flex',
+          flexDirection: 'column'
+        }}
+        aria-label={`Cinematic collage by ${userData.userName}: ${frame.mood_description}`}
+        role="article"
+      >
+        {/* Content type indicator */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          marginBottom: '16px',
+          flexShrink: 0
+        }}>
+          <div style={{
+            width: '16px',
+            height: '16px',
+            borderRadius: '2px',
+            backgroundColor: '#55524F',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}>
+            <span style={{ fontSize: '10px', color: 'white' }}>🖼️</span>
+          </div>
+          <span style={{
+            fontFamily: 'Playfair Display, serif',
+            fontSize: '11px',
+            color: '#55524F',
+            fontWeight: '500',
+            letterSpacing: '0.3px'
+          }}>
+            CINEMATIC COLLAGE
+          </span>
+        </div>
+
+        {/* Header */}
+        <header style={{
+          display: 'flex',
+          alignItems: 'flex-start',
+          justifyContent: 'space-between',
+          marginBottom: '16px',
+          flexShrink: 0
+        }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+            <div
+              onClick={handleProfileClick}
+              role="img"
+              aria-label={`${userData.userName}'s avatar`}
+              style={{
+                width: '50px',
+                height: '50px',
+                borderRadius: '50%',
+                backgroundColor: '#F0F0F0',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                fontSize: 18,
-                color: '#9CA3AF'
-              }}>
-                +
-              </div>
-              <div style={{
-                fontSize: 10,
-                color: '#9CA3AF',
-                fontFamily: "'Inter', sans-serif",
-                textAlign: 'center',
-                padding: '0 8px'
-              }}>
-                Click to add {slotConfig.label.toLowerCase()} image
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-    );
-  };
-
-  if (loadingFrame) {
-    return (
-      <div style={{
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        background: '#FFFFFF'
-      }}>
-        <div style={containerStyle}>
-          <div style={{
-            textAlign: 'center', 
-            padding: '60px 0', 
-            color: '#6B7280',
-            fontFamily: "'Cormorant', serif"
-          }}>
-            Loading collage...
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div style={{
-      minHeight: '100vh',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      background: '#FFFFFF'
-    }}>
-      <div style={containerStyle}>
-        <button
-          type="button"
-          onClick={handleBack}
-          style={{
-            position: 'absolute',
-            top: '20px',
-            left: '20px',
-            background: '#FAF8F2',
-            border: '1px solid rgba(0,0,0,0.1)',
-            cursor: 'pointer',
-            width: '40px',
-            height: '40px',
-            borderRadius: '8px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: '#1C1C1C',
-            zIndex: 1000,
-            transition: 'all 0.2s ease'
-          }}
-          onMouseOver={(e) => {
-            e.currentTarget.style.backgroundColor = '#F0EDE4';
-            e.currentTarget.style.borderColor = 'rgba(0,0,0,0.2)';
-          }}
-          onMouseOut={(e) => {
-            e.currentTarget.style.backgroundColor = '#FAF8F2';
-            e.currentTarget.style.borderColor = 'rgba(0,0,0,0.1)';
-          }}
-        >
-          <BackArrowIcon />
-        </button>
-
-        {/* CHANGED: Single file input for all slots */}
-        <input
-          type="file"
-          ref={fileInputRef}
-          onChange={handleFileChange}
-          accept="image/*"
-          style={{ display: 'none' }}
-        />
-        
-        <div style={{ textAlign: 'center', marginBottom: 8 }}>
-          <h1 style={{
-            fontFamily: "'Playfair Display', serif",
-            fontSize: 32,
-            fontWeight: 700,
-            color: '#1C1C1C',
-            lineHeight: 'auto',
-            letterSpacing: '10%',
-            margin: '0 auto'
-          }}>
-            {isEditing ? 'Edit Collage' : 'Cinematic Collage'}
-          </h1>
-          <p style={{
-            fontFamily: "'Playfair Display', serif",
-            fontSize: 20,
-            fontWeight: 400,
-            color: '#55524F',
-            lineHeight: 'auto',
-            letterSpacing: '0%',
-            margin: '16px auto 0'
-          }}>
-            {isEditing ? 'Update your collage' : 'Collect and curate your inspirations'}
-          </p>
-        </div>
-
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-          <div>
-            <label style={{
-              display: 'block',
-              fontFamily: "'Playfair Display', serif",
-              fontSize: 15,
-              fontWeight: 700,
-              color: '#55524F',
-              marginBottom: 8,
-              lineHeight: '15px'
-            }}>
-              Describe your mood or muse?
-            </label>
-            <textarea
-              value={moodDescription}
-              onChange={(e) => setMoodDescription(e.target.value)}
-              placeholder="What's the story behind these images?"
-              style={textareaStyle}
-              rows={1}
-            />
-          </div>
-
-          <div>
-            <label style={{
-              display: 'block',
-              fontFamily: "'Playfair Display', serif",
-              fontSize: 15,
-              fontWeight: 700,
-              color: '#55524F',
-              marginBottom: 8,
-              lineHeight: '15px'
-            }}>
-              Visual References {filledSlotCount > 0 && `(${filledSlotCount}/4)`}
-            </label>
-            
-            <div style={{ 
-              marginBottom: 16,
-              padding: '12px',
-              background: '#FAF8F2',
-              borderRadius: '12px',
-              border: '1px solid rgba(0,0,0,0.08)'
-            }}>
-              <p style={{
-                fontSize: 12,
-                color: '#6B7280',
-                fontFamily: "'Inter', sans-serif",
-                margin: '0 0 12px 0',
-                textAlign: 'center',
-                lineHeight: 1.4
-              }}>
-                Click on any slot to add an image. Each slot has a specific role in your collage.
-              </p>
-            </div>
-            
-            <div style={{ 
-              display: 'grid', 
-              gridTemplateColumns: '1fr 1fr', 
-              gridTemplateRows: 'auto auto',
-              gap: '12px 12px',
-              width: '100%'
-            }}>
-              <div style={{ 
-                display: 'flex', 
-                flexDirection: 'column', 
-                gap: 12 
-              }}>
-                {renderImageSlot(0)}
-                {renderImageSlot(2)}
-              </div>
-
-              <div style={{ 
-                display: 'flex', 
-                flexDirection: 'column', 
-                gap: 12 
-              }}>
-                {renderImageSlot(1)}
-                {renderImageSlot(3)}
-              </div>
-            </div>
-          </div>
-
-          <div style={{ textAlign: 'center', marginTop: '10px' }}>
-            <button
-              type="button"
-              onClick={() => setIsInspirationOpen(true)}
-              style={{
-                padding: '12px 24px',
-                background: '#FAF8F2',
-                border: '1px solid #D4AF37',
-                borderRadius: '10px',
-                color: '#1A1A1A',
-                cursor: 'pointer',
-                fontFamily: "'Cormorant', serif",
-                fontSize: '15px',
-                fontWeight: '600',
-                transition: 'all 0.2s ease'
-              }}
-              onMouseOver={(e) => {
-                e.currentTarget.style.background = '#F0EDE4';
-                e.currentTarget.style.borderColor = '#B8860B';
-              }}
-              onMouseOut={(e) => {
-                e.currentTarget.style.background = '#FAF8F2';
-                e.currentTarget.style.borderColor = '#D4AF37';
+                overflow: 'hidden',
+                flexShrink: 0,
+                border: '1.5px solid #E5E5E5',
+                cursor: 'pointer'
               }}
             >
-              💡 Get Mood Inspiration
-            </button>
+              {userData.userAvatar ? (
+                <img src={userData.userAvatar} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              ) : (
+                <span style={{ fontFamily: 'Playfair Display, serif', fontSize: '20px', fontWeight: 'bold', color: '#55524F' }}>
+                  {userData.userName?.charAt(0).toUpperCase() || 'U'}
+                </span>
+              )}
+            </div>
+            <div onClick={handleProfileClick} style={{ display: 'flex', flexDirection: 'column', cursor: 'pointer' }}>
+              <h3 style={{ fontFamily: 'Playfair Display, serif', fontSize: '20px', fontWeight: 400, color: '#000000', lineHeight: '1.2', margin: 0 }}>
+                {userData.userName}
+              </h3>
+              <span style={{ fontFamily: 'Playfair Display, serif', fontSize: '13px', fontWeight: 400, color: '#6B7280', lineHeight: '1.2', marginTop: '2px' }}>
+                {userData.userGenre}
+              </span>
+            </div>
           </div>
 
-          {error && (
-            <div style={{
-              background: '#FEF2F2',
-              border: '1px solid #FECACA',
-              color: '#DC2626',
-              padding: '12px 16px',
-              borderRadius: 8,
+          <div style={{ position: 'relative' }} ref={menuContainerRef}>
+            <button
+              ref={menuButtonRef}
+              onClick={toggleMenu}
+              aria-label="More options"
+              aria-expanded={showMenu}
+              aria-haspopup="true"
+              style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px', color: '#000000', borderRadius: '4px', transition: 'background-color 0.2s ease' }}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F0F0F0'}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+            >
+              <MenuIcon />
+            </button>
+            {showMenu && (
+              <div
+                role="menu"
+                aria-label="Frame options"
+                style={{ position: 'absolute', right: 0, top: '30px', backgroundColor: 'white', borderRadius: '6px', boxShadow: '0 2px 8px rgba(0,0,0,0.1)', padding: '6px 0', minWidth: '140px', zIndex: 1000, border: '1px solid #E5E5E5' }}
+              >
+                {menuOptions.map((option) => (
+                  <button
+                    key={option}
+                    role="menuitem"
+                    onClick={() => handleMenuAction(option)}
+                    style={{ width: '100%', background: 'none', border: 'none', padding: '6px 12px', textAlign: 'left', cursor: 'pointer', fontSize: '13px', fontFamily: 'Arial, sans-serif', transition: 'background-color 0.2s ease' }}
+                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F0F0F0'}
+                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                  >
+                    {option}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </header>
+
+        {/* Mood description */}
+        {frame.mood_description && (
+          <div style={{ marginBottom: '14px', flexShrink: 0 }}>
+            <h4 style={{
               fontFamily: "'Cormorant', serif",
-              fontSize: 14
+              fontSize: '20px',
+              fontWeight: 400,
+              color: '#000000',
+              margin: 0,
+              lineHeight: '1.3',
+              letterSpacing: '0.02em',
+              borderBottom: '1px solid #E5E5E5',
+              paddingBottom: '4px'
             }}>
-              {error}
+              {frame.mood_description}
+            </h4>
+          </div>
+        )}
+
+        {/* EDITORIAL COLLAGE LAYOUT
+            ┌─────────────────┬──────────┐
+            │                 │    2     │
+            │       1         ├──────────┤
+            │   (2/3 width)   │    3     │
+            ├────────┬────────┴──────────┤
+            │   4 (full width)           │
+            └────────────────────────────┘
+        */}
+        <div style={{ marginBottom: '16px', flexShrink: 0 }}>
+          {/* Top row: image 1 (large left) + images 2 & 3 (stacked right) */}
+          <div style={{ display: 'flex', gap: '3px', marginBottom: '3px' }}>
+            {/* Image 1 - large, 2/3 width */}
+            {renderImage(0, {
+              width: '65%',
+              height: '200px',
+              borderRadius: '6px 0 0 6px',
+              flexShrink: 0
+            })}
+
+            {/* Images 2 & 3 stacked on right, 1/3 width */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', width: '35%' }}>
+              {renderImage(1, {
+                width: '100%',
+                height: '98px',
+                borderRadius: '0 6px 0 0'
+              })}
+              {renderImage(2, {
+                width: '100%',
+                height: '98px',
+                borderRadius: '0 0 6px 0'
+              })}
             </div>
+          </div>
+
+          {/* Bottom row: image 4 full width */}
+          {renderImage(3, {
+            width: '100%',
+            height: '130px',
+            borderRadius: '0 0 6px 6px'
+          })}
+        </div>
+
+        {/* Action bar */}
+        <footer style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          paddingTop: '12px',
+          borderTop: '1px solid #E5E5E5',
+          marginTop: 'auto',
+          flexShrink: 0
+        }}>
+          <div style={{ display: 'flex', gap: '12px' }}>
+            <button
+              onClick={handleLike}
+              disabled={likeMutation.isPending}
+              aria-label={likesData?.hasLiked ? 'Unlike' : 'Like'}
+              aria-pressed={likesData?.hasLiked}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', padding: '4px 6px', borderRadius: '4px', transition: 'background-color 0.2s ease' }}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F0F0F0'}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+            >
+              <LikeIcon filled={likesData?.hasLiked} />
+              <span style={{ fontSize: '11px', color: likesData?.hasLiked ? '#FF4444' : '#000000', fontFamily: 'Arial, sans-serif', minWidth: '14px', fontWeight: likesData?.hasLiked ? '500' : '400' }}>
+                {likesData?.likeCount || 0}
+              </span>
+            </button>
+
+            <button
+              onClick={handleComment}
+              aria-label="Comment"
+              style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', padding: '4px 6px', borderRadius: '4px', transition: 'background-color 0.2s ease' }}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F0F0F0'}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+            >
+              <CommentIcon />
+              <span style={{ fontSize: '11px', color: '#000000', fontFamily: 'Arial, sans-serif', minWidth: '14px' }}>
+                {commentsData?.commentCount || 0}
+              </span>
+            </button>
+
+            <button
+              onClick={handleShare}
+              disabled={shareMutation.isPending}
+              aria-label="Share"
+              style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', padding: '4px 6px', borderRadius: '4px', transition: 'background-color 0.2s ease' }}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F0F0F0'}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+            >
+              <ShareIcon />
+              <span style={{ fontSize: '11px', color: '#000000', fontFamily: 'Arial, sans-serif', minWidth: '14px' }}>
+                {sharesData?.shareCount || 0}
+              </span>
+            </button>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '4px 6px', color: '#6B7280' }}>
+              <ViewIcon />
+              <span style={{ fontSize: '11px', color: '#6B7280', fontFamily: 'Arial, sans-serif', minWidth: '14px' }}>
+                {viewData?.viewCount || 0}
+              </span>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div style={{ fontSize: '10px', color: '#9CA3AF', fontFamily: 'Arial, sans-serif' }}>
+              {getRelativeTime(frame.created_at)}
+            </div>
+
+            <button
+              onClick={handleRepost}
+              disabled={isReposting}
+              aria-label={userHasReposted ? 'Undo repost' : 'Repost'}
+              aria-pressed={userHasReposted}
+              style={{ background: '#FAFAFA', border: '1px solid #E5E5E5', cursor: isReposting ? 'default' : 'pointer', display: 'flex', alignItems: 'center', gap: '3px', padding: '4px 8px', borderRadius: '4px', transition: 'all 0.2s ease', color: userHasReposted ? '#10B981' : '#000000', opacity: isReposting ? 0.6 : 1 }}
+              onMouseEnter={(e) => { if (!isReposting) { e.currentTarget.style.backgroundColor = '#F0F0F0'; e.currentTarget.style.borderColor = '#D6D6D6'; } }}
+              onMouseLeave={(e) => { if (!isReposting) { e.currentTarget.style.backgroundColor = '#FAFAFA'; e.currentTarget.style.borderColor = '#E5E5E5'; } }}
+            >
+              {isReposting ? (
+                <div style={{ width: '12px', height: '12px', border: '2px solid #E5E5E5', borderTop: '2px solid #10B981', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+              ) : (
+                <RepostIcon filled={userHasReposted} />
+              )}
+              <span style={{ fontSize: '11px', color: userHasReposted ? '#10B981' : '#000000', fontFamily: 'Arial, sans-serif' }}>
+                {frame.repost_count}
+              </span>
+            </button>
+          </div>
+        </footer>
+      </article>
+
+      {/* Report Dialog */}
+      {showReportDialog && (
+        <ReportDialog
+          isOpen={showReportDialog}
+          onClose={() => setShowReportDialog(false)}
+          onReport={handleReport}
+          contentType="frame"
+        />
+      )}
+
+      {/* Gallery Modal */}
+      {galleryOpen && (
+        <div
+          style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0, 0, 0, 0.95)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000, cursor: 'pointer' }}
+          onClick={() => setGalleryOpen(false)}
+        >
+          {displayImages.length > 1 && (
+            <>
+              <button
+                onClick={(e) => { e.stopPropagation(); goToPrev(); }}
+                style={{ position: 'absolute', left: '20px', top: '50%', transform: 'translateY(-50%)', background: 'rgba(255,255,255,0.1)', border: 'none', color: 'white', fontSize: '24px', width: '50px', height: '50px', borderRadius: '50%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s ease' }}
+                onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.2)'}
+                onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
+              >‹</button>
+              <button
+                onClick={(e) => { e.stopPropagation(); goToNext(); }}
+                style={{ position: 'absolute', right: '20px', top: '50%', transform: 'translateY(-50%)', background: 'rgba(255,255,255,0.1)', border: 'none', color: 'white', fontSize: '24px', width: '50px', height: '50px', borderRadius: '50%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s ease' }}
+                onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.2)'}
+                onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
+              >›</button>
+            </>
           )}
 
-          <div style={{ 
-            display: 'flex', 
-            gap: '4%', 
-            justifyContent: 'space-between',
-            alignItems: 'center'
-          }}>
-            {isEditing ? (
-              <button
-                type="button"
-                onClick={() => handleSubmit(false)}
-                disabled={isLoading || filledSlotCount === 0}
-                style={{
-                  ...updateButtonStyle,
-                  opacity: isLoading || filledSlotCount === 0 ? 0.7 : 1,
-                  cursor: isLoading || filledSlotCount === 0 ? 'not-allowed' : 'pointer'
-                }}
-                onMouseOver={(e) => !isLoading && filledSlotCount > 0 && (e.currentTarget.style.background = '#2A2A2A')}
-                onMouseOut={(e) => !isLoading && filledSlotCount > 0 && (e.currentTarget.style.background = '#1A1A1A')}
-              >
-                {isLoading ? 'Updating...' : 'Update'}
-              </button>
-            ) : (
-              <>
-                <button
-                  type="button"
-                  onClick={() => handleSubmit(false)}
-                  disabled={isSavingDraft || isPublishing || filledSlotCount === 0}
-                  style={{
-                    ...draftButtonStyle,
-                    opacity: (isSavingDraft || isPublishing || filledSlotCount === 0) ? 0.7 : 1,
-                    cursor: (isSavingDraft || isPublishing || filledSlotCount === 0) ? 'not-allowed' : 'pointer'
-                  }}
-                  onMouseOver={(e) => !isSavingDraft && !isPublishing && filledSlotCount > 0 && (e.currentTarget.style.background = '#F0EDE4')}
-                  onMouseOut={(e) => !isSavingDraft && !isPublishing && filledSlotCount > 0 && (e.currentTarget.style.background = '#FAF8F2')}
-                >
-                  {isSavingDraft ? 'Saving...' : 'Save Draft'}
-                </button>
-
-                {showPublishOption && (
-                  <button
-                    type="button"
-                    onClick={() => handleSubmit(true)}
-                    disabled={isPublishing || isSavingDraft || filledSlotCount === 0}
-                    style={{
-                      ...publishButtonStyle,
-                      opacity: (isPublishing || isSavingDraft || filledSlotCount === 0) ? 0.7 : 1,
-                      cursor: (isPublishing || isSavingDraft || filledSlotCount === 0) ? 'not-allowed' : 'pointer'
-                    }}
-                    onMouseOver={(e) => !isPublishing && !isSavingDraft && filledSlotCount > 0 && (e.currentTarget.style.background = '#2A2A2A')}
-                    onMouseOut={(e) => !isPublishing && !isSavingDraft && filledSlotCount > 0 && (e.currentTarget.style.background = '#1A1A1A')}
-                  >
-                    {isPublishing ? 'Publishing...' : 'Publish'}
-                  </button>
-                )}
-              </>
+          <div style={{ position: 'relative' }}>
+            <img
+              src={displayImages[currentImageIndex]}
+              alt={`Image ${currentImageIndex + 1} of ${displayImages.length}`}
+              style={{ maxWidth: '85vw', maxHeight: '85vh', objectFit: 'contain', borderRadius: '8px', boxShadow: '0 10px 30px rgba(0,0,0,0.5)' }}
+              onClick={(e) => e.stopPropagation()}
+            />
+            {displayImages.length > 1 && (
+              <div style={{ position: 'absolute', bottom: '-50px', left: '50%', transform: 'translateX(-50%)', background: 'rgba(0,0,0,0.7)', color: 'white', padding: '8px 16px', borderRadius: '20px', fontSize: '14px', fontFamily: "'Cormorant', serif" }}>
+                {currentImageIndex + 1} / {displayImages.length}
+              </div>
             )}
           </div>
 
-          {/* ADDED: Preview button and modal - FIXED with 'as any' and updated styling */}
-          {canPreview && !isEditing && (
-            <>
-              <button
-                onClick={openPreview}
-                style={{
-                  width: '100%',
-                  padding: '16px',
-                  background: '#1A1A1A',
-                  color: '#FFFFFF',
-                  border: 'none',
-                  borderRadius: '12px',
-                  fontSize: '16px',
-                  fontWeight: 600,
-                  fontFamily: "'Playfair Display', serif",
-                  marginTop: '24px',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = '#2A2A2A';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = '#1A1A1A';
-                }}
-              >
-                Preview
-              </button>
-              
-              <PreviewModal isOpen={showPreview} onClose={closePreview}>
-                <FrameCard 
-                  frame={previewData as any}
-                  currentUserId={user?.id}
-                  onAction={() => {}}
-                />
-              </PreviewModal>
-            </>
-          )}
+          <button
+            onClick={() => setGalleryOpen(false)}
+            style={{ position: 'absolute', top: '20px', right: '20px', background: 'rgba(255,255,255,0.1)', border: 'none', color: 'white', fontSize: '24px', width: '40px', height: '40px', borderRadius: '50%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s ease' }}
+            onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.2)'}
+            onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
+          >×</button>
+
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              const link = document.createElement('a');
+              link.href = displayImages[currentImageIndex];
+              link.download = `writeframe-image-${currentImageIndex + 1}.jpg`;
+              link.click();
+            }}
+            style={{ position: 'absolute', top: '20px', right: '70px', background: 'rgba(255,255,255,0.1)', border: 'none', color: 'white', fontSize: '20px', width: '40px', height: '40px', borderRadius: '50%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s ease' }}
+            onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.2)'}
+            onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
+          >⬇</button>
+
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              if (navigator.share) {
+                navigator.share({ title: frame.mood_description || 'Cinematic image from writeFrame', text: 'Check out this cinematic image from writeFrame!', url: displayImages[currentImageIndex] });
+              } else {
+                navigator.clipboard.writeText(displayImages[currentImageIndex]);
+                alert('Image link copied to clipboard!');
+              }
+            }}
+            style={{ position: 'absolute', top: '20px', right: '120px', background: 'rgba(255,255,255,0.1)', border: 'none', color: 'white', fontSize: '20px', width: '40px', height: '40px', borderRadius: '50%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s ease' }}
+            onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.2)'}
+            onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
+          >↗</button>
         </div>
-
-        <InspirationBottomSheet
-          isOpen={isInspirationOpen}
-          onClose={() => setIsInspirationOpen(false)}
-          onSelectPrompt={handlePromptSelect}
-          prompts={promptsData.frames}
-          contentType="frames"
-        />
-      </div>
-    </div>
+      )}
+    </>
   );
-};
+});
 
-export default FrameComposer;
+FrameCard.displayName = 'FrameCard';
+
+export default FrameCard;
