@@ -97,7 +97,7 @@ const TermsPage: React.FC = () => {
             margin: 0
           }}>
             writeFrame is a platform built for creators. These terms are written in plain language
-            to be honest and clear about how we operate — not to confuse you with legal jargon.
+            to be honest and clear about how we operate not to confuse you with legal jargon.
             This is an MVP and these terms will evolve, but our core commitment never will:
             everything you create is yours.
           </p>
@@ -127,8 +127,8 @@ const TermsPage: React.FC = () => {
               color: '#55524F',
               margin: '0 0 12px 0'
             }}>
-              All content you post on writeFrame — scenes, monologues, characters, cinematic
-              collages, or any other creative work — remains your exclusive property. writeFrame
+              All content you post on writeFrame: scenes, monologues, characters, cinematic
+              collages, or any other creative work remains your exclusive property. writeFrame
               claims zero ownership rights to anything you create.
             </p>
             <p style={{
@@ -226,7 +226,7 @@ const TermsPage: React.FC = () => {
               color: '#55524F',
               margin: '0 0 12px 0'
             }}>
-              To file a claim, provide evidence of your original creation — an earlier timestamp,
+              To file a claim, provide evidence of your original creation an earlier timestamp,
               original file, or other proof. We will review and remove infringing content and
               may ban repeat offenders.
             </p>
@@ -277,7 +277,7 @@ const TermsPage: React.FC = () => {
               color: '#55524F',
               margin: '0 0 12px 0'
             }}>
-              Any public platform — Instagram, Twitter, Medium, Behance — carries some inherent
+              Any public platform: Instagram, Twitter, Medium, Behance carries some inherent
               risk of content theft. writeFrame is no different. We are honest about this.
             </p>
             <p style={{
@@ -288,7 +288,7 @@ const TermsPage: React.FC = () => {
             }}>
               What we provide to minimise this risk: timestamps, attribution tools, and a
               takedown process. Many creators choose to share work publicly to build portfolios
-              and audiences — it is a calculated decision, and you are always in control of
+              and audiences it is a calculated decision, and you are always in control of
               what you share.
             </p>
           </div>
@@ -439,8 +439,8 @@ const TermsPage: React.FC = () => {
             }}>
               writeFrame is an MVP and these terms will evolve as the platform grows. We will
               notify users of any significant changes. Continuing to use writeFrame after changes
-              are posted means you accept the updated terms. Our core commitment — that your
-              content belongs to you — will never change.
+              are posted means you accept the updated terms. Our core commitment that your
+              content belongs to you will never change.
             </p>
           </div>
         </section>
