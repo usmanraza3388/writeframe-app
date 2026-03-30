@@ -243,7 +243,7 @@ const TermsPage: React.FC = () => {
               }}>
                 Contact us at:{' '}
                 <a
-                  href="mailto:hello@writeframe.app"
+                  href="mailto:hello@writeframe.co"
                   style={{ color: '#1C1C1C', textDecoration: 'underline' }}
                 >
                   hello@writeframe.app
@@ -484,7 +484,7 @@ const TermsPage: React.FC = () => {
               fontWeight: '600'
             }}
           >
-            hello@writeframe.app
+            hello@writeframe.co
           </a>
         </div>
 
