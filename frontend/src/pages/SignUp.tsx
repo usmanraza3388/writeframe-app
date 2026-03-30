@@ -1,6 +1,6 @@
 import React, { useState, type FormEvent } from "react";
 import { supabase } from "../assets/lib/supabaseClient";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 
 function SocialButton({
   label,
@@ -262,8 +262,19 @@ export default function SignUp() {
           }}
         >
           By clicking Register or Continue with Google, you agree to{" "}
-          <span style={{ textDecoration: "underline" }}>Terms of Use</span> and{" "}
-          <span style={{ textDecoration: "underline" }}>Privacy Policy</span>.
+          <Link
+            to="/terms"
+            style={{ color: "#4B5563", textDecoration: "underline" }}
+          >
+            Terms of Use
+          </Link>
+          {" "}and{" "}
+          <Link
+            to="/terms"
+            style={{ color: "#4B5563", textDecoration: "underline" }}
+          >
+            Privacy Policy
+          </Link>.
         </p>
 
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>

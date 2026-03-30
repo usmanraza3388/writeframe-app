@@ -18,6 +18,7 @@ import Dashboard from "./pages/Dashboard";
 import Drafts from "./pages/Drafts";
 import Settings from "./pages/Settings";
 import AboutPage from "./pages/AboutPage";
+import TermsPage from "./pages/TermsPage";
 import { SceneComposer } from "./components/Scenes/SceneComposer";
 import { MonologueComposer } from "./components/Monologues/MonologueComposer";
 import CharacterComposer from "./components/Characters/CharacterComposer";
@@ -98,6 +99,7 @@ function AppContent() {
         <Route path="/" element={<LandingPage />} />
 
         <Route path="/about" element={<AboutPage />} />
+        <Route path="/terms" element={<TermsPage />} />
 
         <Route
           path="/app"

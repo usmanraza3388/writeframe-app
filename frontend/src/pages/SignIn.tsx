@@ -210,8 +210,19 @@ export default function SignIn() {
         {/* Terms */}
         <p style={{ margin: 0, fontFamily: "'Cormorant', serif", fontSize: 12, color: "#4B5563", textAlign: "center", lineHeight: 1.4 }}>
           By clicking Sign in or Continue with Google, you agree to{" "}
-          <span style={{ textDecoration: "underline" }}>Terms of Use</span> and{" "}
-          <span style={{ textDecoration: "underline" }}>Privacy Policy</span>.
+          <Link
+            to="/terms"
+            style={{ color: "#4B5563", textDecoration: "underline" }}
+          >
+            Terms of Use
+          </Link>
+          {" "}and{" "}
+          <Link
+            to="/terms"
+            style={{ color: "#4B5563", textDecoration: "underline" }}
+          >
+            Privacy Policy
+          </Link>.
         </p>
 
         {/* Divider */}
