@@ -361,6 +361,9 @@ const SceneCard: React.FC<SceneCardProps> = React.memo(({ scene, currentUserId, 
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [showMenu, closeMenu]);
 
+  // ADDED: Get current year for copyright
+  const currentYear = new Date().getFullYear();
+
   return (
     <>
       {showRemakeEditor && (
@@ -1010,6 +1013,20 @@ const SceneCard: React.FC<SceneCardProps> = React.memo(({ scene, currentUserId, 
               </button>
             )}
           </div>
+        </div>
+
+        {/* ADDED: Copyright Notice */}
+        <div style={{
+          marginTop: '12px',
+          paddingTop: '8px',
+          textAlign: 'center',
+          fontFamily: 'Playfair Display, serif',
+          fontSize: '10px',
+          color: '#9CA3AF',
+          letterSpacing: '0.3px',
+          borderTop: '1px solid #EFEDE5'
+        }}>
+          © {currentYear} {scene.user_name}
         </div>
       </div>
 
