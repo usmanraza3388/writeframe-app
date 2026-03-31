@@ -1017,7 +1017,7 @@ const SceneCard: React.FC<SceneCardProps> = React.memo(({ scene, currentUserId, 
 
         {/* ADDED: Copyright Notice */}
         <div style={{
-          marginTop: '12px',
+          marginTop: '16px',
           paddingTop: '8px',
           textAlign: 'center',
           fontFamily: 'Playfair Display, serif',
