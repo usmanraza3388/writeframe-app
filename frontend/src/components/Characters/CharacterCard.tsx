@@ -413,9 +413,6 @@ const CharacterCard: React.FC<CharacterCardProps> = React.memo(({
   // Get main character image
   const mainImage = character.visual_references?.[0]?.image_url;
 
-  // ADDED: Get current year for copyright
-  const currentYear = new Date().getFullYear();
-
   return (
     <>
       {/* Dialogs */}
@@ -936,20 +933,6 @@ const CharacterCard: React.FC<CharacterCardProps> = React.memo(({
               </span>
             </button>
           </div>
-        </div>
-
-        {/* ADDED: Copyright Notice */}
-        <div style={{
-          marginTop: '16px',
-          paddingTop: '8px',
-          textAlign: 'center',
-          fontFamily: 'Playfair Display, serif',
-          fontSize: '10px',
-          color: '#9CA3AF',
-          letterSpacing: '0.3px',
-          borderTop: '1px solid #EFEDE5'
-        }}>
-          © {currentYear} {character.user_name}
         </div>
       </article>
 
